@@ -15,8 +15,8 @@ void main() {
 
   setUp(() {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    goalsRepo = GoalsRepository(db);
-    settingsRepo = SettingsRepository(db);
+    goalsRepo = DriftGoalsRepository(db);
+    settingsRepo = DriftSettingsRepository(db);
     service = GoalsService(goalsRepo, settingsRepo);
   });
 

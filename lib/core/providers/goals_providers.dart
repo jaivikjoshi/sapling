@@ -2,12 +2,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/db/sapling_database.dart';
 import '../../data/repositories/goals_repository.dart';
+import '../../data/repositories_supabase/supabase_goals_repository.dart';
 import '../../domain/services/goals_service.dart';
+import 'auth_providers.dart';
 import 'db_provider.dart';
 import 'settings_providers.dart';
 
 final goalsRepositoryProvider = Provider<GoalsRepository>((ref) {
-  return GoalsRepository(ref.watch(databaseProvider));
+  final userId = ref.watch(currentUserProvider)?.id;
+  if (userId == null) {
+    return DriftGoalsRepository(ref.watch(databaseProvider));
+  }
+  return SupabaseGoalsRepository(ref.watch(supabaseClientProvider), userId);
 });
 
 final goalsServiceProvider = Provider<GoalsService>((ref) {

@@ -88,8 +88,12 @@ class _PaycheckCard extends ConsumerWidget {
     final dateFmt = DateFormat.MMMd();
     return Card(
       color: SaplingColors.primary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -100,32 +104,46 @@ class _PaycheckCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: SaplingColors.accent)),
+                        ?.copyWith(color: SaplingColors.background, letterSpacing: 0.2)),
                 const _ModeToggle(),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Text(
               formatCurrency(r.allowanceToday),
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold, color: Colors.white),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 56,
+                    letterSpacing: -2.0,
+                    color: Colors.white,
+                    height: 1.0,
+                  ),
             ),
-            const SizedBox(height: 12),
-            _InfoRow(
-              label: 'Banked',
-              value: formatCurrency(r.bankedAllowance),
-              color: r.bankedAllowance >= 0
-                  ? SaplingColors.secondary : SaplingColors.labelRed,
-            ),
-            const SizedBox(height: 4),
-            _InfoRow(label: 'Days left', value: '${r.daysLeft}',
-                color: SaplingColors.accent),
-            const SizedBox(height: 4),
-            _InfoRow(
-              label: 'Cycle',
-              value: '${dateFmt.format(r.cycleWindow.start)} – '
-                  '${dateFmt.format(r.cycleWindow.end)}',
-              color: SaplingColors.accent.withValues(alpha: 0.7),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _MiniStatBlock(
+                  label: 'Banked',
+                  value: formatCurrency(r.bankedAllowance),
+                  valueColor: r.bankedAllowance >= 0
+                      ? SaplingColors.secondary
+                      : SaplingColors.accent,
+                ),
+                _MiniStatBlock(
+                  label: 'Days left',
+                  value: '${r.daysLeft}',
+                  valueColor: Colors.white,
+                ),
+                _MiniStatBlock(
+                  label: 'Cycle',
+                  value: '${dateFmt.format(r.cycleWindow.start)} – '
+                      '${dateFmt.format(r.cycleWindow.end)}',
+                  valueColor: Colors.white,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                ),
+              ],
             ),
           ],
         ),
@@ -137,8 +155,12 @@ class _PaycheckCard extends ConsumerWidget {
       {bool loading = false, String? error}) {
     return Card(
       color: SaplingColors.primary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -149,14 +171,14 @@ class _PaycheckCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: SaplingColors.accent)),
+                        ?.copyWith(color: SaplingColors.background, letterSpacing: 0.2)),
                 const _ModeToggle(),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             if (loading)
               const SizedBox(
-                height: 36, width: 120,
+                height: 56, width: 150,
                 child: LinearProgressIndicator(
                   color: SaplingColors.secondary,
                   backgroundColor: SaplingColors.support,
@@ -165,6 +187,7 @@ class _PaycheckCard extends ConsumerWidget {
             else if (error != null)
               Text(error,
                   style: const TextStyle(color: SaplingColors.labelRed)),
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -192,11 +215,15 @@ class _GoalCard extends ConsumerWidget {
   }
 
   Widget _buildGoalData(BuildContext context, GoalAllowanceResult r) {
-    final dateFmt = DateFormat.yMMMd();
+    final dateFmt = DateFormat.MMMd();
     return Card(
       color: SaplingColors.primary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -207,41 +234,48 @@ class _GoalCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: SaplingColors.accent)),
+                        ?.copyWith(color: SaplingColors.background, letterSpacing: 0.2)),
                 const _ModeToggle(),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Text(
               formatCurrency(r.allowanceToday),
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold, color: Colors.white),
+                    fontWeight: FontWeight.w700, 
+                    fontSize: 56,
+                    letterSpacing: -2.0,
+                    color: Colors.white,
+                    height: 1.0,
+                  ),
             ),
-            const SizedBox(height: 12),
-            _InfoRow(label: 'Goal', value: r.goal.name,
-                color: SaplingColors.accent),
-            const SizedBox(height: 4),
-            _InfoRow(
-              label: 'Target',
-              value: '${formatCurrency(r.goal.targetAmount)} by '
-                  '${dateFmt.format(r.goal.targetDate)}',
-              color: SaplingColors.accent.withValues(alpha: 0.7),
-            ),
-            const SizedBox(height: 4),
-            _InfoRow(
-              label: 'Days to goal',
-              value: '${r.daysToGoal}',
-              color: SaplingColors.accent,
-            ),
-            const SizedBox(height: 4),
-            _InfoRow(
-              label: 'Banked',
-              value: formatCurrency(r.bankedAllowance),
-              color: r.bankedAllowance >= 0
-                  ? SaplingColors.secondary : SaplingColors.labelRed,
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _MiniStatBlock(
+                  label: 'Target',
+                  value: formatCurrency(r.goal.targetAmount),
+                  valueColor: Colors.white,
+                ),
+                _MiniStatBlock(
+                  label: 'By',
+                  value: dateFmt.format(r.goal.targetDate),
+                  valueColor: Colors.white,
+                ),
+                _MiniStatBlock(
+                  label: 'Banked',
+                  value: formatCurrency(r.bankedAllowance),
+                  valueColor: r.bankedAllowance >= 0
+                      ? SaplingColors.secondary
+                      : SaplingColors.accent,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                ),
+              ],
             ),
             if (!r.feasibility.isFeasible) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               _FeasibilityWarning(feasibility: r.feasibility),
             ],
           ],
@@ -253,8 +287,12 @@ class _GoalCard extends ConsumerWidget {
   Widget _buildNoGoal(BuildContext context) {
     return Card(
       color: SaplingColors.primary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -265,18 +303,19 @@ class _GoalCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: SaplingColors.accent)),
+                        ?.copyWith(color: SaplingColors.background, letterSpacing: 0.2)),
                 const _ModeToggle(),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 32),
             Text(
               'No primary goal set.\nGo to Goals tab and set one.',
               style: Theme.of(context)
                   .textTheme
-                  .bodySmall
-                  ?.copyWith(color: SaplingColors.accent.withValues(alpha: 0.7)),
+                  .bodyMedium
+                  ?.copyWith(color: SaplingColors.background.withValues(alpha: 0.7)),
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -287,8 +326,12 @@ class _GoalCard extends ConsumerWidget {
       {bool loading = false, String? error}) {
     return Card(
       color: SaplingColors.primary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -299,14 +342,14 @@ class _GoalCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: SaplingColors.accent)),
+                        ?.copyWith(color: SaplingColors.background, letterSpacing: 0.2)),
                 const _ModeToggle(),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             if (loading)
               const SizedBox(
-                height: 36, width: 120,
+                height: 56, width: 150,
                 child: LinearProgressIndicator(
                   color: SaplingColors.secondary,
                   backgroundColor: SaplingColors.support,
@@ -315,6 +358,7 @@ class _GoalCard extends ConsumerWidget {
             else if (error != null)
               Text(error,
                   style: const TextStyle(color: SaplingColors.labelRed)),
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -388,7 +432,7 @@ class _InfoRow extends StatelessWidget {
                 .textTheme
                 .bodySmall
                 ?.copyWith(
-                    color: SaplingColors.accent.withValues(alpha: 0.7))),
+                    color: SaplingColors.background.withValues(alpha: 0.7))),
         Flexible(
           child: Text(value,
               style: Theme.of(context)
@@ -396,6 +440,47 @@ class _InfoRow extends StatelessWidget {
                   .bodySmall
                   ?.copyWith(color: color, fontWeight: FontWeight.w600),
               overflow: TextOverflow.ellipsis),
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniStatBlock extends StatelessWidget {
+  const _MiniStatBlock({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+    this.crossAxisAlignment = CrossAxisAlignment.start,
+  });
+
+  final String label;
+  final String value;
+  final Color valueColor;
+  final CrossAxisAlignment crossAxisAlignment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: crossAxisAlignment,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            color: SaplingColors.background.withValues(alpha: 0.6),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: valueColor,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );

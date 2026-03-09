@@ -22,9 +22,9 @@ void main() {
 
   setUp(() {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    txnRepo = TransactionsRepository(db);
-    billsRepo = BillsRepository(db);
-    incomeRepo = RecurringIncomeRepository(db);
+    txnRepo = DriftTransactionsRepository(db);
+    billsRepo = DriftBillsRepository(db);
+    incomeRepo = DriftRecurringIncomeRepository(db);
     engine = AllowanceEngine(txnRepo, billsRepo, incomeRepo, null);
     ledger = LedgerService(txnRepo);
     detector = OverspendDetector(engine, txnRepo);

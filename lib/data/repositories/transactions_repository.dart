@@ -1,18 +1,37 @@
 import 'package:drift/drift.dart';
+
 import '../db/sapling_database.dart';
 
-class TransactionsRepository {
+/// Interface for transactions repository (Drift or Supabase implementation).
+abstract class TransactionsRepository {
+  Future<void> insert(Transaction t);
+  Future<void> updateById(String id, Transaction t);
+  Future<void> deleteById(String id);
+  Future<Transaction> getById(String id);
+  Future<Transaction?> getByIdOrNull(String id);
+  Stream<List<Transaction>> watchAll({int? limit});
+  Stream<List<Transaction>> watchByDateRange(DateTime start, DateTime end);
+  Future<List<Transaction>> getByDateRange(DateTime start, DateTime end);
+  Future<List<Transaction>> getAll();
+  Future<double> computeBalanceUpTo(DateTime endExclusive);
+  Future<double> computeBalance();
+  Stream<double> watchBalance();
+}
+
+class DriftTransactionsRepository implements TransactionsRepository {
   final SaplingDatabase _db;
 
-  TransactionsRepository(this._db);
+  DriftTransactionsRepository(this._db);
 
-  Future<void> insert(TransactionsCompanion companion) {
-    return _db.into(_db.transactions).insert(companion);
+  @override
+  Future<void> insert(Transaction t) {
+    return _db.into(_db.transactions).insert(t.toCompanion(true));
   }
 
-  Future<void> updateById(String id, TransactionsCompanion companion) {
-    return (_db.update(_db.transactions)..where((t) => t.id.equals(id)))
-        .write(companion);
+  @override
+  Future<void> updateById(String id, Transaction t) {
+    return (_db.update(_db.transactions)..where((row) => row.id.equals(id)))
+        .write(t.toCompanion(true));
   }
 
   Future<void> deleteById(String id) {

@@ -32,7 +32,7 @@ void main() {
 
   setUp(() {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    repo = DailyCloseoutsRepository(db);
+    repo = DriftDailyCloseoutsRepository(db);
     fakeEngine = FakeAllowanceEngineForStreak();
     service = CloseoutService(repo, fakeEngine);
   });

@@ -2,11 +2,17 @@ import 'package:drift/drift.dart';
 
 import '../db/sapling_database.dart';
 
-class SchedulerMetadataRepository {
+abstract class SchedulerMetadataRepository {
+  Future<String?> get(String key);
+  Future<void> set(String key, String value);
+}
+
+class DriftSchedulerMetadataRepository implements SchedulerMetadataRepository {
   final SaplingDatabase _db;
 
-  SchedulerMetadataRepository(this._db);
+  DriftSchedulerMetadataRepository(this._db);
 
+  @override
   Future<String?> get(String key) async {
     final row = await (_db.select(_db.schedulerMetadata)
           ..where((t) => t.key.equals(key)))
@@ -14,6 +20,7 @@ class SchedulerMetadataRepository {
     return row?.value;
   }
 
+  @override
   Future<void> set(String key, String value) async {
     final existing = await (_db.select(_db.schedulerMetadata)
           ..where((t) => t.key.equals(key)))

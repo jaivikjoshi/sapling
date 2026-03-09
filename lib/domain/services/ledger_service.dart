@@ -23,16 +23,16 @@ class LedgerService {
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _repo.insert(TransactionsCompanion.insert(
+    await _repo.insert(Transaction(
       id: id,
       type: enumToDb(TransactionType.expense),
       amount: amount,
       date: date,
-      categoryId: Value(categoryId),
-      label: Value(enumToDb(label)),
-      note: Value(note),
-      linkedBillId: Value(linkedBillId),
-      linkedSplitEntryId: Value(linkedSplitEntryId),
+      categoryId: categoryId,
+      label: enumToDb(label),
+      note: note,
+      linkedBillId: linkedBillId,
+      linkedSplitEntryId: linkedSplitEntryId,
       createdAt: now,
       updatedAt: now,
     ));
@@ -49,15 +49,15 @@ class LedgerService {
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _repo.insert(TransactionsCompanion.insert(
+    await _repo.insert(Transaction(
       id: id,
       type: enumToDb(TransactionType.income),
       amount: amount,
       date: date,
-      source: Value(source),
-      incomePostingType: Value(enumToDb(postingType)),
-      note: Value(note),
-      linkedRecurringIncomeId: Value(linkedRecurringIncomeId),
+      source: source,
+      incomePostingType: enumToDb(postingType),
+      note: note,
+      linkedRecurringIncomeId: linkedRecurringIncomeId,
       createdAt: now,
       updatedAt: now,
     ));
@@ -71,12 +71,12 @@ class LedgerService {
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _repo.insert(TransactionsCompanion.insert(
+    await _repo.insert(Transaction(
       id: id,
       type: enumToDb(TransactionType.adjustment),
       amount: amount,
       date: date,
-      note: Value(note),
+      note: note,
       createdAt: now,
       updatedAt: now,
     ));
@@ -105,16 +105,20 @@ class LedgerService {
     SpendLabel? label,
     String? note,
   }) async {
+    final existing = await _repo.getByIdOrNull(id);
+    if (existing == null) return;
     final now = DateTime.now();
-    final c = TransactionsCompanion(
-      updatedAt: Value(now),
-      amount: amount != null ? Value(amount) : const Value.absent(),
-      date: date != null ? Value(date) : const Value.absent(),
-      categoryId: categoryId != null ? Value(categoryId) : const Value.absent(),
-      label: label != null ? Value(enumToDb(label)) : const Value.absent(),
-      note: note != null ? Value(note) : const Value.absent(),
+    await _repo.updateById(
+      id,
+      existing.copyWith(
+        amount: amount ?? existing.amount,
+        date: date ?? existing.date,
+        categoryId: categoryId != null ? Value(categoryId) : const Value.absent(),
+        label: label != null ? Value(enumToDb(label)) : const Value.absent(),
+        note: note != null ? Value(note) : const Value.absent(),
+        updatedAt: now,
+      ),
     );
-    await _repo.updateById(id, c);
   }
 
   Future<Transaction?> getTransactionById(String id) async {

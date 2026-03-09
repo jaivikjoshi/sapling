@@ -2,12 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/db/sapling_database.dart';
 import '../../data/repositories/recurring_income_repository.dart';
+import '../../data/repositories_supabase/supabase_recurring_income_repository.dart';
 import '../../domain/services/recurring_income_service.dart';
+import 'auth_providers.dart';
 import 'db_provider.dart';
 
 final recurringIncomeRepositoryProvider =
     Provider<RecurringIncomeRepository>((ref) {
-  return RecurringIncomeRepository(ref.watch(databaseProvider));
+  final userId = ref.watch(currentUserProvider)?.id;
+  if (userId == null) {
+    return DriftRecurringIncomeRepository(ref.watch(databaseProvider));
+  }
+  return SupabaseRecurringIncomeRepository(
+      ref.watch(supabaseClientProvider), userId);
 });
 
 final recurringIncomeServiceProvider =

@@ -1,10 +1,19 @@
 import 'package:drift/drift.dart';
+
 import '../db/sapling_database.dart';
 
-class SettingsRepository {
+/// Interface for settings repository (Drift or Supabase implementation).
+abstract class SettingsRepository {
+  Future<AppSetting> get();
+  Stream<AppSetting> watch();
+  Future<void> update(AppSettingsCompanion companion);
+  Future<void> markOnboardingComplete();
+}
+
+class DriftSettingsRepository implements SettingsRepository {
   final SaplingDatabase _db;
 
-  SettingsRepository(this._db);
+  DriftSettingsRepository(this._db);
 
   Future<AppSetting> get() async {
     return _db.select(_db.appSettings).getSingle();

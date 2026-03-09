@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sapling/data/db/sapling_database.dart';
 import 'package:sapling/data/repositories/persons_repository.dart';
-import 'package:sapling/domain/services/split_service.dart';
+import 'package:sapling/data/repositories/persons_repository.dart';
 import 'package:sapling/data/repositories/split_entries_repository.dart';
 import 'package:sapling/data/repositories/split_shares_repository.dart';
 import 'package:sapling/data/repositories/transactions_repository.dart';
@@ -20,10 +20,10 @@ void main() {
 
   setUp(() async {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    entriesRepo = SplitEntriesRepository(db);
-    sharesRepo = SplitSharesRepository(db);
-    txnRepo = TransactionsRepository(db);
-    personsRepo = PersonsRepository(db);
+    entriesRepo = DriftSplitEntriesRepository(db);
+    sharesRepo = DriftSplitSharesRepository(db);
+    txnRepo = DriftTransactionsRepository(db);
+    personsRepo = DriftPersonsRepository(db);
 
     final now = DateTime(2025, 1, 15);
     await personsRepo.insert(PersonsCompanion.insert(

@@ -19,9 +19,9 @@ void main() {
 
   setUp(() async {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    metadataRepo = SchedulerMetadataRepository(db);
-    settingsRepo = SettingsRepository(db);
-    incomeRepo = RecurringIncomeRepository(db);
+    metadataRepo = DriftSchedulerMetadataRepository(db);
+    settingsRepo = DriftSettingsRepository(db);
+    incomeRepo = DriftRecurringIncomeRepository(db);
     watcher = CycleBoundaryWatcher(metadataRepo, settingsRepo, incomeRepo);
   });
 

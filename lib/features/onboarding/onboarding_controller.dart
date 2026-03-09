@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../core/providers/db_provider.dart';
+import '../../core/providers/ledger_providers.dart';
 import '../../core/providers/recurring_income_providers.dart';
 import '../../core/providers/settings_providers.dart';
 import '../../core/utils/enum_serialization.dart';
@@ -193,9 +193,9 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     state = state.copyWith(isSubmitting: true, error: () => null);
 
     try {
-      final db = _ref.read(databaseProvider);
       final repo = _ref.read(settingsRepositoryProvider);
       final incomeRepo = _ref.read(recurringIncomeRepositoryProvider);
+      final txnRepo = _ref.read(transactionsRepositoryProvider);
       final now = DateTime.now();
 
       // Persist recurring incomes and resolve anchor ID
@@ -220,17 +220,15 @@ class OnboardingController extends StateNotifier<OnboardingState> {
 
       // Create initial balance adjustment
       if (state.startingBalance != 0) {
-        await db.into(db.transactions).insert(
-          TransactionsCompanion.insert(
-            id: _uuid.v4(),
-            type: 'adjustment',
-            amount: state.startingBalance,
-            date: now,
-            createdAt: now,
-            updatedAt: now,
-            note: const Value('Initial balance from onboarding'),
-          ),
-        );
+        await txnRepo.insert(Transaction(
+          id: _uuid.v4(),
+          type: 'adjustment',
+          amount: state.startingBalance,
+          date: now,
+          note: 'Initial balance from onboarding',
+          createdAt: now,
+          updatedAt: now,
+        ));
       }
 
       // Save settings

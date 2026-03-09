@@ -8,6 +8,8 @@ import '../../features/bills/bills_screen.dart';
 import '../../features/goals/goals_screen.dart';
 import '../../features/reports/reports_screen.dart';
 import '../../features/settings/settings_screen.dart';
+import '../../features/auth/login_screen.dart';
+import '../../features/auth/signup_screen.dart';
 import '../../features/transactions/add_expense_screen.dart';
 import '../../features/transactions/add_income_screen.dart';
 import '../../features/transactions/edit_expense_screen.dart';
@@ -29,6 +31,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/signup',
+        builder: (context, state) => const SignupScreen(),
       ),
       GoRoute(
         path: '/onboarding',
@@ -139,40 +149,38 @@ class ScaffoldWithNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) {
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: navigationShell.currentIndex,
+        onTap: (index) {
           navigationShell.goBranch(
             index,
             initialLocation: index == navigationShell.currentIndex,
           );
         },
-        backgroundColor: SaplingColors.surface,
-        indicatorColor: SaplingColors.accent.withValues(alpha: 0.3),
-        destinations: const [
-          NavigationDestination(
+        items: const [
+          BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          NavigationDestination(
+          BottomNavigationBarItem(
             icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
+            activeIcon: Icon(Icons.receipt_long),
             label: 'Bills',
           ),
-          NavigationDestination(
+          BottomNavigationBarItem(
             icon: Icon(Icons.flag_outlined),
-            selectedIcon: Icon(Icons.flag),
+            activeIcon: Icon(Icons.flag),
             label: 'Goals',
           ),
-          NavigationDestination(
+          BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
+            activeIcon: Icon(Icons.bar_chart),
             label: 'Reports',
           ),
-          NavigationDestination(
+          BottomNavigationBarItem(
             icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
+            activeIcon: Icon(Icons.settings),
             label: 'Settings',
           ),
         ],

@@ -4,41 +4,36 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/providers/closeout_providers.dart';
 import '../../core/providers/ledger_providers.dart';
+import '../../core/providers/plant_providers.dart';
 import '../../core/theme/sapling_colors.dart';
 import '../../core/utils/currency_formatter.dart';
+import '../../domain/models/plant_state.dart';
 import '../transactions/reconcile_sheet.dart';
 import '../transactions/transaction_tile_widget.dart';
 import 'widgets/allowance_card.dart';
 import 'widgets/behind_banner.dart';
+import 'widgets/plant_widget.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Trigger plant state update (backfill missed days) on every home screen build.
+    ref.watch(plantUpdateProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                'assets/images/logo.png',
-                height: 32,
-                width: 32,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text('Sapling'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.splitscreen),
-            tooltip: 'Friends & Split',
-            onPressed: () => context.push('/splits'),
+        title: const Text(
+          'Sapling',
+          style: TextStyle(
+            fontFamily: 'Georgia', // Premium editorial serif fallback
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: SaplingColors.primary,
+            letterSpacing: -0.5,
           ),
-        ],
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -49,6 +44,8 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           const AllowanceCard(),
           const BehindBanner(),
+          // const SizedBox(height: 20),
+          // const _PlantSection(),
           const SizedBox(height: 24),
           _QuickActions(
             onAddExpense: () => context.push('/add-expense'),
@@ -76,6 +73,114 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+class _PlantSection extends StatefulWidget {
+  const _PlantSection();
+
+  @override
+  State<_PlantSection> createState() => _PlantSectionState();
+}
+
+class _PlantSectionState extends State<_PlantSection> {
+  // Debug-only local state so you can tap buttons and watch the plant change.
+  PlantState _debug = PlantState.initial();
+
+  void _grow() => setState(() {
+        _debug = _debug.copyWith(
+          growthPoints: _debug.growthPoints + 5,
+          healthScore: (_debug.healthScore + 15).clamp(0, 100),
+          currentStreak: _debug.currentStreak + 5,
+          longestStreak: _debug.longestStreak + 5,
+          daysAtZero: 0,
+        );
+      });
+
+  void _decay() => setState(() {
+        _debug = _debug.copyWith(
+          healthScore: (_debug.healthScore - 12).clamp(0, 100),
+          currentStreak: 0,
+          daysAtZero: _debug.daysAtZero + 3,
+          growthPoints: _debug.daysAtZero >= 7
+              ? (_debug.growthPoints - 1).clamp(0, 9999)
+              : _debug.growthPoints,
+        );
+      });
+
+  void _reset() => setState(() {
+        _debug = PlantState.initial();
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        color: SaplingColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            children: [
+              PlantWidget(state: _debug),
+              const SizedBox(height: 8),
+              // ── Debug controls ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _DebugBtn(label: '🌱 Grow', onTap: _grow),
+                    _DebugBtn(label: '🍂 Decay', onTap: _decay),
+                    _DebugBtn(label: '↻ Reset', onTap: _reset),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Growth: ${_debug.growthPoints}pts (stage ${_debug.growthStage})  •  '
+                'Health: ${_debug.healthScore} (stage ${_debug.healthStage})',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: SaplingColors.textSecondary.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DebugBtn extends StatelessWidget {
+  const _DebugBtn({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: SaplingColors.secondary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: SaplingColors.primary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BalanceCard extends ConsumerWidget {
   const _BalanceCard();
 
@@ -83,38 +188,60 @@ class _BalanceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final balanceAsync = ref.watch(balanceStreamProvider);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Current Balance',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: SaplingColors.textSecondary),
-            ),
-            const SizedBox(height: 8),
-            balanceAsync.when(
-              data: (balance) => Text(
-                formatCurrency(balance),
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: SaplingColors.primary,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Current Balance',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: SaplingColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5),
+              ),
+              const Spacer(),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: SaplingColors.secondary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'USD',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: SaplingColors.textSecondary,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
-              loading: () => const SizedBox(
-                height: 36,
-                width: 100,
-                child: LinearProgressIndicator(),
-              ),
-              error: (e, _) => Text('Error: $e',
-                  style: TextStyle(color: SaplingColors.error)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          balanceAsync.when(
+            data: (balance) => Text(
+              formatCurrency(balance),
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 42,
+                    letterSpacing: -1.5,
+                    color: SaplingColors.primary,
+                  ),
             ),
-          ],
-        ),
+            loading: () => const SizedBox(
+              height: 48,
+              width: 150,
+              child: LinearProgressIndicator(
+                  color: SaplingColors.shimmer, backgroundColor: Colors.transparent),
+            ),
+            error: (e, _) => Text('Error: $e',
+                style: const TextStyle(color: SaplingColors.error)),
+          ),
+        ],
       ),
     );
   }
@@ -127,46 +254,36 @@ class _CloseoutStatusCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final streakAsync = ref.watch(streakProvider);
 
-    return Card(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: InkWell(
         onTap: () => context.push('/closeout'),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: SaplingColors.secondary.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(Icons.nightlight_round, color: SaplingColors.support),
+              const Icon(Icons.eco, color: SaplingColors.secondary, size: 20),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    streakAsync.when(
-                      data: (s) => Text(
-                        '${s.currentStreak} day budget streak',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      loading: () => const Text('Budget streak…'),
-                      error: (_, __) => const Text('Closeout'),
+                child: streakAsync.when(
+                  data: (s) => Text(
+                    '${s.currentStreak} Day Budget Streak: ${s.todayWithinBudget ? 'Within Budget!' : 'Over Budget'}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: SaplingColors.secondary.withValues(alpha: 0.9),
+                      fontSize: 14,
                     ),
-                    const SizedBox(height: 2),
-                    streakAsync.when(
-                      data: (s) => Text(
-                        s.todayWithinBudget ? 'Today: within budget' : 'Today: over budget',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: s.todayWithinBudget
-                              ? SaplingColors.labelGreen
-                              : SaplingColors.labelRed,
-                        ),
-                      ),
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
-                    ),
-                  ],
+                  ),
+                  loading: () => Text('Budget streak…',
+                      style: TextStyle(color: SaplingColors.secondary.withValues(alpha: 0.9))),
+                  error: (_, __) => const Text('Closeout'),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: SaplingColors.textSecondary),
             ],
           ),
         ),
@@ -192,41 +309,38 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: [
-        _ActionButton(
-          icon: Icons.remove_circle_outline,
-          label: 'Expense',
-          color: SaplingColors.labelRed,
-          onTap: onAddExpense,
-        ),
-        _ActionButton(
-          icon: Icons.add_circle_outline,
-          label: 'Income',
-          color: SaplingColors.secondary,
-          onTap: onAddIncome,
-        ),
-        _ActionButton(
-          icon: Icons.receipt,
-          label: 'Pay Bill',
-          color: SaplingColors.labelOrange,
-          onTap: onMarkBillPaid,
-        ),
-        _ActionButton(
-          icon: Icons.splitscreen,
-          label: 'Friends & Split',
-          color: SaplingColors.support,
-          onTap: onSplits,
-        ),
-        _ActionButton(
-          icon: Icons.sync_alt,
-          label: 'Reconcile',
-          color: SaplingColors.support,
-          onTap: onReconcile,
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _ActionButton(
+            icon: Icons.horizontal_rule_rounded,
+            label: 'Expense',
+            color: SaplingColors.accent,
+            onTap: onAddExpense,
+          ),
+          _ActionButton(
+            icon: Icons.attach_money_rounded,
+            label: 'Income',
+            color: SaplingColors.secondary,
+            onTap: onAddIncome,
+          ),
+          _ActionButton(
+            icon: Icons.receipt_long_rounded,
+            label: 'Pay Bill',
+            color: SaplingColors.surfaceNav,
+            onTap: onMarkBillPaid,
+            iconColor: Colors.white,
+          ),
+          _ActionButton(
+            icon: Icons.call_split_rounded,
+            label: 'Split',
+            color: SaplingColors.secondary.withValues(alpha: 0.4),
+            onTap: onSplits,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -237,40 +351,52 @@ class _ActionButton extends StatelessWidget {
     required this.label,
     required this.color,
     required this.onTap,
+    this.iconColor,
   });
 
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
-    final width = (MediaQuery.of(context).size.width - 32 - 12) / 2;
-    return SizedBox(
-      width: width,
-      child: Material(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(
-              children: [
-                Icon(icon, color: color, size: 28),
-                const SizedBox(height: 6),
-                Text(label,
-                    style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12)),
-              ],
+    return Column(
+      children: [
+        Material(
+          color: color.withValues(alpha: color.a == 1.0 ? 0.15 : 1.0),
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: color.a == 1.0 ? 0.15 : 1.0),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Icon(
+                  icon,
+                  color: iconColor ?? (color.a == 1.0 ? color : SaplingColors.primary),
+                  size: 32,
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            color: SaplingColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      ],
     );
   }
 }

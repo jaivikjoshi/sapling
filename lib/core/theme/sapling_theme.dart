@@ -23,7 +23,45 @@ abstract final class SaplingTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: SaplingColors.background,
-      fontFamily: 'SF Pro Display',
+      fontFamily: '.SF Pro Display', // Use system default
+      textTheme: const TextTheme(
+        headlineLarge: TextStyle(
+          fontSize: 36,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -1.0,
+          color: SaplingColors.textPrimary,
+        ),
+        headlineMedium: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.5,
+            color: SaplingColors.textPrimary),
+        titleLarge: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.5,
+          color: SaplingColors.textPrimary,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: SaplingColors.textPrimary,
+        ),
+        bodyLarge: TextStyle(
+          fontSize: 16,
+          color: SaplingColors.textPrimary,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          color: SaplingColors.textSecondary,
+        ),
+        labelLarge: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.1,
+          color: SaplingColors.textPrimary,
+        ),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: SaplingColors.background,
         foregroundColor: SaplingColors.textPrimary,
@@ -35,21 +73,21 @@ abstract final class SaplingTheme {
         color: SaplingColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: SaplingColors.surface,
-        selectedItemColor: SaplingColors.primary,
-        unselectedItemColor: SaplingColors.textSecondary,
+        backgroundColor: SaplingColors.surfaceNav,
+        selectedItemColor: SaplingColors.support, // Blush pink when selected
+        unselectedItemColor: Colors.white54,
         type: BottomNavigationBarType.fixed,
-        elevation: 8,
+        elevation: 0,
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: SaplingColors.accent,
-        foregroundColor: SaplingColors.textOnAccent,
-        elevation: 4,
+        backgroundColor: SaplingColors.primary,
+        foregroundColor: SaplingColors.textOnPrimary,
+        elevation: 2,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -59,18 +97,18 @@ abstract final class SaplingTheme {
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: SaplingColors.divider),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: SaplingColors.divider),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(
             color: SaplingColors.secondary,
-            width: 2,
+            width: 1.5,
           ),
         ),
       ),
@@ -79,9 +117,9 @@ abstract final class SaplingTheme {
           backgroundColor: SaplingColors.primary,
           foregroundColor: SaplingColors.textOnPrimary,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
       ),

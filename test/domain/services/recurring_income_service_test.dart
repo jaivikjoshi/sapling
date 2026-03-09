@@ -14,7 +14,7 @@ void main() {
 
   setUp(() {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    repo = RecurringIncomeRepository(db);
+    repo = DriftRecurringIncomeRepository(db);
     service = RecurringIncomeService(repo);
   });
 

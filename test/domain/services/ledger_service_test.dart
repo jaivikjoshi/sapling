@@ -13,7 +13,7 @@ void main() {
 
   setUp(() {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    repo = TransactionsRepository(db);
+    repo = DriftTransactionsRepository(db);
     ledger = LedgerService(repo);
   });
 

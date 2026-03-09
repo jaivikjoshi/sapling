@@ -15,8 +15,8 @@ void main() {
 
   setUp(() {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    billsRepo = BillsRepository(db);
-    txnRepo = TransactionsRepository(db);
+    billsRepo = DriftBillsRepository(db);
+    txnRepo = DriftTransactionsRepository(db);
     service = BillsService(billsRepo, txnRepo);
   });
 

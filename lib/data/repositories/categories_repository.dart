@@ -1,10 +1,21 @@
 import 'package:drift/drift.dart';
+
 import '../db/sapling_database.dart';
 
-class CategoriesRepository {
+abstract class CategoriesRepository {
+  Stream<List<Category>> watchAll();
+  Future<List<Category>> getAll();
+  Future<Category> getById(String id);
+  Future<bool> nameExists(String name, {String? excludeId});
+  Future<void> insert(CategoriesCompanion companion);
+  Future<void> updateById(String id, CategoriesCompanion companion);
+  Future<void> deleteById(String id);
+}
+
+class DriftCategoriesRepository implements CategoriesRepository {
   final SaplingDatabase _db;
 
-  CategoriesRepository(this._db);
+  DriftCategoriesRepository(this._db);
 
   Stream<List<Category>> watchAll() {
     return (_db.select(_db.categories)

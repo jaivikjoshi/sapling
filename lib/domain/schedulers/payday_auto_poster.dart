@@ -64,14 +64,14 @@ class PaydayAutoPoster {
   ) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _txnRepo.insert(TransactionsCompanion.insert(
+    await _txnRepo.insert(Transaction(
       id: id,
       type: enumToDb(TransactionType.income),
       amount: amount,
       date: date,
-      incomePostingType: Value(enumToDb(IncomePostingType.autoPostedExpected)),
-      linkedRecurringIncomeId: Value(income.id),
-      note: Value('Auto-posted: ${income.name}'),
+      incomePostingType: enumToDb(IncomePostingType.autoPostedExpected),
+      linkedRecurringIncomeId: income.id,
+      note: 'Auto-posted: ${income.name}',
       createdAt: now,
       updatedAt: now,
     ));

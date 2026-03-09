@@ -14,7 +14,7 @@ void main() {
 
   setUp(() {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    repo = RecoveryPlansRepository(db);
+    repo = DriftRecoveryPlansRepository(db);
     service = RecoveryPlanService(repo);
   });
 

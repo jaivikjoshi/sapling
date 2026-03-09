@@ -4,12 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/sapling_database.dart';
 import '../../data/repositories/settings_repository.dart';
+import '../../data/repositories_supabase/supabase_settings_repository.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/models/settings_model.dart';
+import 'auth_providers.dart';
 import 'db_provider.dart';
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
-  return SettingsRepository(ref.watch(databaseProvider));
+  final userId = ref.watch(currentUserProvider)?.id;
+  if (userId == null) {
+    return DriftSettingsRepository(ref.watch(databaseProvider));
+  }
+  return SupabaseSettingsRepository(ref.watch(supabaseClientProvider), userId);
 });
 
 final settingsStreamProvider = StreamProvider<UserSettings>((ref) {

@@ -4,20 +4,37 @@ import '../../data/db/sapling_database.dart';
 import '../../data/repositories/persons_repository.dart';
 import '../../data/repositories/split_entries_repository.dart';
 import '../../data/repositories/split_shares_repository.dart';
+import '../../data/repositories_supabase/supabase_persons_repository.dart';
+import '../../data/repositories_supabase/supabase_split_entries_repository.dart';
+import '../../data/repositories_supabase/supabase_split_shares_repository.dart';
 import '../../domain/services/split_service.dart';
+import 'auth_providers.dart';
 import 'db_provider.dart';
 import 'ledger_providers.dart';
 
 final personsRepositoryProvider = Provider<PersonsRepository>((ref) {
-  return PersonsRepository(ref.watch(databaseProvider));
+  final userId = ref.watch(currentUserProvider)?.id;
+  if (userId == null) {
+    return DriftPersonsRepository(ref.watch(databaseProvider));
+  }
+  return SupabasePersonsRepository(ref.watch(supabaseClientProvider), userId);
 });
 
 final splitEntriesRepositoryProvider = Provider<SplitEntriesRepository>((ref) {
-  return SplitEntriesRepository(ref.watch(databaseProvider));
+  final userId = ref.watch(currentUserProvider)?.id;
+  if (userId == null) {
+    return DriftSplitEntriesRepository(ref.watch(databaseProvider));
+  }
+  return SupabaseSplitEntriesRepository(
+      ref.watch(supabaseClientProvider), userId);
 });
 
 final splitSharesRepositoryProvider = Provider<SplitSharesRepository>((ref) {
-  return SplitSharesRepository(ref.watch(databaseProvider));
+  final userId = ref.watch(currentUserProvider)?.id;
+  if (userId == null) {
+    return DriftSplitSharesRepository(ref.watch(databaseProvider));
+  }
+  return SupabaseSplitSharesRepository(ref.watch(supabaseClientProvider));
 });
 
 final splitServiceProvider = Provider<SplitService>((ref) {

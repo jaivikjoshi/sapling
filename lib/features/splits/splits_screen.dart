@@ -60,6 +60,7 @@ class SplitsScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'splits_fab',
         onPressed: () => _showCreateSplit(context, ref),
         backgroundColor: SaplingColors.secondary,
         child: const Icon(Icons.add, color: Colors.white),

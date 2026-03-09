@@ -23,10 +23,10 @@ void main() {
 
   setUp(() {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    txnRepo = TransactionsRepository(db);
-    billsRepo = BillsRepository(db);
-    incomeRepo = RecurringIncomeRepository(db);
-    goalsRepo = GoalsRepository(db);
+    txnRepo = DriftTransactionsRepository(db);
+    billsRepo = DriftBillsRepository(db);
+    incomeRepo = DriftRecurringIncomeRepository(db);
+    goalsRepo = DriftGoalsRepository(db);
     engine = AllowanceEngine(txnRepo, billsRepo, incomeRepo, goalsRepo);
     ledger = LedgerService(txnRepo);
   });

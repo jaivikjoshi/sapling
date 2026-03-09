@@ -15,8 +15,8 @@ void main() {
 
   setUp(() async {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    txnRepo = TransactionsRepository(db);
-    categoriesRepo = CategoriesRepository(db);
+    txnRepo = DriftTransactionsRepository(db);
+    categoriesRepo = DriftCategoriesRepository(db);
     service = ReportsService(txnRepo, categoriesRepo);
   });
 

@@ -136,9 +136,9 @@ class SplitService {
     final now = DateTime.now();
     await _txnRepo.updateById(
       expenseId,
-      TransactionsCompanion(
+      txn.copyWith(
         linkedSplitEntryId: Value(splitEntryId),
-        updatedAt: Value(now),
+        updatedAt: now,
       ),
     );
     await _entriesRepo.updateById(

@@ -20,6 +20,7 @@ class BillsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Bills')),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'bills_fab',
         onPressed: () => _showForm(context),
         backgroundColor: SaplingColors.secondary,
         child: const Icon(Icons.add, color: Colors.white),

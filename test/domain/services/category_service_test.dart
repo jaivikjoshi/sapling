@@ -13,7 +13,7 @@ void main() {
 
   setUp(() async {
     db = SaplingDatabase.forTesting(NativeDatabase.memory());
-    repo = CategoriesRepository(db);
+    repo = DriftCategoriesRepository(db);
     service = CategoryService(repo);
   });
 

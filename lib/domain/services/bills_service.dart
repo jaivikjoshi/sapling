@@ -110,15 +110,15 @@ class BillsService {
 
     final txnId = _uuid.v4();
     final now = DateTime.now();
-    await _txnRepo.insert(TransactionsCompanion.insert(
+    await _txnRepo.insert(Transaction(
       id: txnId,
       type: enumToDb(TransactionType.expense),
       amount: effectiveAmount,
       date: effectiveDate,
-      categoryId: Value(bill.categoryId),
-      label: Value(enumToDb(label)),
-      note: Value('Bill paid: ${bill.name}'),
-      linkedBillId: Value(billId),
+      categoryId: bill.categoryId,
+      label: enumToDb(label),
+      note: 'Bill paid: ${bill.name}',
+      linkedBillId: billId,
       createdAt: now,
       updatedAt: now,
     ));

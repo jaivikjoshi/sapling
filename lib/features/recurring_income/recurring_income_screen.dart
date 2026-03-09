@@ -21,6 +21,7 @@ class RecurringIncomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Recurring Income')),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'recurring_income_fab',
         onPressed: () => _showForm(context),
         backgroundColor: SaplingColors.secondary,
         child: const Icon(Icons.add, color: Colors.white),
