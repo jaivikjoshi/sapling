@@ -85,29 +85,30 @@ class _PlantSectionState extends State<_PlantSection> {
   PlantState _debug = PlantState.initial();
 
   void _grow() => setState(() {
-        _debug = _debug.copyWith(
-          growthPoints: _debug.growthPoints + 5,
-          healthScore: (_debug.healthScore + 15).clamp(0, 100),
-          currentStreak: _debug.currentStreak + 5,
-          longestStreak: _debug.longestStreak + 5,
-          daysAtZero: 0,
-        );
-      });
+    _debug = _debug.copyWith(
+      growthPoints: _debug.growthPoints + 5,
+      healthScore: (_debug.healthScore + 15).clamp(0, 100),
+      currentStreak: _debug.currentStreak + 5,
+      longestStreak: _debug.longestStreak + 5,
+      daysAtZero: 0,
+    );
+  });
 
   void _decay() => setState(() {
-        _debug = _debug.copyWith(
-          healthScore: (_debug.healthScore - 12).clamp(0, 100),
-          currentStreak: 0,
-          daysAtZero: _debug.daysAtZero + 3,
-          growthPoints: _debug.daysAtZero >= 7
+    _debug = _debug.copyWith(
+      healthScore: (_debug.healthScore - 12).clamp(0, 100),
+      currentStreak: 0,
+      daysAtZero: _debug.daysAtZero + 3,
+      growthPoints:
+          _debug.daysAtZero >= 7
               ? (_debug.growthPoints - 1).clamp(0, 9999)
               : _debug.growthPoints,
-        );
-      });
+    );
+  });
 
   void _reset() => setState(() {
-        _debug = PlantState.initial();
-      });
+    _debug = PlantState.initial();
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -115,9 +116,7 @@ class _PlantSectionState extends State<_PlantSection> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
         color: SaplingColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
           child: Column(
@@ -198,9 +197,10 @@ class _BalanceCard extends ConsumerWidget {
               Text(
                 'Current Balance',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: SaplingColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5),
+                  color: SaplingColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
               ),
               const Spacer(),
               Container(
@@ -215,31 +215,38 @@ class _BalanceCard extends ConsumerWidget {
               Text(
                 'USD',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: SaplingColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: SaplingColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 4),
           balanceAsync.when(
-            data: (balance) => Text(
-              formatCurrency(balance),
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+            data:
+                (balance) => Text(
+                  formatCurrency(balance),
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: 42,
                     letterSpacing: -1.5,
                     color: SaplingColors.primary,
                   ),
-            ),
-            loading: () => const SizedBox(
-              height: 48,
-              width: 150,
-              child: LinearProgressIndicator(
-                  color: SaplingColors.shimmer, backgroundColor: Colors.transparent),
-            ),
-            error: (e, _) => Text('Error: $e',
-                style: const TextStyle(color: SaplingColors.error)),
+                ),
+            loading:
+                () => const SizedBox(
+                  height: 48,
+                  width: 150,
+                  child: LinearProgressIndicator(
+                    color: SaplingColors.shimmer,
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+            error:
+                (e, _) => Text(
+                  'Error: $e',
+                  style: const TextStyle(color: SaplingColors.error),
+                ),
           ),
         ],
       ),
@@ -268,20 +275,27 @@ class _CloseoutStatusCard extends ConsumerWidget {
           child: Row(
             children: [
               const Icon(Icons.eco, color: SaplingColors.secondary, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: streakAsync.when(
-                  data: (s) => Text(
-                    '${s.currentStreak} Day Budget Streak: ${s.todayWithinBudget ? 'Within Budget!' : 'Over Budget'}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: SaplingColors.secondary.withValues(alpha: 0.9),
-                      fontSize: 14,
+              const SizedBox(width: 8),
+              streakAsync.when(
+                data:
+                    (s) => Text(
+                      '${s.currentStreak}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: SaplingColors.secondary,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  loading: () => Text('Budget streak…',
-                      style: TextStyle(color: SaplingColors.secondary.withValues(alpha: 0.9))),
-                  error: (_, __) => const Text('Closeout'),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Budget streak...',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: SaplingColors.secondary.withValues(alpha: 0.8),
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -380,7 +394,9 @@ class _ActionButton extends StatelessWidget {
               child: Center(
                 child: Icon(
                   icon,
-                  color: iconColor ?? (color.a == 1.0 ? color : SaplingColors.primary),
+                  color:
+                      iconColor ??
+                      (color.a == 1.0 ? color : SaplingColors.primary),
                   size: 32,
                 ),
               ),
@@ -412,32 +428,52 @@ class _RecentTransactions extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Recent',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    )),
+            const Text(
+              'Recent',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1E2625), // Very dark slate/black
+              ),
+            ),
             TextButton(
               onPressed: () => context.push('/transactions'),
-              child: const Text('View all'),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'View all',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF4A918B), // Soft teal
+                ),
+              ),
             ),
           ],
         ),
+        const SizedBox(height: 12),
         txnAsync.when(
           data: (txns) {
             if (txns.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
-                  child: Text('No transactions yet.',
-                      style: TextStyle(color: SaplingColors.textSecondary)),
+                  child: Text(
+                    'No transactions yet.',
+                    style: TextStyle(color: SaplingColors.textSecondary),
+                  ),
                 ),
               );
             }
             final recent = txns.take(5).toList();
             return Column(
-              children: recent
-                  .map((t) => SmallTransactionTile(transaction: t))
-                  .toList(),
+              children:
+                  recent
+                      .map((t) => SmallTransactionTile(transaction: t))
+                      .toList(),
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
