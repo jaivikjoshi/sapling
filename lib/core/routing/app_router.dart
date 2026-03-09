@@ -8,6 +8,7 @@ import '../../features/splash/splash_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/bills/bills_screen.dart';
 import '../../features/goals/goals_screen.dart';
+import '../../features/leaf/leaf_screen.dart';
 import '../../features/reports/reports_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/auth/login_screen.dart';
@@ -55,16 +56,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/bills',
-                builder: (context, state) => const BillsScreen(),
+                path: '/goals',
+                builder: (context, state) => const GoalsScreen(),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/goals',
-                builder: (context, state) => const GoalsScreen(),
+                path: '/leaf',
+                builder: (context, state) => const LeafScreen(),
               ),
             ],
           ),
@@ -86,6 +87,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      // Appending bills implicitly, but removing it from nav stack.
+      // Navigating directly could still be possible though.
+      GoRoute(path: '/bills', builder: (context, state) => const BillsScreen()),
       GoRoute(
         path: '/add-expense',
         builder: (context, state) => const AddExpenseScreen(),
@@ -190,46 +194,35 @@ class _GlassNavBar extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(36),
           boxShadow: [
-            // Primary lift shadow
+            // Soft light lift shadow matching inspiration
             BoxShadow(
-              color: const Color(0xFF16272E).withValues(alpha: 0.16),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 20,
-              offset: const Offset(0, 6),
+              offset: const Offset(0, 10),
             ),
-            // Soft ambient shadow
             BoxShadow(
-              color: const Color(0xFF16272E).withValues(alpha: 0.06),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 40,
-              offset: const Offset(0, 12),
+              offset: const Offset(0, 20),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(36),
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
             child: Container(
-              height: 70,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              height: 72,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
-                // Frosted teal glass — smoky blue-teal, ~78% opacity
-                color: const Color(0xFF49616B).withValues(alpha: 0.78),
-                borderRadius: BorderRadius.circular(30),
-                // Subtle cool border
+                // Light glass background almost totally opaque but soft
+                color: const Color(0xFFFDFDFD).withValues(alpha: 0.88),
+                borderRadius: BorderRadius.circular(36),
                 border: Border.all(
-                  color: const Color(0xFFD2E1E6).withValues(alpha: 0.14),
+                  color: const Color(0xFFE4E4E4).withValues(alpha: 0.5),
                   width: 0.5,
-                ),
-                // Inner top highlight gradient
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF5B717A).withValues(alpha: 0.85),
-                    const Color(0xFF415760).withValues(alpha: 0.78),
-                  ],
                 ),
               ),
               child: Row(
@@ -243,17 +236,18 @@ class _GlassNavBar extends StatelessWidget {
                     onTap: () => onTap(0),
                   ),
                   _NavBarItem(
-                    activeIcon: Icons.receipt_long_rounded,
-                    inactiveIcon: Icons.receipt_long_outlined,
-                    label: 'Bills',
+                    activeIcon: Icons.flag_rounded,
+                    inactiveIcon: Icons.flag_outlined,
+                    label: 'Goals',
                     isSelected: currentIndex == 1,
                     onTap: () => onTap(1),
                   ),
                   _NavBarItem(
-                    activeIcon: Icons.flag_rounded,
-                    inactiveIcon: Icons.flag_outlined,
-                    label: 'Goals',
+                    activeIcon: Icons.energy_savings_leaf_rounded,
+                    inactiveIcon: Icons.energy_savings_leaf_outlined,
+                    label: 'Leaf',
                     isSelected: currentIndex == 2,
+                    isIconOnly: true, // Specific treatment for the center tab
                     onTap: () => onTap(2),
                   ),
                   _NavBarItem(
@@ -287,6 +281,7 @@ class _NavBarItem extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
+    this.isIconOnly = false,
   });
 
   final IconData activeIcon;
@@ -294,65 +289,65 @@ class _NavBarItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool isIconOnly;
 
-  // Exact color specs from design brief
-  static const _activeIconColor = Color(0xFFE6B29D); // warm dusty peach
-  static const _activeLabelColor = Color(
-    0xFFD79883,
-  ); // slightly deeper for text
-  static const _activePillColor = Color(0xFFA88D84); // dusty blush pill tint
-  static const _inactiveIconColor = Color(0xFFB9C3C8); // muted cool gray
-  static const _inactiveLabelColor = Color(0xFFAAB4BA); // slightly dimmer
+  // Modern Light Theme details based on inspiration
+  static const _activePillColor = Color(0xFFEEEEEE); // Light grey pill
+  static const _activeColor = Color(0xFF1E282A); // Pure, dark charcoal
+  static const _inactiveColor = Color(0xFFAAB4BA); // Dim grey
 
   @override
   Widget build(BuildContext context) {
+    if (isIconOnly) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          width: 52,
+          height: 52,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected ? _activePillColor : Colors.transparent,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isSelected ? activeIcon : inactiveIcon,
+            color: isSelected ? _activeColor : _inactiveColor,
+            size: 26,
+          ),
+        ),
+      );
+    }
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: SizedBox(
-        width: 58,
+      child: Container(
+        height: 52,
+        constraints: const BoxConstraints(minWidth: 54),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? _activePillColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              padding: EdgeInsets.symmetric(
-                horizontal: isSelected ? 14 : 12,
-                vertical: isSelected ? 6 : 4,
-              ),
-              decoration: BoxDecoration(
-                color:
-                    isSelected
-                        ? _activePillColor.withValues(alpha: 0.22)
-                        : Colors.transparent,
-                borderRadius: BorderRadius.circular(18),
-                // Subtle inner highlight on active pill
-                border:
-                    isSelected
-                        ? Border.all(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          width: 0.5,
-                        )
-                        : null,
-              ),
-              child: Icon(
-                isSelected ? activeIcon : inactiveIcon,
-                color: isSelected ? _activeIconColor : _inactiveIconColor,
-                size: 22,
-              ),
+            Icon(
+              isSelected ? activeIcon : inactiveIcon,
+              color: isSelected ? _activeColor : _inactiveColor,
+              size: 22,
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? _activeLabelColor : _inactiveLabelColor,
+                color: isSelected ? _activeColor : _inactiveColor,
                 fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                letterSpacing: 0.15,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                letterSpacing: 0.2,
               ),
               maxLines: 1,
-              overflow: TextOverflow.visible,
             ),
           ],
         ),

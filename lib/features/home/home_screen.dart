@@ -49,9 +49,9 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           _QuickActions(
             onAddExpense: () => context.push('/add-expense'),
-            onAddIncome: () => context.push('/add-income'),
-            onMarkBillPaid: () => context.go('/bills'),
-            onSplits: () => context.push('/splits'),
+          onAddIncome: () => context.push('/add-income'),
+          onMarkBillPaid: () => context.push('/bills'),
+          onSplits: () => context.push('/splits'),
             onReconcile: () => _showReconcile(context),
           ),
           const SizedBox(height: 24),

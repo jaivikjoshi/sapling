@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../core/providers/bills_providers.dart';
 import '../../core/providers/ledger_providers.dart';
-import '../../core/theme/sapling_colors.dart';
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/sapling_database.dart';
 import '../../domain/models/enums.dart';
@@ -24,7 +23,6 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
   late TextEditingController _nameCtrl;
   late TextEditingController _amountCtrl;
   late BillFrequency _frequency;
-  late SpendLabel _label;
   late DateTime _nextDueDate;
   String? _categoryId;
 
@@ -38,12 +36,10 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
     _amountCtrl = TextEditingController(
       text: e != null ? e.amount.toStringAsFixed(2) : '',
     );
-    _frequency = e != null
-        ? enumFromDb<BillFrequency>(e.frequency, BillFrequency.values)
-        : BillFrequency.monthly;
-    _label = e != null
-        ? enumFromDb<SpendLabel>(e.defaultLabel, SpendLabel.values)
-        : SpendLabel.green;
+    _frequency =
+        e != null
+            ? enumFromDb<BillFrequency>(e.frequency, BillFrequency.values)
+            : BillFrequency.monthly;
     _nextDueDate = e?.nextDueDate ?? DateTime.now();
     _categoryId = e?.categoryId;
   }
@@ -87,8 +83,6 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
               _buildDatePicker(),
               const SizedBox(height: 12),
               _buildCategoryPicker(catsAsync),
-              const SizedBox(height: 12),
-              _buildLabelPicker(),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _save,
@@ -112,10 +106,7 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
   Widget _buildAmountField() {
     return TextFormField(
       controller: _amountCtrl,
-      decoration: const InputDecoration(
-        labelText: 'Amount',
-        prefixText: '\$ ',
-      ),
+      decoration: const InputDecoration(labelText: 'Amount', prefixText: '\$ '),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
@@ -128,9 +119,10 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
     return DropdownButtonFormField<BillFrequency>(
       value: _frequency,
       decoration: const InputDecoration(labelText: 'Frequency'),
-      items: BillFrequency.values
-          .map((f) => DropdownMenuItem(value: f, child: Text(f.name)))
-          .toList(),
+      items:
+          BillFrequency.values
+              .map((f) => DropdownMenuItem(value: f, child: Text(f.name)))
+              .toList(),
       onChanged: (v) => setState(() => _frequency = v!),
     );
   }
@@ -164,39 +156,19 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
         return DropdownButtonFormField<String>(
           value: _categoryId,
           decoration: const InputDecoration(labelText: 'Category'),
-          items: cats
-              .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
-              .toList(),
+          items:
+              cats
+                  .map(
+                    (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
+                  )
+                  .toList(),
           onChanged: (v) => setState(() => _categoryId = v),
-          validator: (v) =>
-              v == null || v.isEmpty ? 'Category is required.' : null,
+          validator:
+              (v) => v == null || v.isEmpty ? 'Category is required.' : null,
         );
       },
     );
   }
-
-  Widget _buildLabelPicker() {
-    return Row(
-      children: SpendLabel.values.map((l) {
-        final selected = l == _label;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: ChoiceChip(
-            label: Text(l.name),
-            selected: selected,
-            selectedColor: _labelColor(l).withValues(alpha: 0.3),
-            onSelected: (_) => setState(() => _label = l),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Color _labelColor(SpendLabel l) => switch (l) {
-        SpendLabel.green => SaplingColors.labelGreen,
-        SpendLabel.orange => SaplingColors.labelOrange,
-        SpendLabel.red => SaplingColors.labelRed,
-      };
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -211,7 +183,7 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
         frequency: _frequency,
         nextDueDate: _nextDueDate,
         categoryId: _categoryId!,
-        defaultLabel: _label,
+        defaultLabel: SpendLabel.green,
       );
     } else {
       await service.create(
@@ -220,7 +192,7 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
         frequency: _frequency,
         nextDueDate: _nextDueDate,
         categoryId: _categoryId!,
-        defaultLabel: _label,
+        defaultLabel: SpendLabel.green,
       );
     }
 
