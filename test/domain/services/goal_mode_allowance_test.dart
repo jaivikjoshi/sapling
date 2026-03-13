@@ -67,8 +67,12 @@ void main() {
       expect(result, equals(null));
     });
 
-    test('returns result with goal data when primary goal exists', () async {
-      final goalId = await createGoal();
+    test('goal mode: daily = (balance + income - bills - goalTarget) / days',
+        () async {
+      // Balance = $5000, goal target = $2000, 90 days to goal
+      // No future income or bills → spendable = 5000 - 2000 = 3000
+      // dailyAllowance = 3000 / 91 ≈ $32.97
+      final goalId = await createGoal(amount: 2000, daysFromNow: 90);
       await ledger.addIncome(
         amount: 5000,
         date: DateTime.now(),
@@ -80,25 +84,42 @@ void main() {
       );
 
       expect(result, isNot(equals(null)));
-      expect(result!.goal.id, goalId);
-      expect(result.daysToGoal, greaterThan(0));
-      expect(result.balance, 5000);
+      expect(result!.balance, 5000);
+      expect(result.spendablePool, closeTo(3000, 1));
+      // daysToGoal = 91 (90 + 1 for today)
+      expect(result.dailyAllowance, closeTo(3000 / 91, 0.5));
+      expect(result.todaySpend, 0);
+      expect(result.remainingToday, result.dailyAllowance);
     });
 
-    test('saving style multiplier affects allowance', () async {
-      final now = DateTime.now();
+    test('today spend reduces remaining in goal mode', () async {
+      final goalId = await createGoal(amount: 2000, daysFromNow: 60);
+      await ledger.addIncome(
+        amount: 5000,
+        date: DateTime.now(),
+        postingType: IncomePostingType.manualOneTime,
+      );
+      await ledger.addExpense(
+        amount: 20,
+        date: DateTime.now(),
+        categoryId: 'cat-1',
+        label: SpendLabel.green,
+      );
 
-      for (var i = 0; i < 10; i++) {
-        await ledger.addExpense(
-          amount: 30,
-          date: DateTime(now.year, now.month, now.day - i - 1),
-          categoryId: 'cat-1',
-          label: SpendLabel.green,
-        );
-      }
+      final result = await engine.computeGoalMode(
+        settings: settingsWithGoal(goalId),
+      );
+
+      expect(result, isNot(equals(null)));
+      expect(result!.todaySpend, 20);
+      expect(result.remainingToday, result.dailyAllowance - 20);
+    });
+
+    test('saving style does not affect daily spend (pure cash flow)',
+        () async {
       await ledger.addIncome(
         amount: 10000,
-        date: now,
+        date: DateTime.now(),
         postingType: IncomePostingType.manualOneTime,
       );
 
@@ -122,13 +143,16 @@ void main() {
         settings: settingsWithGoal('aggro-goal'),
       );
 
+      // Both should have the same daily allowance because the goal target
+      // is the same and it's pure cash flow math
       expect(easyResult, isNot(equals(null)));
       expect(aggroResult, isNot(equals(null)));
-      expect(aggroResult!.allowanceToday,
-          lessThanOrEqualTo(easyResult!.allowanceToday));
+      expect(aggroResult!.dailyAllowance,
+          closeTo(easyResult!.dailyAllowance, 0.01));
     });
 
     test('feasibility shows deficit when goal is unreachable', () async {
+      // Goal of $100K with $0 balance = impossible
       final goalId = await createGoal(amount: 100000, daysFromNow: 30);
 
       final result = await engine.computeGoalMode(
@@ -136,12 +160,12 @@ void main() {
       );
 
       expect(result, isNot(equals(null)));
-      expect(result!.feasibility.isFeasible, false);
-      expect(result.feasibility.deficit, greaterThan(0));
+      expect(result!.spendablePool, lessThan(0));
+      expect(result.dailyAllowance, 0);
       expect(result.behindAmount, greaterThan(0));
     });
 
-    test('feasibility passes for achievable goal', () async {
+    test('feasibility passes for easily achievable goal', () async {
       final goalId = await createGoal(amount: 100, daysFromNow: 90);
       await ledger.addIncome(
         amount: 10000,
@@ -154,29 +178,43 @@ void main() {
       );
 
       expect(result, isNot(equals(null)));
-      expect(result!.feasibility.isFeasible, true);
-      expect(result.feasibility.deficit, 0);
+      expect(result!.spendablePool, greaterThan(0));
+      expect(result.dailyAllowance, greaterThan(0));
     });
 
-    test('banked allowance is shared with paycheck mode', () async {
-      final goalId = await createGoal();
+    test('recurring income included in goal mode projection', () async {
+      final now = DateTime.now();
+      // Goal of $2000 in 60 days
+      final goalId = await createGoal(amount: 2000, daysFromNow: 60);
+
+      // Start with $500
       await ledger.addIncome(
-        amount: 3000,
-        date: DateTime.now(),
+        amount: 500,
+        date: now,
         postingType: IncomePostingType.manualOneTime,
       );
 
-      final settings = settingsWithGoal(goalId);
-      final paycheckResult = await engine.computePaycheckMode(
-        settings: settings,
-      );
-      final goalResult = await engine.computeGoalMode(
-        settings: settings,
+      // Recurring $500 biweekly income — should project ~4 paychecks
+      await incomeRepo.insert(RecurringIncomesCompanion.insert(
+        id: 'salary-1',
+        name: 'Salary',
+        frequency: const Value('biweekly'),
+        nextPaydayDate: DateTime(now.year, now.month, now.day + 7),
+        expectedAmount: const Value(500),
+        isPaydayAnchor: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ));
+
+      final result = await engine.computeGoalMode(
+        settings: settingsWithGoal(goalId),
       );
 
-      expect(paycheckResult.bankedAllowance, isA<double>());
-      expect(goalResult, isNot(equals(null)));
-      expect(goalResult!.bankedAllowance, isA<double>());
+      expect(result, isNot(equals(null)));
+      // projectedIncome should include the recurring paychecks
+      expect(result!.projectedIncome, greaterThanOrEqualTo(1500));
+      // spendable = 500 + ~2000 income - 0 bills - 2000 goal ≈ $500+
+      expect(result.spendablePool, greaterThan(0));
     });
   });
 }

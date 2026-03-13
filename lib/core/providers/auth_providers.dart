@@ -14,6 +14,7 @@ final authStateProvider = StreamProvider((ref) {
 
 /// Current Supabase user (null if signed out). Prefer authStateProvider for reactive UI.
 final currentUserProvider = Provider<User?>((ref) {
+  ref.watch(authStateProvider);
   final client = ref.watch(supabaseClientProvider);
   return client.auth.currentUser;
 });

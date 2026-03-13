@@ -10,35 +10,65 @@ import 'cycle_window_calculator.dart';
 import 'goal_feasibility_service.dart';
 import 'projection_service.dart';
 
+// ── Result types ──
+
 class PaycheckAllowanceResult {
   final double balance;
-  final double allowanceToday;
-  final double bankedAllowance;
+
+  /// The daily spending budget for this cycle.
+  final double dailyAllowance;
+
+  /// How much the user has already spent today.
+  final double todaySpend;
+
+  /// How much the user can still spend today: dailyAllowance - todaySpend.
+  final double remainingToday;
+
+  /// How far behind the user is (positive = overspent overall).
   final double behindAmount;
+
   final double projectedIncome;
   final double projectedBills;
+  final double spendablePool;
   final int daysLeft;
   final CycleWindow cycleWindow;
 
   const PaycheckAllowanceResult({
     required this.balance,
-    required this.allowanceToday,
-    required this.bankedAllowance,
+    required this.dailyAllowance,
+    required this.todaySpend,
+    required this.remainingToday,
     required this.behindAmount,
     required this.projectedIncome,
     required this.projectedBills,
+    required this.spendablePool,
     required this.daysLeft,
     required this.cycleWindow,
   });
+
+  // Keep backward compatibility for UI code reading allowanceToday
+  double get allowanceToday => dailyAllowance;
+  double get bankedAllowance => 0;
 }
 
 class GoalAllowanceResult {
   final double balance;
-  final double allowanceToday;
-  final double bankedAllowance;
+
+  /// The daily spending budget that lets you reach your goal on time.
+  final double dailyAllowance;
+
+  /// How much the user has already spent today.
+  final double todaySpend;
+
+  /// How much the user can still spend today: dailyAllowance - todaySpend.
+  final double remainingToday;
+
+  /// How far behind the user is (positive = goal is unreachable at current pace).
   final double behindAmount;
+
   final double projectedIncome;
   final double projectedBills;
+  final double spendablePool;
   final int daysToGoal;
   final Goal goal;
   final GoalFeasibilityResult feasibility;
@@ -46,16 +76,22 @@ class GoalAllowanceResult {
 
   const GoalAllowanceResult({
     required this.balance,
-    required this.allowanceToday,
-    required this.bankedAllowance,
+    required this.dailyAllowance,
+    required this.todaySpend,
+    required this.remainingToday,
     required this.behindAmount,
     required this.projectedIncome,
     required this.projectedBills,
+    required this.spendablePool,
     required this.daysToGoal,
     required this.goal,
     required this.feasibility,
     required this.cycleWindow,
   });
+
+  // Keep backward compatibility for UI code reading allowanceToday
+  double get allowanceToday => dailyAllowance;
+  double get bankedAllowance => 0;
 }
 
 /// Used by CloseoutService for budget-based streak; allows tests to inject a fake.
@@ -76,7 +112,21 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     this._goalsRepo,
   ]);
 
-  // ── Paycheck mode (PRD 5.8) ──
+  // ══════════════════════════════════════════════════════════════════════
+  // PAYCHECK MODE
+  //
+  // "How much can I spend per day to make this paycheck last until the
+  //  next one?"
+  //
+  // Formula:
+  //   spendablePool = balance + projectedIncome - projectedBills
+  //   dailyAllowance = spendablePool / daysLeft
+  //   remainingToday = dailyAllowance - todaySpend
+  //
+  // Overspend carry-forward is automatic: yesterday's overspend lowered
+  // the balance, so today's recalculation naturally distributes the
+  // impact across remaining days.
+  // ══════════════════════════════════════════════════════════════════════
 
   Future<PaycheckAllowanceResult> computePaycheckMode({
     required UserSettings settings,
@@ -84,6 +134,7 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
 
+    // Determine cycle boundaries
     final anchor = await _incomeRepo.getAnchor();
     final cycle = CycleWindowCalculator.compute(
       resetType: settings.rolloverResetType,
@@ -92,7 +143,10 @@ class AllowanceEngine implements AllowanceEngineForStreak {
       anchorNextPaydayDate: anchor?.nextPaydayDate,
     );
 
+    // Current balance (all posted transactions)
     final balance = await _txnRepo.computeBalance();
+
+    // Transactions within this cycle (for today-spend calc)
     final allTxns = await _txnRepo.getByDateRange(cycle.start, cycle.end);
     final incomeTxns = allTxns.where((t) => t.type == 'income').toList();
     final billPaidTxns =
@@ -101,39 +155,74 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     final schedules = await _incomeRepo.getAll();
     final bills = await _billsRepo.getAll();
 
-    final projectedIncome = ProjectionService.projectIncome(
+    // Project income & bills to cycle end.
+    // ProjectionService includes confirmed transactions in its total,
+    // but those are already reflected in `balance`. Subtract confirmed
+    // amounts so we only count truly future income/bills.
+    final grossProjectedIncome = ProjectionService.projectIncome(
       start: todayStart, end: cycle.end,
       confirmedIncome: incomeTxns, schedules: schedules,
     );
-    final projectedBills = ProjectionService.projectBills(
+    final confirmedIncomeInWindow = incomeTxns
+        .where((t) => !t.date.isBefore(todayStart) && t.date.isBefore(cycle.end))
+        .fold<double>(0, (sum, t) => sum + t.amount);
+    final futureIncome = grossProjectedIncome - confirmedIncomeInWindow;
+
+    final grossProjectedBills = ProjectionService.projectBills(
       start: todayStart, end: cycle.end,
       bills: bills, paidBillTransactions: billPaidTxns,
     );
+    // Bills that are already paid are excluded by ProjectionService,
+    // so grossProjectedBills = future-only bills already. No dedup needed.
+    final futureBills = grossProjectedBills;
 
-    final available = balance + projectedIncome - projectedBills;
+    // ── Core formula ──
     final daysLeft = cycle.daysLeft;
-    final dailyBase = available > 0 ? available / daysLeft : 0.0;
+    final spendablePool = balance + futureIncome - futureBills;
+    final dailyAllowance = spendablePool > 0
+        ? spendablePool / daysLeft
+        : 0.0;
 
-    final banked = _computeBanked(
-      allTxns: allTxns, dailyBase: dailyBase,
-      cycleStart: cycle.start, todayStart: todayStart,
-    );
+    // ── Today's spend ──
+    final todaySpend = _computeTodaySpend(allTxns, todayStart);
+    final remainingToday = dailyAllowance - todaySpend;
 
-    final rawAllowance = dailyBase + banked;
-    final allowanceToday = rawAllowance > 0 ? rawAllowance : 0.0;
-    final behindAmount = available < 0
-        ? available.abs()
-        : (rawAllowance < 0 ? rawAllowance.abs() : 0.0);
+    // ── Behind amount ──
+    final behindAmount = spendablePool < 0
+        ? spendablePool.abs()
+        : 0.0;
 
     return PaycheckAllowanceResult(
-      balance: balance, allowanceToday: allowanceToday,
-      bankedAllowance: banked, behindAmount: behindAmount,
-      projectedIncome: projectedIncome, projectedBills: projectedBills,
-      daysLeft: daysLeft, cycleWindow: cycle,
+      balance: balance,
+      dailyAllowance: dailyAllowance,
+      todaySpend: todaySpend,
+      remainingToday: remainingToday,
+      behindAmount: behindAmount,
+      projectedIncome: futureIncome,
+      projectedBills: futureBills,
+      spendablePool: spendablePool,
+      daysLeft: daysLeft,
+      cycleWindow: cycle,
     );
   }
 
-  // ── Goal mode (PRD 5.9) ──
+  // ══════════════════════════════════════════════════════════════════════
+  // GOAL MODE
+  //
+  // "How much can I spend per day and still have $X saved by [date]?"
+  //
+  // Formula:
+  //   spendablePool = balance + projectedIncome - projectedBills - goalTarget
+  //   dailyAllowance = spendablePool / daysToGoal
+  //   remainingToday = dailyAllowance - todaySpend
+  //
+  // Example: Balance=$1000, income to goal=$4000, bills=$1500, goal=$2000
+  //   spendable = 1000 + 4000 - 1500 - 2000 = $1500
+  //   If 60 days to goal → dailyAllowance = $25/day
+  //
+  // If you overspend by $5 today, tomorrow your balance is $5 lower,
+  // so the recalculation naturally tightens the remaining days.
+  // ══════════════════════════════════════════════════════════════════════
 
   Future<GoalAllowanceResult?> computeGoalMode({
     required UserSettings settings,
@@ -146,10 +235,11 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     final targetDay = DateTime(
         goal.targetDate.year, goal.targetDate.month, goal.targetDate.day);
     final horizon = targetDay.difference(todayStart).inDays + 1;
-    final h = horizon < 1 ? 1 : horizon;
+    final daysToGoal = horizon < 1 ? 1 : horizon;
     final horizonEnd = DateTime(
-        todayStart.year, todayStart.month, todayStart.day + h);
+        todayStart.year, todayStart.month, todayStart.day + daysToGoal);
 
+    // Cycle (for UI display)
     final anchor = await _incomeRepo.getAnchor();
     final cycle = CycleWindowCalculator.compute(
       resetType: settings.rolloverResetType, now: now,
@@ -157,7 +247,10 @@ class AllowanceEngine implements AllowanceEngineForStreak {
       anchorNextPaydayDate: anchor?.nextPaydayDate,
     );
 
+    // Current balance
     final balance = await _txnRepo.computeBalance();
+
+    // Transactions (for today-spend calc)
     final allTxns = await _txnRepo.getByDateRange(cycle.start, cycle.end);
     final incomeTxns = allTxns.where((t) => t.type == 'income').toList();
     final billPaidTxns =
@@ -166,74 +259,84 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     final schedules = await _incomeRepo.getAll();
     final bills = await _billsRepo.getAll();
 
-    final projectedIncome = ProjectionService.projectIncome(
+    // Project income & bills to goal date.
+    // Subtract confirmed income that's already in balance.
+    final grossProjectedIncome = ProjectionService.projectIncome(
       start: todayStart, end: horizonEnd,
       confirmedIncome: incomeTxns, schedules: schedules,
     );
-    final projectedBills = ProjectionService.projectBills(
+    final confirmedIncomeInWindow = incomeTxns
+        .where((t) => !t.date.isBefore(todayStart) && t.date.isBefore(horizonEnd))
+        .fold<double>(0, (sum, t) => sum + t.amount);
+    final futureIncome = grossProjectedIncome - confirmedIncomeInWindow;
+
+    final futureBills = ProjectionService.projectBills(
       start: todayStart, end: horizonEnd,
       bills: bills, paidBillTransactions: billPaidTxns,
     );
 
-    final style = enumFromDb<SavingStyle>(
-        goal.savingStyle, SavingStyle.values);
-    final vd = _computeBaselineDailySpend(
+    // ── Core formula ──
+    // Everything coming in, minus everything going out, minus what you
+    // need to have saved = what you can freely spend over the whole horizon
+    final goalTarget = goal.targetAmount;
+    final spendablePool =
+        balance + futureIncome - futureBills - goalTarget;
+    final dailyAllowance = spendablePool > 0
+        ? spendablePool / daysToGoal
+        : 0.0;
+
+    // ── Today's spend ──
+    final todaySpend = _computeTodaySpend(allTxns, todayStart);
+    final remainingToday = dailyAllowance - todaySpend;
+
+    // ── Feasibility check ──
+    final baselineDailySpend = _computeBaselineDailySpend(
       allTxns: await _txnRepo.getAll(),
       windowDays: settings.spendingBaselineDays,
     );
-    final allowedVarPerDay = style.multiplier * vd;
-
+    final style = enumFromDb<SavingStyle>(
+        goal.savingStyle, SavingStyle.values);
     final feasibility = GoalFeasibilityService.compute(
       goal: goal, balance: balance,
-      projectedIncome: projectedIncome, projectedBills: projectedBills,
-      dailyVariableSpend: vd, savingStyleMultiplier: style.multiplier,
+      projectedIncome: futureIncome, projectedBills: futureBills,
+      dailyVariableSpend: baselineDailySpend,
+      savingStyleMultiplier: style.multiplier,
     );
 
-    // Banked: shared, computed from cycle (same as paycheck)
-    final banked = _computeBanked(
-      allTxns: allTxns, dailyBase: allowedVarPerDay,
-      cycleStart: cycle.start, todayStart: todayStart,
-    );
-
-    final rawAllowance = allowedVarPerDay + banked;
-    final allowanceToday = rawAllowance > 0 ? rawAllowance : 0.0;
-    final behindAmount = !feasibility.isFeasible
-        ? feasibility.deficit
-        : (rawAllowance < 0 ? rawAllowance.abs() : 0.0);
+    final behindAmount = spendablePool < 0
+        ? spendablePool.abs()
+        : (!feasibility.isFeasible ? feasibility.deficit : 0.0);
 
     return GoalAllowanceResult(
-      balance: balance, allowanceToday: allowanceToday,
-      bankedAllowance: banked, behindAmount: behindAmount,
-      projectedIncome: projectedIncome, projectedBills: projectedBills,
-      daysToGoal: h, goal: goal,
-      feasibility: feasibility, cycleWindow: cycle,
+      balance: balance,
+      dailyAllowance: dailyAllowance,
+      todaySpend: todaySpend,
+      remainingToday: remainingToday,
+      behindAmount: behindAmount,
+      projectedIncome: futureIncome,
+      projectedBills: futureBills,
+      spendablePool: spendablePool,
+      daysToGoal: daysToGoal,
+      goal: goal,
+      feasibility: feasibility,
+      cycleWindow: cycle,
     );
   }
 
-  // ── Shared helpers ──
+  // ══════════════════════════════════════════════════════════════════════
+  // Helpers
+  // ══════════════════════════════════════════════════════════════════════
 
-  double _computeBanked({
-    required List<Transaction> allTxns,
-    required double dailyBase,
-    required DateTime cycleStart,
-    required DateTime todayStart,
-  }) {
-    double banked = 0;
-    var day = DateTime(cycleStart.year, cycleStart.month, cycleStart.day);
-
-    while (day.isBefore(todayStart)) {
-      final nextDay = DateTime(day.year, day.month, day.day + 1);
-      double daySpend = 0;
-      for (final txn in allTxns) {
-        final txnDay = DateTime(txn.date.year, txn.date.month, txn.date.day);
-        if (txnDay == day && txn.type == 'expense') {
-          daySpend += txn.amount;
-        }
+  /// Sum all expenses posted today.
+  double _computeTodaySpend(List<Transaction> txns, DateTime todayStart) {
+    double total = 0;
+    for (final txn in txns) {
+      final txnDay = DateTime(txn.date.year, txn.date.month, txn.date.day);
+      if (txnDay == todayStart && txn.type == 'expense') {
+        total += txn.amount;
       }
-      banked += (dailyBase - daySpend);
-      day = nextDay;
     }
-    return banked;
+    return total;
   }
 
   /// PRD 5.6: Variable spending baseline = non-bill expenses / W days
@@ -262,7 +365,9 @@ class AllowanceEngine implements AllowanceEngineForStreak {
   }
 
   /// Whether spending on [date] was within that day's budget (for streak).
-  /// Uses monthly cycle: allowance for the day = dailyBase + banked from month start.
+  /// Simple check: was total spend on that day ≤ the daily allowance
+  /// that would have been calculated for that day's cycle?
+  @override
   Future<bool> wasWithinBudgetOnDate(
     DateTime date,
     UserSettings settings,
@@ -302,20 +407,12 @@ class AllowanceEngine implements AllowanceEngineForStreak {
         ? available / daysInMonth
         : 0.0;
 
-    final banked = _computeBanked(
-      allTxns: allTxns,
-      dailyBase: dailyBase,
-      cycleStart: monthStart,
-      todayStart: dayStart,
-    );
-
-    final allowanceForDay = dailyBase + banked;
     double spendOnDay = 0;
     for (final t in allTxns) {
       final tDay = DateTime(t.date.year, t.date.month, t.date.day);
       if (tDay == dayStart && t.type == 'expense') spendOnDay += t.amount;
     }
 
-    return spendOnDay <= allowanceForDay;
+    return spendOnDay <= dailyBase;
   }
 }

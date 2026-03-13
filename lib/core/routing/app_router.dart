@@ -13,6 +13,7 @@ import '../../features/reports/reports_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/signup_screen.dart';
+import '../../features/auth/welcome_screen.dart';
 import '../../features/transactions/add_expense_screen.dart';
 import '../../features/transactions/add_income_screen.dart';
 import '../../features/transactions/edit_expense_screen.dart';
@@ -25,16 +26,36 @@ import '../../features/splits/split_detail_screen.dart';
 import '../../features/closeout/closeout_screen.dart';
 import '../../features/recovery/recovery_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
+import '../providers/auth_providers.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final user = ref.watch(currentUserProvider);
+
   return GoRouter(
     initialLocation: '/',
+    redirect: (context, state) {
+      final loc = state.matchedLocation;
+      final hasSession = user != null;
+      final isWelcomeFlow = loc == '/welcome' || loc.startsWith('/welcome/');
+      if (hasSession && isWelcomeFlow) return '/home';
+      if (!hasSession && !isWelcomeFlow && loc != '/') return '/welcome';
+      return null;
+    },
     routes: [
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
-        path: '/signup',
-        builder: (context, state) => const SignupScreen(),
+        path: '/welcome',
+        builder: (context, state) => const WelcomeScreen(),
+        routes: [
+          GoRoute(
+            path: 'login',
+            builder: (context, state) => const LoginScreen(),
+          ),
+          GoRoute(
+            path: 'signup',
+            builder: (context, state) => const SignupScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/onboarding',

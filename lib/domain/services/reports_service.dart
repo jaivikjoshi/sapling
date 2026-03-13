@@ -63,10 +63,24 @@ class ReportsService {
     );
   }
 
+  Future<MonthlySummary> periodSummary(DateTime start, DateTime end) async {
+    final txns = await _txnRepo.getByDateRange(start, end);
+    return _summarize(txns);
+  }
+
+  Future<List<Transaction>> getTransactionsInPeriod(DateTime start, DateTime end) async {
+    return _txnRepo.getByDateRange(start, end);
+  }
+
   /// Per-category expense total for the month. Only expenses with categoryId.
   Future<List<CategoryBreakdownItem>> categoryBreakdown(int year, int month) async {
     final start = monthStart(year, month);
     final end = monthEnd(year, month);
+    return categoryBreakdownByPeriod(start, end);
+  }
+
+  /// Per-category expense total for a custom period.
+  Future<List<CategoryBreakdownItem>> categoryBreakdownByPeriod(DateTime start, DateTime end) async {
     final txns = await _txnRepo.getByDateRange(start, end);
     final byCategory = <String, double>{};
     for (final t in txns) {

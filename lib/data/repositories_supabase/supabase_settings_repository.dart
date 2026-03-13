@@ -14,18 +14,8 @@ class SupabaseSettingsRepository implements SettingsRepository {
 
   static const _pollInterval = Duration(seconds: 30);
 
-  /// Ensures app_settings row exists for user; creates with defaults if not.
-  Future<AppSetting> _ensureAndGet() async {
-    final res = await _client
-        .from('app_settings')
-        .select()
-        .eq('user_id', _userId)
-        .maybeSingle();
-    if (res != null) {
-      return appSettingFromSupabase(res as Map<String, dynamic>);
-    }
-    final now = DateTime.now();
-    final defaults = AppSetting(
+  AppSetting _defaultSettings() {
+    return const AppSetting(
       id: 'singleton',
       baseCurrency: 'cad',
       rolloverResetType: 'monthly',
@@ -42,6 +32,23 @@ class SupabaseSettingsRepository implements SettingsRepository {
       nightlyCloseoutTime: '21:00',
       onboardingCompleted: false,
     );
+  }
+
+  /// Ensures app_settings row exists for user; creates with defaults if not.
+  Future<AppSetting> _ensureAndGet() async {
+    if (_client.auth.currentUser?.id != _userId) {
+      return _defaultSettings();
+    }
+    final res = await _client
+        .from('app_settings')
+        .select()
+        .eq('user_id', _userId)
+        .maybeSingle();
+    if (res != null) {
+      return appSettingFromSupabase(res);
+    }
+    final now = DateTime.now();
+    final defaults = _defaultSettings();
     final map = appSettingToSupabase(defaults);
     map['user_id'] = _userId;
     map['created_at'] = now.toIso8601String();
@@ -50,15 +57,25 @@ class SupabaseSettingsRepository implements SettingsRepository {
     return defaults;
   }
 
+  @override
   Future<AppSetting> get() async => _ensureAndGet();
 
+  @override
   Stream<AppSetting> watch() async* {
-    yield await _ensureAndGet();
-    await for (final _ in Stream.periodic(_pollInterval)) {
+    try {
       yield await _ensureAndGet();
+      await for (final _ in Stream.periodic(_pollInterval)) {
+        if (_client.auth.currentUser?.id != _userId) {
+          break;
+        }
+        yield await _ensureAndGet();
+      }
+    } on PostgrestException catch (e) {
+      if (e.code != '42501') rethrow;
     }
   }
 
+  @override
   Future<void> update(AppSettingsCompanion companion) async {
     final updateMap = <String, dynamic>{};
     if (companion.baseCurrency.present) {
@@ -114,6 +131,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
         .eq('user_id', _userId);
   }
 
+  @override
   Future<void> markOnboardingComplete() async {
     await update(
       const AppSettingsCompanion(onboardingCompleted: Value(true)),

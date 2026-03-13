@@ -20,39 +20,93 @@ class GoalsScreen extends ConsumerWidget {
     final settingsAsync = ref.watch(settingsStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Goals')),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'goals_fab',
-        onPressed: () => _showForm(context),
-        child: const Icon(Icons.add),
-      ),
-      body: goalsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (goals) {
-          if (goals.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text(
-                  'No goals yet.\nTap + to create your first goal.',
-                  textAlign: TextAlign.center,
+      backgroundColor: SaplingColors.background,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            floating: true,
+            title: Text(
+              'Goals',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: SaplingColors.textPrimary,
+              ),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: IconButton(
+                  onPressed: () => _showForm(context),
+                  icon: const Icon(Icons.add),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: SaplingColors.textPrimary,
+                    shape: const CircleBorder(),
+                  ),
                 ),
               ),
-            );
-          }
+            ],
+          ),
+          goalsAsync.when(
+            loading:
+                () => const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            error:
+                (e, _) => SliverFillRemaining(
+                  child: Center(child: Text('Error: $e')),
+                ),
+            data: (goals) {
+              if (goals.isEmpty) {
+                return SliverFillRemaining(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.flag_rounded,
+                            size: 64,
+                            color: SaplingColors.support,
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'No goals yet.\nPlant a seed for the future.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              color: SaplingColors.textSecondary,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
 
-          final primaryId = settingsAsync.valueOrNull?.primaryGoalId;
+              final primaryId = settingsAsync.valueOrNull?.primaryGoalId;
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: goals.length,
-            itemBuilder: (ctx, i) => _GoalTile(
-              goal: goals[i],
-              isPrimary: goals[i].id == primaryId,
-            ),
-          );
-        },
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (ctx, i) => _GoalTile(
+                      goal: goals[i],
+                      isPrimary: goals[i].id == primaryId,
+                    ),
+                    childCount: goals.length,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -61,8 +115,9 @@ class GoalsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: SaplingColors.background,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       builder: (_) => GoalFormSheet(existing: existing),
     );
@@ -79,92 +134,184 @@ class _GoalTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dateFmt = DateFormat.yMMMd();
     final style = enumFromDb<SavingStyle>(goal.savingStyle, SavingStyle.values);
-    final progress = goal.targetAmount > 0
-        ? 0.0 // Progress is tracked by saved amount — stubbed until savings tracking
-        : 0.0;
+    final progress =
+        goal.targetAmount > 0
+            ? 0.0 // Progress is tracked by saved amount — stubbed until savings tracking
+            : 0.0;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => GoalDetailScreen(goalId: goal.id),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
-        ),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  if (isPrimary)
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => GoalDetailScreen(goalId: goal.id),
+                ),
+              ),
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      margin: const EdgeInsets.only(right: 8),
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: SaplingColors.secondary.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(6),
+                        color: SaplingColors.background,
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Text(
-                        'PRIMARY',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: SaplingColors.secondary,
-                        ),
+                      child: const Icon(
+                        Icons.flag_rounded,
+                        color: SaplingColors.textSecondary,
                       ),
                     ),
-                  Expanded(
-                    child: Text(
-                      goal.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (isPrimary)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                'PRIMARY GOAL',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.1,
+                                  color: SaplingColors.secondary,
+                                ),
+                              ),
+                            ),
+                          Text(
+                            goal.name,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 19,
+                              letterSpacing: -0.5,
+                              color: SaplingColors.textPrimary,
+                            ),
                           ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.more_horiz,
+                        color: SaplingColors.textSecondary,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      onSelected:
+                          (action) => _handleAction(context, ref, action),
+                      itemBuilder:
+                          (_) => [
+                            if (!isPrimary)
+                              const PopupMenuItem(
+                                value: 'primary',
+                                child: Text('Set as Primary'),
+                              ),
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Edit'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'archive',
+                              child: Text('Archive'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(color: SaplingColors.labelRed),
+                              ),
+                            ),
+                          ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatCurrency(0), // Stubbed saved amount
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                        color: SaplingColors.textPrimary,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        'of ${formatCurrency(goal.targetAmount)}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: SaplingColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 10,
+                    backgroundColor: SaplingColors.divider.withValues(
+                      alpha: 0.5,
+                    ),
+                    valueColor: AlwaysStoppedAnimation(
+                      isPrimary
+                          ? SaplingColors.secondary
+                          : SaplingColors.textSecondary,
                     ),
                   ),
-                  PopupMenuButton<String>(
-                    onSelected: (action) =>
-                        _handleAction(context, ref, action),
-                    itemBuilder: (_) => [
-                      if (!isPrimary)
-                        const PopupMenuItem(
-                          value: 'primary',
-                          child: Text('Set as Primary'),
-                        ),
-                      const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                      const PopupMenuItem(
-                          value: 'archive', child: Text('Archive')),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Text('Delete',
-                            style: TextStyle(color: SaplingColors.labelRed)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  _Chip(label: formatCurrency(goal.targetAmount)),
-                  const SizedBox(width: 8),
-                  _Chip(label: dateFmt.format(goal.targetDate)),
-                  const SizedBox(width: 8),
-                  _Chip(label: style.name, color: _styleColor(style)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              LinearProgressIndicator(
-                value: progress,
-                backgroundColor: SaplingColors.divider,
-                valueColor: AlwaysStoppedAnimation(
-                    isPrimary ? SaplingColors.secondary : SaplingColors.support),
-              ),
-            ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    _IconChip(
+                      icon: Icons.calendar_today_rounded,
+                      label: dateFmt.format(goal.targetDate),
+                    ),
+                    const SizedBox(width: 8),
+                    _IconChip(
+                      icon: Icons.speed_rounded,
+                      label: style.name,
+                      color: _styleColor(style),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -172,13 +319,16 @@ class _GoalTile extends ConsumerWidget {
   }
 
   Color _styleColor(SavingStyle s) => switch (s) {
-        SavingStyle.easy => SaplingColors.labelGreen,
-        SavingStyle.natural => SaplingColors.labelOrange,
-        SavingStyle.aggressive => SaplingColors.labelRed,
-      };
+    SavingStyle.easy => SaplingColors.labelGreen,
+    SavingStyle.natural => SaplingColors.labelOrange,
+    SavingStyle.aggressive => SaplingColors.labelRed,
+  };
 
   Future<void> _handleAction(
-      BuildContext context, WidgetRef ref, String action) async {
+    BuildContext context,
+    WidgetRef ref,
+    String action,
+  ) async {
     final service = ref.read(goalsServiceProvider);
     switch (action) {
       case 'primary':
@@ -202,26 +352,35 @@ class _GoalTile extends ConsumerWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, this.color});
+class _IconChip extends StatelessWidget {
+  const _IconChip({required this.icon, required this.label, this.color});
+  final IconData icon;
   final String label;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final effectiveColor = color ?? SaplingColors.textSecondary;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: (color ?? SaplingColors.textSecondary).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: effectiveColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          color: color ?? SaplingColors.textSecondary,
-          fontWeight: FontWeight.w500,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: effectiveColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: effectiveColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -271,22 +430,29 @@ class _GoalDetailBody extends ConsumerWidget {
       children: [
         Text(
           goal.name,
-          style: Theme.of(context)
-              .textTheme
-              .headlineMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         if (isPrimary) ...[
           const SizedBox(height: 4),
-          const Text('Primary Goal',
-              style: TextStyle(
-                  color: SaplingColors.secondary, fontWeight: FontWeight.w600)),
+          const Text(
+            'Primary Goal',
+            style: TextStyle(
+              color: SaplingColors.secondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
         const SizedBox(height: 24),
-        _DetailRow(label: 'Target Amount',
-            value: formatCurrency(goal.targetAmount)),
-        _DetailRow(label: 'Target Date',
-            value: dateFmt.format(goal.targetDate)),
+        _DetailRow(
+          label: 'Target Amount',
+          value: formatCurrency(goal.targetAmount),
+        ),
+        _DetailRow(
+          label: 'Target Date',
+          value: dateFmt.format(goal.targetDate),
+        ),
         _DetailRow(label: 'Saving Style', value: style.name),
         _DetailRow(label: 'Priority', value: '#${goal.priorityOrder + 1}'),
         const SizedBox(height: 24),
@@ -315,8 +481,10 @@ class _DetailRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: const TextStyle(color: SaplingColors.textSecondary)),
+          Text(
+            label,
+            style: const TextStyle(color: SaplingColors.textSecondary),
+          ),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),

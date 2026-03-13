@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/auth_providers.dart';
+import 'auth_shell.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -17,6 +18,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _passwordCtrl = TextEditingController();
   bool _loading = false;
   String? _error;
+  bool _success = false;
 
   @override
   void dispose() {
@@ -29,6 +31,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _success = false;
     });
     try {
       final client = ref.read(supabaseClientProvider);
@@ -42,19 +45,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         context.go('/home');
         return;
       }
-      // Email confirmation required — show message and send to login.
-      if (mounted) setState(() {
-        _loading = false;
-        _error =
-            'Check your email to confirm your account, then sign in.';
-      });
-      await Future<void>.delayed(const Duration(seconds: 2));
-      if (!mounted) return;
-      context.go('/login');
+      // Email confirmation required
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _success = true;
+        });
+      }
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      if (mounted) setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e.toString());
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -75,9 +76,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       );
       // After OAuth completes, auth stream will update and splash will route.
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      if (mounted) setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e.toString());
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -87,59 +88,168 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final enabled = _emailCtrl.text.isNotEmpty && _passwordCtrl.text.length >= 6 && !_loading;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Create account')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Email'),
-              onChanged: (_) => setState(() {}),
+    final enabled =
+        _emailCtrl.text.isNotEmpty &&
+        _passwordCtrl.text.length >= 6 &&
+        !_loading;
+
+    return AuthScaffold(
+      title: 'Create account',
+      subtitle: 'Start your journey to better budgeting.',
+      onBack: _loading ? null : () => context.go('/welcome'),
+      child: _success
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: const Column(
+                    children: [
+                      Icon(
+                        Icons.mark_email_read_rounded,
+                        color: AuthPalette.gold,
+                        size: 42,
+                      ),
+                      SizedBox(height: 14),
+                      Text(
+                        'Check your email',
+                        style: TextStyle(
+                          color: AuthPalette.headline,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'We sent a confirmation link to your email address. Please verify your account, then sign in.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AuthPalette.subtext,
+                          fontSize: 15,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: () => context.go('/welcome/login'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AuthPalette.primaryBtn,
+                      foregroundColor: AuthPalette.primaryBtnText,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
+                    child: const Text(
+                      'Return to sign in',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AuthTextField(
+                  controller: _emailCtrl,
+                  label: 'Email',
+                  keyboardType: TextInputType.emailAddress,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 16),
+                AuthTextField(
+                  controller: _passwordCtrl,
+                  label: 'Password (min 6 chars)',
+                  obscureText: true,
+                  onChanged: (_) => setState(() {}),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 18),
+                  AuthErrorBanner(message: _error!),
+                ],
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: enabled ? _signUp : null,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AuthPalette.primaryBtn,
+                      disabledBackgroundColor:
+                          AuthPalette.primaryBtn.withValues(alpha: 0.35),
+                      foregroundColor: AuthPalette.primaryBtnText,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AuthPalette.primaryBtnText,
+                            ),
+                          )
+                        : const Text(
+                            'Create account',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const AuthDivider(),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: _loading ? null : _signUpWithGoogle,
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor:
+                          AuthPalette.secondaryBtn.withValues(alpha: 0.45),
+                      foregroundColor: AuthPalette.secondaryBtnText,
+                      side: BorderSide(
+                        color: AuthPalette.secondaryBtnBorder.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.login, size: 20),
+                        SizedBox(width: 12),
+                        Text(
+                          'Continue with Google',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _passwordCtrl,
-              decoration: const InputDecoration(labelText: 'Password (min 6 chars)'),
-              obscureText: true,
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 16),
-            if (_error != null) ...[
-              Text(
-                _error!,
-                style: const TextStyle(color: Colors.red),
-              ),
-              const SizedBox(height: 8),
-            ],
-            ElevatedButton(
-              onPressed: enabled ? _signUp : null,
-              child: _loading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Sign up'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: _loading ? null : _signUpWithGoogle,
-              icon: const Icon(Icons.login),
-              label: const Text('Continue with Google'),
-            ),
-            TextButton(
-              onPressed: _loading ? null : () => context.go('/login'),
-              child: const Text('Already have an account? Sign in'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
-

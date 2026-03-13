@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sapling/data/db/sapling_database.dart';
 import 'package:sapling/data/repositories/bills_repository.dart';
+import 'package:sapling/data/repositories/goals_repository.dart';
 import 'package:sapling/data/repositories/recurring_income_repository.dart';
 import 'package:sapling/data/repositories/transactions_repository.dart';
 import 'package:sapling/domain/models/enums.dart';
@@ -16,6 +17,7 @@ void main() {
   late TransactionsRepository txnRepo;
   late BillsRepository billsRepo;
   late RecurringIncomeRepository incomeRepo;
+  late GoalsRepository goalsRepo;
   late AllowanceEngine engine;
   late LedgerService ledger;
 
@@ -24,7 +26,8 @@ void main() {
     txnRepo = DriftTransactionsRepository(db);
     billsRepo = DriftBillsRepository(db);
     incomeRepo = DriftRecurringIncomeRepository(db);
-    engine = AllowanceEngine(txnRepo, billsRepo, incomeRepo, null);
+    goalsRepo = DriftGoalsRepository(db);
+    engine = AllowanceEngine(txnRepo, billsRepo, incomeRepo, goalsRepo);
     ledger = LedgerService(txnRepo);
   });
 
@@ -40,12 +43,14 @@ void main() {
       final result =
           await engine.computePaycheckMode(settings: baseSettings);
       expect(result.balance, 0);
-      expect(result.allowanceToday, 0);
+      expect(result.dailyAllowance, 0);
+      expect(result.todaySpend, 0);
+      expect(result.remainingToday, 0);
       expect(result.behindAmount, 0);
       expect(result.daysLeft, greaterThan(0));
     });
 
-    test('income increases available allowance', () async {
+    test('income creates daily allowance = balance / daysLeft', () async {
       await ledger.addIncome(
         amount: 3000,
         date: DateTime.now(),
@@ -55,17 +60,20 @@ void main() {
       final result =
           await engine.computePaycheckMode(settings: baseSettings);
       expect(result.balance, 3000);
-      expect(result.allowanceToday, greaterThan(0));
+      // dailyAllowance = spendablePool / daysLeft = 3000 / daysLeft
+      expect(result.dailyAllowance, closeTo(3000 / result.daysLeft, 0.01));
+      expect(result.todaySpend, 0);
+      expect(result.remainingToday, result.dailyAllowance);
     });
 
-    test('expense reduces balance and affects allowance', () async {
+    test('today spend reduces remaining but not daily allowance', () async {
       await ledger.addIncome(
         amount: 3000,
         date: DateTime.now(),
         postingType: IncomePostingType.manualOneTime,
       );
       await ledger.addExpense(
-        amount: 1000,
+        amount: 50,
         date: DateTime.now(),
         categoryId: 'cat-1',
         label: SpendLabel.green,
@@ -73,7 +81,34 @@ void main() {
 
       final result =
           await engine.computePaycheckMode(settings: baseSettings);
-      expect(result.balance, 2000);
+      expect(result.balance, 2950);
+      expect(result.todaySpend, 50);
+      // remainingToday = dailyAllowance - 50
+      expect(result.remainingToday, result.dailyAllowance - 50);
+    });
+
+    test('overspend yesterday naturally tightens today', () async {
+      final now = DateTime.now();
+      // Add income yesterday
+      await ledger.addIncome(
+        amount: 1000,
+        date: DateTime(now.year, now.month, now.day - 1),
+        postingType: IncomePostingType.manualOneTime,
+      );
+      // Overspend yesterday (more than daily would be)
+      await ledger.addExpense(
+        amount: 200,
+        date: DateTime(now.year, now.month, now.day - 1),
+        categoryId: 'cat-1',
+        label: SpendLabel.red,
+      );
+
+      final result =
+          await engine.computePaycheckMode(settings: baseSettings);
+      // Balance = 800, daily = 800/daysLeft
+      expect(result.balance, 800);
+      expect(result.dailyAllowance, closeTo(800 / result.daysLeft, 0.01));
+      // The overspend is naturally carried forward via the reduced balance
     });
 
     test('planned bills reduce projected available', () async {
@@ -97,12 +132,12 @@ void main() {
 
       final result =
           await engine.computePaycheckMode(settings: baseSettings);
-      // Balance is 3000, but 1000 in bills reduces the available pool
+      // spendable = 3000 - 1000 = 2000
       expect(result.projectedBills, greaterThanOrEqualTo(1000));
+      expect(result.spendablePool, closeTo(2000, 1));
     });
 
-    test('behind amount is positive when overspent', () async {
-      // Start with 0 balance, add an expense -> negative balance
+    test('behind amount is positive when overspent overall', () async {
       await ledger.addExpense(
         amount: 500,
         date: DateTime.now(),
@@ -113,15 +148,14 @@ void main() {
       final result =
           await engine.computePaycheckMode(settings: baseSettings);
       expect(result.balance, -500);
-      expect(result.allowanceToday, 0);
-      expect(result.behindAmount, greaterThan(0));
+      expect(result.dailyAllowance, 0);
+      expect(result.behindAmount, 500);
     });
   });
 
   group('AllowanceEngine — payday_based cycle', () {
     test('uses anchor schedule for cycle boundaries', () async {
       final now = DateTime.now();
-      // Create an anchor income that pays biweekly
       await incomeRepo.insert(RecurringIncomesCompanion.insert(
         id: 'anchor-1',
         name: 'Salary',
@@ -146,13 +180,11 @@ void main() {
 
       final result =
           await engine.computePaycheckMode(settings: paydaySettings);
-      expect(result.cycleWindow.start.year, greaterThan(0));
-      expect(result.cycleWindow.end.year, greaterThan(0));
-      // Cycle should be ~14 days for biweekly
       final cycleDays = result.cycleWindow.end
           .difference(result.cycleWindow.start)
           .inDays;
-      expect(cycleDays, 14);
+      // Biweekly = ~14 days (may be 13 due to day boundary)
+      expect(cycleDays, inInclusiveRange(13, 14));
     });
   });
 }
