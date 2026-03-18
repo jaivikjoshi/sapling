@@ -18,7 +18,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _passwordCtrl = TextEditingController();
   bool _loading = false;
   String? _error;
-  bool _success = false;
 
   @override
   void dispose() {
@@ -31,27 +30,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     setState(() {
       _loading = true;
       _error = null;
-      _success = false;
     });
     try {
       final client = ref.read(supabaseClientProvider);
+      final email = _emailCtrl.text.trim();
       final res = await client.auth.signUp(
-        email: _emailCtrl.text.trim(),
+        email: email,
         password: _passwordCtrl.text,
+        // emailRedirectTo: 'com.jaivik.leko://auth-callback', // Disabled: no email verification
       );
       if (!mounted) return;
-      // If session exists, email confirmation is disabled — go to app.
+      // Email verification disabled — pass through. Splash fetches settings and routes to onboarding or home.
       if (res.session != null) {
-        context.go('/home');
+        context.go('/');
         return;
       }
-      // Email confirmation required
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _success = true;
-        });
-      }
+      context.go('/');
     } on AuthException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (e) {
@@ -72,7 +66,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       final client = ref.read(supabaseClientProvider);
       await client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'com.jaivik.sapling://login-callback',
+        redirectTo: 'com.jaivik.leko://login-callback',
       );
       // After OAuth completes, auth stream will update and splash will route.
     } on AuthException catch (e) {
@@ -97,69 +91,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       title: 'Create account',
       subtitle: 'Start your journey to better budgeting.',
       onBack: _loading ? null : () => context.go('/welcome'),
-      child: _success
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
-                  ),
-                  child: const Column(
-                    children: [
-                      Icon(
-                        Icons.mark_email_read_rounded,
-                        color: AuthPalette.gold,
-                        size: 42,
-                      ),
-                      SizedBox(height: 14),
-                      Text(
-                        'Check your email',
-                        style: TextStyle(
-                          color: AuthPalette.headline,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        'We sent a confirmation link to your email address. Please verify your account, then sign in.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AuthPalette.subtext,
-                          fontSize: 15,
-                          height: 1.45,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  height: 56,
-                  child: FilledButton(
-                    onPressed: () => context.go('/welcome/login'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AuthPalette.primaryBtn,
-                      foregroundColor: AuthPalette.primaryBtnText,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    child: const Text(
-                      'Return to sign in',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : Column(
+      child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AuthTextField(

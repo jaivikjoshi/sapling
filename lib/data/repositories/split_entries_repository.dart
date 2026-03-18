@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 abstract class SplitEntriesRepository {
   Future<List<SplitEntry>> getAll();
@@ -14,7 +14,7 @@ abstract class SplitEntriesRepository {
 }
 
 class DriftSplitEntriesRepository implements SplitEntriesRepository {
-  final SaplingDatabase _db;
+  final LekoDatabase _db;
 
   DriftSplitEntriesRepository(this._db);
 

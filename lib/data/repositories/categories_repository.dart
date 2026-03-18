@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 abstract class CategoriesRepository {
   Stream<List<Category>> watchAll();
@@ -13,7 +13,7 @@ abstract class CategoriesRepository {
 }
 
 class DriftCategoriesRepository implements CategoriesRepository {
-  final SaplingDatabase _db;
+  final LekoDatabase _db;
 
   DriftCategoriesRepository(this._db);
 

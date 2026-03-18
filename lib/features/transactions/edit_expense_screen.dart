@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/providers/ledger_providers.dart';
 import '../../core/providers/split_providers.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import '../../core/utils/enum_serialization.dart';
 

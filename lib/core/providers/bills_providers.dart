@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../data/repositories/bills_repository.dart';
 import '../../data/repositories_supabase/supabase_bills_repository.dart';
 import '../../domain/services/bills_service.dart';

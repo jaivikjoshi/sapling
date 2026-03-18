@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'onboarding_controller.dart';
-import 'widgets/currency_step.dart';
+import 'widgets/activation_step.dart';
 import 'widgets/balance_step.dart';
-import 'widgets/income_step.dart';
-import 'widgets/rollover_step.dart';
-import 'widgets/baseline_step.dart';
-import 'widgets/notifications_step.dart';
-import 'widgets/completion_step.dart';
+import 'widgets/bills_step.dart';
+import 'widgets/focus_goal_step.dart';
+import 'widgets/monetization_step.dart';
+import 'widgets/permissions_step.dart';
+import 'widgets/primary_need_step.dart';
+import 'widgets/promise_step.dart';
+import 'widgets/rhythm_step.dart';
+import 'widgets/support_style_step.dart';
+import 'widgets/welcome_step.dart';
 
 class OnboardingScreen extends ConsumerWidget {
   const OnboardingScreen({super.key});
@@ -20,6 +24,7 @@ class OnboardingScreen extends ConsumerWidget {
     );
 
     return Scaffold(
+      backgroundColor: const Color(0xFF0F1A1B), // Fallback
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: _buildStep(step),
@@ -29,13 +34,17 @@ class OnboardingScreen extends ConsumerWidget {
 
   Widget _buildStep(OnboardingStep step) {
     return switch (step) {
-      OnboardingStep.currency => const CurrencyStep(key: ValueKey('currency')),
+      OnboardingStep.welcome => const WelcomeStep(key: ValueKey('welcome')),
+      OnboardingStep.primaryNeed => const PrimaryNeedStep(key: ValueKey('primaryNeed')),
+      OnboardingStep.rhythm => const RhythmStep(key: ValueKey('rhythm')),
+      OnboardingStep.promise => const PromiseStep(key: ValueKey('promise')),
       OnboardingStep.balance => const BalanceStep(key: ValueKey('balance')),
-      OnboardingStep.income => const IncomeStep(key: ValueKey('income')),
-      OnboardingStep.rollover => const RolloverStep(key: ValueKey('rollover')),
-      OnboardingStep.baseline => const BaselineStep(key: ValueKey('baseline')),
-      OnboardingStep.notifications => const NotificationsStep(key: ValueKey('notifs')),
-      OnboardingStep.completion => const CompletionStep(key: ValueKey('done')),
+      OnboardingStep.bills => const BillsStep(key: ValueKey('bills')),
+      OnboardingStep.focusGoal => const FocusGoalStep(key: ValueKey('focusGoal')),
+      OnboardingStep.supportStyle => const SupportStyleStep(key: ValueKey('supportStyle')),
+      OnboardingStep.permissions => const PermissionsStep(key: ValueKey('permissions')),
+      OnboardingStep.monetization => const MonetizationStep(key: ValueKey('monetization')),
+      OnboardingStep.activation => const ActivationStep(key: ValueKey('activation')),
     };
   }
 }

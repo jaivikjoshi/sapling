@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 abstract class BillsRepository {
   Future<List<Bill>> getAll();
@@ -12,7 +12,7 @@ abstract class BillsRepository {
 }
 
 class DriftBillsRepository implements BillsRepository {
-  final SaplingDatabase _db;
+  final LekoDatabase _db;
 
   DriftBillsRepository(this._db);
 

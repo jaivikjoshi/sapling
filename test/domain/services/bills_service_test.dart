@@ -1,20 +1,20 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/data/db/sapling_database.dart';
-import 'package:sapling/data/repositories/bills_repository.dart';
-import 'package:sapling/data/repositories/transactions_repository.dart';
-import 'package:sapling/domain/models/enums.dart';
-import 'package:sapling/domain/services/bills_service.dart';
+import 'package:leko/data/db/leko_database.dart';
+import 'package:leko/data/repositories/bills_repository.dart';
+import 'package:leko/data/repositories/transactions_repository.dart';
+import 'package:leko/domain/models/enums.dart';
+import 'package:leko/domain/services/bills_service.dart';
 
 void main() {
-  late SaplingDatabase db;
+  late LekoDatabase db;
   late BillsRepository billsRepo;
   late TransactionsRepository txnRepo;
   late BillsService service;
 
   setUp(() {
-    db = SaplingDatabase.forTesting(NativeDatabase.memory());
+    db = LekoDatabase.forTesting(NativeDatabase.memory());
     billsRepo = DriftBillsRepository(db);
     txnRepo = DriftTransactionsRepository(db);
     service = BillsService(billsRepo, txnRepo);

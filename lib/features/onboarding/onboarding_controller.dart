@@ -3,105 +3,89 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/providers/ledger_providers.dart';
-import '../../core/providers/recurring_income_providers.dart';
 import '../../core/providers/settings_providers.dart';
-import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../core/providers/bills_providers.dart';
+import '../../core/providers/goals_providers.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 
 enum OnboardingStep {
-  currency,
+  welcome,
+  primaryNeed,
+  rhythm,
+  promise,
   balance,
-  income,
-  rollover,
-  baseline,
-  notifications,
-  completion,
+  bills,
+  focusGoal,
+  supportStyle,
+  permissions,
+  monetization,
+  activation,
 }
 
-class OnboardingIncomeData {
-  final String tempId;
-  final String name;
-  final IncomeFrequency frequency;
-  final DateTime nextPaydayDate;
-  final double? expectedAmount;
-  final PaydayBehavior paydayBehavior;
+enum IncomeRhythm {
+  predictable,
+  irregular,
+}
 
-  const OnboardingIncomeData({
-    required this.tempId,
-    required this.name,
-    required this.frequency,
-    required this.nextPaydayDate,
-    this.expectedAmount,
-    required this.paydayBehavior,
-  });
+enum SupportStyle {
+  gentle,
+  steady,
+  focused,
 }
 
 class OnboardingState {
   final OnboardingStep step;
-  final Currency currency;
+  final String? primaryNeed;
+  final IncomeRhythm? rhythm;
   final double startingBalance;
-  final List<OnboardingIncomeData> incomes;
-  final RolloverResetType rolloverType;
-  final String? paydayAnchorTempId;
-  final int baselineDays;
-  final PaydayBehavior defaultPaydayBehavior;
-  final bool paydayNotifs;
-  final bool billNotifs;
-  final bool overspendNotifs;
-  final bool closeoutNotifs;
+  final List<String> selectedBills;
+  final String? focusGoal;
+  final SupportStyle? supportStyle;
+  final bool optedIntoTrial;
+  
+  // Internal flags
+  final bool hasRequestedNotifications;
   final bool isSubmitting;
   final String? error;
 
   const OnboardingState({
-    this.step = OnboardingStep.currency,
-    this.currency = Currency.cad,
+    this.step = OnboardingStep.welcome,
+    this.primaryNeed,
+    this.rhythm,
     this.startingBalance = 0,
-    this.incomes = const [],
-    this.rolloverType = RolloverResetType.monthly,
-    this.paydayAnchorTempId,
-    this.baselineDays = 30,
-    this.defaultPaydayBehavior = PaydayBehavior.confirmActualOnPayday,
-    this.paydayNotifs = true,
-    this.billNotifs = true,
-    this.overspendNotifs = true,
-    this.closeoutNotifs = true,
+    this.selectedBills = const [],
+    this.focusGoal,
+    this.supportStyle,
+    this.optedIntoTrial = false,
+    this.hasRequestedNotifications = false,
     this.isSubmitting = false,
     this.error,
   });
 
   OnboardingState copyWith({
     OnboardingStep? step,
-    Currency? currency,
+    String? primaryNeed,
+    IncomeRhythm? rhythm,
     double? startingBalance,
-    List<OnboardingIncomeData>? incomes,
-    RolloverResetType? rolloverType,
-    String? Function()? paydayAnchorTempId,
-    int? baselineDays,
-    PaydayBehavior? defaultPaydayBehavior,
-    bool? paydayNotifs,
-    bool? billNotifs,
-    bool? overspendNotifs,
-    bool? closeoutNotifs,
+    List<String>? selectedBills,
+    String? focusGoal,
+    SupportStyle? supportStyle,
+    bool? optedIntoTrial,
+    bool? hasRequestedNotifications,
     bool? isSubmitting,
     String? Function()? error,
   }) {
     return OnboardingState(
       step: step ?? this.step,
-      currency: currency ?? this.currency,
+      primaryNeed: primaryNeed ?? this.primaryNeed,
+      rhythm: rhythm ?? this.rhythm,
       startingBalance: startingBalance ?? this.startingBalance,
-      incomes: incomes ?? this.incomes,
-      rolloverType: rolloverType ?? this.rolloverType,
-      paydayAnchorTempId: paydayAnchorTempId != null
-          ? paydayAnchorTempId()
-          : this.paydayAnchorTempId,
-      baselineDays: baselineDays ?? this.baselineDays,
-      defaultPaydayBehavior:
-          defaultPaydayBehavior ?? this.defaultPaydayBehavior,
-      paydayNotifs: paydayNotifs ?? this.paydayNotifs,
-      billNotifs: billNotifs ?? this.billNotifs,
-      overspendNotifs: overspendNotifs ?? this.overspendNotifs,
-      closeoutNotifs: closeoutNotifs ?? this.closeoutNotifs,
+      selectedBills: selectedBills ?? this.selectedBills,
+      focusGoal: focusGoal ?? this.focusGoal,
+      supportStyle: supportStyle ?? this.supportStyle,
+      optedIntoTrial: optedIntoTrial ?? this.optedIntoTrial,
+      hasRequestedNotifications: hasRequestedNotifications ?? this.hasRequestedNotifications,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error != null ? error() : this.error,
     );
@@ -119,39 +103,20 @@ class OnboardingController extends StateNotifier<OnboardingState> {
 
   OnboardingController(this._ref) : super(const OnboardingState());
 
-  void setCurrency(Currency c) => state = state.copyWith(currency: c);
+  void setPrimaryNeed(String need) => state = state.copyWith(primaryNeed: need);
+  void setRhythm(IncomeRhythm rhythm) => state = state.copyWith(rhythm: rhythm);
   void setBalance(double b) => state = state.copyWith(startingBalance: b);
-  void setRolloverType(RolloverResetType t) =>
-      state = state.copyWith(rolloverType: t);
-  void setPaydayAnchor(String? id) =>
-      state = state.copyWith(paydayAnchorTempId: () => id);
-  void setBaselineDays(int d) => state = state.copyWith(baselineDays: d);
-  void setDefaultPaydayBehavior(PaydayBehavior b) =>
-      state = state.copyWith(defaultPaydayBehavior: b);
-
-  void setNotifs({bool? payday, bool? bill, bool? overspend, bool? closeout}) {
-    state = state.copyWith(
-      paydayNotifs: payday,
-      billNotifs: bill,
-      overspendNotifs: overspend,
-      closeoutNotifs: closeout,
-    );
+  void toggleBill(String bill) {
+    if (state.selectedBills.contains(bill)) {
+      state = state.copyWith(selectedBills: state.selectedBills.where((b) => b != bill).toList());
+    } else {
+      state = state.copyWith(selectedBills: [...state.selectedBills, bill]);
+    }
   }
-
-  void addIncome(OnboardingIncomeData income) {
-    state = state.copyWith(incomes: [...state.incomes, income]);
-  }
-
-  void removeIncome(String tempId) {
-    state = state.copyWith(
-      incomes: state.incomes.where((i) => i.tempId != tempId).toList(),
-      paydayAnchorTempId: state.paydayAnchorTempId == tempId
-          ? () => null
-          : null,
-    );
-  }
-
-  static String newTempId() => _uuid.v4();
+  void setFocusGoal(String goal) => state = state.copyWith(focusGoal: goal);
+  void setSupportStyle(SupportStyle style) => state = state.copyWith(supportStyle: style);
+  void setOptedIntoTrial(bool optedIn) => state = state.copyWith(optedIntoTrial: optedIn);
+  void setHasRequestedNotifications() => state = state.copyWith(hasRequestedNotifications: true);
 
   void goTo(OnboardingStep step) => state = state.copyWith(step: step);
 
@@ -171,52 +136,15 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     }
   }
 
-  String? validate() {
-    if (state.rolloverType == RolloverResetType.paydayBased) {
-      if (state.incomes.isEmpty) {
-        return 'Add at least one recurring income for payday-based rollover.';
-      }
-      if (state.paydayAnchorTempId == null) {
-        return 'Select a Payday Anchor income schedule.';
-      }
-    }
-    return null;
-  }
-
   Future<bool> complete() async {
-    final validationError = validate();
-    if (validationError != null) {
-      state = state.copyWith(error: () => validationError);
-      return false;
-    }
-
     state = state.copyWith(isSubmitting: true, error: () => null);
 
     try {
       final repo = _ref.read(settingsRepositoryProvider);
-      final incomeRepo = _ref.read(recurringIncomeRepositoryProvider);
       final txnRepo = _ref.read(transactionsRepositoryProvider);
+      final billsRepo = _ref.read(billsRepositoryProvider);
+      final goalsRepo = _ref.read(goalsRepositoryProvider);
       final now = DateTime.now();
-
-      // Persist recurring incomes and resolve anchor ID
-      String? anchorDbId;
-      for (final income in state.incomes) {
-        final dbId = _uuid.v4();
-        if (income.tempId == state.paydayAnchorTempId) anchorDbId = dbId;
-
-        await incomeRepo.insert(RecurringIncomesCompanion.insert(
-          id: dbId,
-          name: income.name,
-          frequency: Value(enumToDb(income.frequency)),
-          nextPaydayDate: income.nextPaydayDate,
-          expectedAmount: Value(income.expectedAmount),
-          paydayBehavior: Value(enumToDb(income.paydayBehavior)),
-          isPaydayAnchor:
-              Value(income.tempId == state.paydayAnchorTempId),
-          createdAt: now,
-          updatedAt: now,
-        ));
-      }
 
       // Create initial balance adjustment
       if (state.startingBalance != 0) {
@@ -231,19 +159,63 @@ class OnboardingController extends StateNotifier<OnboardingState> {
         ));
       }
 
+      // Add selected bills (using defaults for amounts/dates since it's just a sketch)
+      for (final billName in state.selectedBills) {
+        await billsRepo.insert(BillsCompanion.insert(
+          id: _uuid.v4(),
+          name: billName,
+          amount: 100.0, // Placeholder amount
+          categoryId: 'cat_other', // Default category
+          nextDueDate: DateTime(now.year, now.month, 1),
+          autopay: const Value(true),
+          createdAt: now,
+          updatedAt: now,
+        ));
+      }
+
+      // Add focus goal
+      if (state.focusGoal != null) {
+        await goalsRepo.insert(GoalsCompanion.insert(
+          id: _uuid.v4(),
+          name: state.focusGoal!,
+          targetAmount: 1000.0, // Default target
+          targetDate: DateTime(now.year + 1, now.month, now.day),
+          createdAt: now,
+          updatedAt: now,
+        ));
+      }
+
+      // Configure notification settings based on support style
+      bool paydayNotifs = true;
+      bool billNotifs = true;
+      bool overspendNotifs = true;
+      bool closeoutNotifs = true;
+
+      if (state.supportStyle == SupportStyle.gentle) {
+        overspendNotifs = false;
+        closeoutNotifs = false;
+      } else if (state.supportStyle == SupportStyle.steady) {
+        overspendNotifs = false;
+        closeoutNotifs = true;
+      }
+
       // Save settings
       await saveSettingsField(
         repo,
-        baseCurrency: state.currency,
-        rolloverResetType: state.rolloverType,
-        spendingBaselineDays: state.baselineDays,
-        defaultPaydayBehavior: state.defaultPaydayBehavior,
-        paydayAnchorRecurringIncomeId: () => anchorDbId,
-        paydayEnabled: state.paydayNotifs,
-        billsEnabled: state.billNotifs,
-        overspendEnabled: state.overspendNotifs,
-        nightlyCloseoutEnabled: state.closeoutNotifs,
+        baseCurrency: Currency.cad, // Defaulting to CAD to simplify onboarding, user can change in settings
+        rolloverResetType: RolloverResetType.monthly, // Default
+        spendingBaselineDays: 30, // Default
+        defaultPaydayBehavior: PaydayBehavior.confirmActualOnPayday, // Default
+        paydayAnchorRecurringIncomeId: () => null,
+        paydayEnabled: paydayNotifs,
+        billsEnabled: billNotifs,
+        overspendEnabled: overspendNotifs,
+        nightlyCloseoutEnabled: closeoutNotifs,
       );
+
+      // Technically here in a real app we'd save the Trial Opt In via RevenueCat/Server check
+      // For now, we just mark onboarding complete
+      
       await repo.markOnboardingComplete();
 
       state = state.copyWith(isSubmitting: false);

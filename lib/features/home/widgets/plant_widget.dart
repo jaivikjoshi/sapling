@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/sapling_colors.dart';
+import '../../../core/theme/leko_colors.dart';
 import '../../../domain/models/plant_state.dart';
 
 /// A beautiful, CustomPainter-based plant widget driven by [PlantState].
@@ -491,8 +491,8 @@ class _StageLabel extends StatelessWidget {
   static const _growthNames = [
     'Seed',
     'Sprout',
-    'Small Sapling',
-    'Growing Sapling',
+    'Small Leko',
+    'Growing Leko',
     'Young Tree',
     'Mature Tree',
     'Flourishing',
@@ -517,7 +517,7 @@ class _StageLabel extends StatelessWidget {
       style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: SaplingColors.textSecondary.withValues(alpha: 0.7),
+        color: LekoColors.textSecondary.withValues(alpha: 0.7),
         letterSpacing: 0.3,
       ),
     );

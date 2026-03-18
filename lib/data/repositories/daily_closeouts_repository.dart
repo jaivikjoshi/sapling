@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 abstract class DailyCloseoutsRepository {
   Future<void> insert(DailyCloseoutsCompanion companion);
@@ -10,7 +10,7 @@ abstract class DailyCloseoutsRepository {
 }
 
 class DriftDailyCloseoutsRepository implements DailyCloseoutsRepository {
-  final SaplingDatabase _db;
+  final LekoDatabase _db;
 
   DriftDailyCloseoutsRepository(this._db);
 

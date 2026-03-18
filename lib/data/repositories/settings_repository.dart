@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 /// Interface for settings repository (Drift or Supabase implementation).
 abstract class SettingsRepository {
@@ -11,7 +11,7 @@ abstract class SettingsRepository {
 }
 
 class DriftSettingsRepository implements SettingsRepository {
-  final SaplingDatabase _db;
+  final LekoDatabase _db;
 
   DriftSettingsRepository(this._db);
 

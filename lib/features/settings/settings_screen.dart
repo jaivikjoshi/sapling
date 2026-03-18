@@ -119,7 +119,7 @@ class _SettingsBody extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name.isEmpty ? 'Sapling User' : name,
+                        name.isEmpty ? 'Leko User' : name,
                         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF222529)),
                       ),
                       const SizedBox(height: 2),
@@ -259,7 +259,7 @@ class _SettingsBody extends ConsumerWidget {
           Divider(height: 1, indent: 64, color: Colors.grey.shade100),
           _ActionRow(
             icon: Icons.info_outline_rounded,
-            title: 'About Sapling',
+            title: 'About Leko',
             onTap: () {},
           ),
           Divider(height: 1, indent: 64, color: Colors.grey.shade100),

@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'sapling_database.dart';
+part of 'leko_database.dart';
 
 // ignore_for_file: type=lint
 class $AppSettingsTable extends AppSettings
@@ -6630,9 +6630,9 @@ class SchedulerMetadataCompanion
   }
 }
 
-abstract class _$SaplingDatabase extends GeneratedDatabase {
-  _$SaplingDatabase(QueryExecutor e) : super(e);
-  $SaplingDatabaseManager get managers => $SaplingDatabaseManager(this);
+abstract class _$LekoDatabase extends GeneratedDatabase {
+  _$LekoDatabase(QueryExecutor e) : super(e);
+  $LekoDatabaseManager get managers => $LekoDatabaseManager(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
@@ -6733,7 +6733,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
     });
 
 class $$AppSettingsTableFilterComposer
-    extends Composer<_$SaplingDatabase, $AppSettingsTable> {
+    extends Composer<_$LekoDatabase, $AppSettingsTable> {
   $$AppSettingsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -6818,7 +6818,7 @@ class $$AppSettingsTableFilterComposer
 }
 
 class $$AppSettingsTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $AppSettingsTable> {
+    extends Composer<_$LekoDatabase, $AppSettingsTable> {
   $$AppSettingsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -6904,7 +6904,7 @@ class $$AppSettingsTableOrderingComposer
 }
 
 class $$AppSettingsTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $AppSettingsTable> {
+    extends Composer<_$LekoDatabase, $AppSettingsTable> {
   $$AppSettingsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -6990,7 +6990,7 @@ class $$AppSettingsTableAnnotationComposer
 class $$AppSettingsTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $AppSettingsTable,
           AppSetting,
           $$AppSettingsTableFilterComposer,
@@ -7000,12 +7000,12 @@ class $$AppSettingsTableTableManager
           $$AppSettingsTableUpdateCompanionBuilder,
           (
             AppSetting,
-            BaseReferences<_$SaplingDatabase, $AppSettingsTable, AppSetting>,
+            BaseReferences<_$LekoDatabase, $AppSettingsTable, AppSetting>,
           ),
           AppSetting,
           PrefetchHooks Function()
         > {
-  $$AppSettingsTableTableManager(_$SaplingDatabase db, $AppSettingsTable table)
+  $$AppSettingsTableTableManager(_$LekoDatabase db, $AppSettingsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -7108,7 +7108,7 @@ class $$AppSettingsTableTableManager
 
 typedef $$AppSettingsTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $AppSettingsTable,
       AppSetting,
       $$AppSettingsTableFilterComposer,
@@ -7118,7 +7118,7 @@ typedef $$AppSettingsTableProcessedTableManager =
       $$AppSettingsTableUpdateCompanionBuilder,
       (
         AppSetting,
-        BaseReferences<_$SaplingDatabase, $AppSettingsTable, AppSetting>,
+        BaseReferences<_$LekoDatabase, $AppSettingsTable, AppSetting>,
       ),
       AppSetting,
       PrefetchHooks Function()
@@ -7161,7 +7161,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
     });
 
 class $$TransactionsTableFilterComposer
-    extends Composer<_$SaplingDatabase, $TransactionsTable> {
+    extends Composer<_$LekoDatabase, $TransactionsTable> {
   $$TransactionsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7241,7 +7241,7 @@ class $$TransactionsTableFilterComposer
 }
 
 class $$TransactionsTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $TransactionsTable> {
+    extends Composer<_$LekoDatabase, $TransactionsTable> {
   $$TransactionsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7321,7 +7321,7 @@ class $$TransactionsTableOrderingComposer
 }
 
 class $$TransactionsTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $TransactionsTable> {
+    extends Composer<_$LekoDatabase, $TransactionsTable> {
   $$TransactionsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7385,7 +7385,7 @@ class $$TransactionsTableAnnotationComposer
 class $$TransactionsTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $TransactionsTable,
           Transaction,
           $$TransactionsTableFilterComposer,
@@ -7395,15 +7395,13 @@ class $$TransactionsTableTableManager
           $$TransactionsTableUpdateCompanionBuilder,
           (
             Transaction,
-            BaseReferences<_$SaplingDatabase, $TransactionsTable, Transaction>,
+            BaseReferences<_$LekoDatabase, $TransactionsTable, Transaction>,
           ),
           Transaction,
           PrefetchHooks Function()
         > {
-  $$TransactionsTableTableManager(
-    _$SaplingDatabase db,
-    $TransactionsTable table,
-  ) : super(
+  $$TransactionsTableTableManager(_$LekoDatabase db, $TransactionsTable table)
+    : super(
         TableManagerState(
           db: db,
           table: table,
@@ -7499,7 +7497,7 @@ class $$TransactionsTableTableManager
 
 typedef $$TransactionsTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $TransactionsTable,
       Transaction,
       $$TransactionsTableFilterComposer,
@@ -7509,7 +7507,7 @@ typedef $$TransactionsTableProcessedTableManager =
       $$TransactionsTableUpdateCompanionBuilder,
       (
         Transaction,
-        BaseReferences<_$SaplingDatabase, $TransactionsTable, Transaction>,
+        BaseReferences<_$LekoDatabase, $TransactionsTable, Transaction>,
       ),
       Transaction,
       PrefetchHooks Function()
@@ -7536,7 +7534,7 @@ typedef $$CategoriesTableUpdateCompanionBuilder =
     });
 
 class $$CategoriesTableFilterComposer
-    extends Composer<_$SaplingDatabase, $CategoriesTable> {
+    extends Composer<_$LekoDatabase, $CategoriesTable> {
   $$CategoriesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7576,7 +7574,7 @@ class $$CategoriesTableFilterComposer
 }
 
 class $$CategoriesTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $CategoriesTable> {
+    extends Composer<_$LekoDatabase, $CategoriesTable> {
   $$CategoriesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7616,7 +7614,7 @@ class $$CategoriesTableOrderingComposer
 }
 
 class $$CategoriesTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $CategoriesTable> {
+    extends Composer<_$LekoDatabase, $CategoriesTable> {
   $$CategoriesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7648,7 +7646,7 @@ class $$CategoriesTableAnnotationComposer
 class $$CategoriesTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $CategoriesTable,
           Category,
           $$CategoriesTableFilterComposer,
@@ -7658,12 +7656,12 @@ class $$CategoriesTableTableManager
           $$CategoriesTableUpdateCompanionBuilder,
           (
             Category,
-            BaseReferences<_$SaplingDatabase, $CategoriesTable, Category>,
+            BaseReferences<_$LekoDatabase, $CategoriesTable, Category>,
           ),
           Category,
           PrefetchHooks Function()
         > {
-  $$CategoriesTableTableManager(_$SaplingDatabase db, $CategoriesTable table)
+  $$CategoriesTableTableManager(_$LekoDatabase db, $CategoriesTable table)
     : super(
         TableManagerState(
           db: db,
@@ -7727,7 +7725,7 @@ class $$CategoriesTableTableManager
 
 typedef $$CategoriesTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $CategoriesTable,
       Category,
       $$CategoriesTableFilterComposer,
@@ -7735,7 +7733,7 @@ typedef $$CategoriesTableProcessedTableManager =
       $$CategoriesTableAnnotationComposer,
       $$CategoriesTableCreateCompanionBuilder,
       $$CategoriesTableUpdateCompanionBuilder,
-      (Category, BaseReferences<_$SaplingDatabase, $CategoriesTable, Category>),
+      (Category, BaseReferences<_$LekoDatabase, $CategoriesTable, Category>),
       Category,
       PrefetchHooks Function()
     >;
@@ -7766,8 +7764,7 @@ typedef $$GoalsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$GoalsTableFilterComposer
-    extends Composer<_$SaplingDatabase, $GoalsTable> {
+class $$GoalsTableFilterComposer extends Composer<_$LekoDatabase, $GoalsTable> {
   $$GoalsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7822,7 +7819,7 @@ class $$GoalsTableFilterComposer
 }
 
 class $$GoalsTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $GoalsTable> {
+    extends Composer<_$LekoDatabase, $GoalsTable> {
   $$GoalsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7877,7 +7874,7 @@ class $$GoalsTableOrderingComposer
 }
 
 class $$GoalsTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $GoalsTable> {
+    extends Composer<_$LekoDatabase, $GoalsTable> {
   $$GoalsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7926,7 +7923,7 @@ class $$GoalsTableAnnotationComposer
 class $$GoalsTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $GoalsTable,
           Goal,
           $$GoalsTableFilterComposer,
@@ -7934,11 +7931,11 @@ class $$GoalsTableTableManager
           $$GoalsTableAnnotationComposer,
           $$GoalsTableCreateCompanionBuilder,
           $$GoalsTableUpdateCompanionBuilder,
-          (Goal, BaseReferences<_$SaplingDatabase, $GoalsTable, Goal>),
+          (Goal, BaseReferences<_$LekoDatabase, $GoalsTable, Goal>),
           Goal,
           PrefetchHooks Function()
         > {
-  $$GoalsTableTableManager(_$SaplingDatabase db, $GoalsTable table)
+  $$GoalsTableTableManager(_$LekoDatabase db, $GoalsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -8014,7 +8011,7 @@ class $$GoalsTableTableManager
 
 typedef $$GoalsTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $GoalsTable,
       Goal,
       $$GoalsTableFilterComposer,
@@ -8022,7 +8019,7 @@ typedef $$GoalsTableProcessedTableManager =
       $$GoalsTableAnnotationComposer,
       $$GoalsTableCreateCompanionBuilder,
       $$GoalsTableUpdateCompanionBuilder,
-      (Goal, BaseReferences<_$SaplingDatabase, $GoalsTable, Goal>),
+      (Goal, BaseReferences<_$LekoDatabase, $GoalsTable, Goal>),
       Goal,
       PrefetchHooks Function()
     >;
@@ -8060,7 +8057,7 @@ typedef $$RecurringIncomesTableUpdateCompanionBuilder =
     });
 
 class $$RecurringIncomesTableFilterComposer
-    extends Composer<_$SaplingDatabase, $RecurringIncomesTable> {
+    extends Composer<_$LekoDatabase, $RecurringIncomesTable> {
   $$RecurringIncomesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -8130,7 +8127,7 @@ class $$RecurringIncomesTableFilterComposer
 }
 
 class $$RecurringIncomesTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $RecurringIncomesTable> {
+    extends Composer<_$LekoDatabase, $RecurringIncomesTable> {
   $$RecurringIncomesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -8200,7 +8197,7 @@ class $$RecurringIncomesTableOrderingComposer
 }
 
 class $$RecurringIncomesTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $RecurringIncomesTable> {
+    extends Composer<_$LekoDatabase, $RecurringIncomesTable> {
   $$RecurringIncomesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -8262,7 +8259,7 @@ class $$RecurringIncomesTableAnnotationComposer
 class $$RecurringIncomesTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $RecurringIncomesTable,
           RecurringIncome,
           $$RecurringIncomesTableFilterComposer,
@@ -8273,7 +8270,7 @@ class $$RecurringIncomesTableTableManager
           (
             RecurringIncome,
             BaseReferences<
-              _$SaplingDatabase,
+              _$LekoDatabase,
               $RecurringIncomesTable,
               RecurringIncome
             >,
@@ -8282,7 +8279,7 @@ class $$RecurringIncomesTableTableManager
           PrefetchHooks Function()
         > {
   $$RecurringIncomesTableTableManager(
-    _$SaplingDatabase db,
+    _$LekoDatabase db,
     $RecurringIncomesTable table,
   ) : super(
         TableManagerState(
@@ -8378,7 +8375,7 @@ class $$RecurringIncomesTableTableManager
 
 typedef $$RecurringIncomesTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $RecurringIncomesTable,
       RecurringIncome,
       $$RecurringIncomesTableFilterComposer,
@@ -8388,11 +8385,7 @@ typedef $$RecurringIncomesTableProcessedTableManager =
       $$RecurringIncomesTableUpdateCompanionBuilder,
       (
         RecurringIncome,
-        BaseReferences<
-          _$SaplingDatabase,
-          $RecurringIncomesTable,
-          RecurringIncome
-        >,
+        BaseReferences<_$LekoDatabase, $RecurringIncomesTable, RecurringIncome>,
       ),
       RecurringIncome,
       PrefetchHooks Function()
@@ -8430,8 +8423,7 @@ typedef $$BillsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$BillsTableFilterComposer
-    extends Composer<_$SaplingDatabase, $BillsTable> {
+class $$BillsTableFilterComposer extends Composer<_$LekoDatabase, $BillsTable> {
   $$BillsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -8501,7 +8493,7 @@ class $$BillsTableFilterComposer
 }
 
 class $$BillsTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $BillsTable> {
+    extends Composer<_$LekoDatabase, $BillsTable> {
   $$BillsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -8571,7 +8563,7 @@ class $$BillsTableOrderingComposer
 }
 
 class $$BillsTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $BillsTable> {
+    extends Composer<_$LekoDatabase, $BillsTable> {
   $$BillsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -8629,7 +8621,7 @@ class $$BillsTableAnnotationComposer
 class $$BillsTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $BillsTable,
           Bill,
           $$BillsTableFilterComposer,
@@ -8637,11 +8629,11 @@ class $$BillsTableTableManager
           $$BillsTableAnnotationComposer,
           $$BillsTableCreateCompanionBuilder,
           $$BillsTableUpdateCompanionBuilder,
-          (Bill, BaseReferences<_$SaplingDatabase, $BillsTable, Bill>),
+          (Bill, BaseReferences<_$LekoDatabase, $BillsTable, Bill>),
           Bill,
           PrefetchHooks Function()
         > {
-  $$BillsTableTableManager(_$SaplingDatabase db, $BillsTable table)
+  $$BillsTableTableManager(_$LekoDatabase db, $BillsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -8729,7 +8721,7 @@ class $$BillsTableTableManager
 
 typedef $$BillsTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $BillsTable,
       Bill,
       $$BillsTableFilterComposer,
@@ -8737,7 +8729,7 @@ typedef $$BillsTableProcessedTableManager =
       $$BillsTableAnnotationComposer,
       $$BillsTableCreateCompanionBuilder,
       $$BillsTableUpdateCompanionBuilder,
-      (Bill, BaseReferences<_$SaplingDatabase, $BillsTable, Bill>),
+      (Bill, BaseReferences<_$LekoDatabase, $BillsTable, Bill>),
       Bill,
       PrefetchHooks Function()
     >;
@@ -8761,7 +8753,7 @@ typedef $$PersonsTableUpdateCompanionBuilder =
     });
 
 class $$PersonsTableFilterComposer
-    extends Composer<_$SaplingDatabase, $PersonsTable> {
+    extends Composer<_$LekoDatabase, $PersonsTable> {
   $$PersonsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -8796,7 +8788,7 @@ class $$PersonsTableFilterComposer
 }
 
 class $$PersonsTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $PersonsTable> {
+    extends Composer<_$LekoDatabase, $PersonsTable> {
   $$PersonsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -8831,7 +8823,7 @@ class $$PersonsTableOrderingComposer
 }
 
 class $$PersonsTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $PersonsTable> {
+    extends Composer<_$LekoDatabase, $PersonsTable> {
   $$PersonsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -8858,7 +8850,7 @@ class $$PersonsTableAnnotationComposer
 class $$PersonsTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $PersonsTable,
           Person,
           $$PersonsTableFilterComposer,
@@ -8866,11 +8858,11 @@ class $$PersonsTableTableManager
           $$PersonsTableAnnotationComposer,
           $$PersonsTableCreateCompanionBuilder,
           $$PersonsTableUpdateCompanionBuilder,
-          (Person, BaseReferences<_$SaplingDatabase, $PersonsTable, Person>),
+          (Person, BaseReferences<_$LekoDatabase, $PersonsTable, Person>),
           Person,
           PrefetchHooks Function()
         > {
-  $$PersonsTableTableManager(_$SaplingDatabase db, $PersonsTable table)
+  $$PersonsTableTableManager(_$LekoDatabase db, $PersonsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -8930,7 +8922,7 @@ class $$PersonsTableTableManager
 
 typedef $$PersonsTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $PersonsTable,
       Person,
       $$PersonsTableFilterComposer,
@@ -8938,7 +8930,7 @@ typedef $$PersonsTableProcessedTableManager =
       $$PersonsTableAnnotationComposer,
       $$PersonsTableCreateCompanionBuilder,
       $$PersonsTableUpdateCompanionBuilder,
-      (Person, BaseReferences<_$SaplingDatabase, $PersonsTable, Person>),
+      (Person, BaseReferences<_$LekoDatabase, $PersonsTable, Person>),
       Person,
       PrefetchHooks Function()
     >;
@@ -8970,7 +8962,7 @@ typedef $$SplitEntriesTableUpdateCompanionBuilder =
     });
 
 class $$SplitEntriesTableFilterComposer
-    extends Composer<_$SaplingDatabase, $SplitEntriesTable> {
+    extends Composer<_$LekoDatabase, $SplitEntriesTable> {
   $$SplitEntriesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -9025,7 +9017,7 @@ class $$SplitEntriesTableFilterComposer
 }
 
 class $$SplitEntriesTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $SplitEntriesTable> {
+    extends Composer<_$LekoDatabase, $SplitEntriesTable> {
   $$SplitEntriesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -9080,7 +9072,7 @@ class $$SplitEntriesTableOrderingComposer
 }
 
 class $$SplitEntriesTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $SplitEntriesTable> {
+    extends Composer<_$LekoDatabase, $SplitEntriesTable> {
   $$SplitEntriesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -9125,7 +9117,7 @@ class $$SplitEntriesTableAnnotationComposer
 class $$SplitEntriesTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $SplitEntriesTable,
           SplitEntry,
           $$SplitEntriesTableFilterComposer,
@@ -9135,15 +9127,13 @@ class $$SplitEntriesTableTableManager
           $$SplitEntriesTableUpdateCompanionBuilder,
           (
             SplitEntry,
-            BaseReferences<_$SaplingDatabase, $SplitEntriesTable, SplitEntry>,
+            BaseReferences<_$LekoDatabase, $SplitEntriesTable, SplitEntry>,
           ),
           SplitEntry,
           PrefetchHooks Function()
         > {
-  $$SplitEntriesTableTableManager(
-    _$SaplingDatabase db,
-    $SplitEntriesTable table,
-  ) : super(
+  $$SplitEntriesTableTableManager(_$LekoDatabase db, $SplitEntriesTable table)
+    : super(
         TableManagerState(
           db: db,
           table: table,
@@ -9221,7 +9211,7 @@ class $$SplitEntriesTableTableManager
 
 typedef $$SplitEntriesTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $SplitEntriesTable,
       SplitEntry,
       $$SplitEntriesTableFilterComposer,
@@ -9231,7 +9221,7 @@ typedef $$SplitEntriesTableProcessedTableManager =
       $$SplitEntriesTableUpdateCompanionBuilder,
       (
         SplitEntry,
-        BaseReferences<_$SaplingDatabase, $SplitEntriesTable, SplitEntry>,
+        BaseReferences<_$LekoDatabase, $SplitEntriesTable, SplitEntry>,
       ),
       SplitEntry,
       PrefetchHooks Function()
@@ -9254,7 +9244,7 @@ typedef $$SplitSharesTableUpdateCompanionBuilder =
     });
 
 class $$SplitSharesTableFilterComposer
-    extends Composer<_$SaplingDatabase, $SplitSharesTable> {
+    extends Composer<_$LekoDatabase, $SplitSharesTable> {
   $$SplitSharesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -9284,7 +9274,7 @@ class $$SplitSharesTableFilterComposer
 }
 
 class $$SplitSharesTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $SplitSharesTable> {
+    extends Composer<_$LekoDatabase, $SplitSharesTable> {
   $$SplitSharesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -9314,7 +9304,7 @@ class $$SplitSharesTableOrderingComposer
 }
 
 class $$SplitSharesTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $SplitSharesTable> {
+    extends Composer<_$LekoDatabase, $SplitSharesTable> {
   $$SplitSharesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -9342,7 +9332,7 @@ class $$SplitSharesTableAnnotationComposer
 class $$SplitSharesTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $SplitSharesTable,
           SplitShare,
           $$SplitSharesTableFilterComposer,
@@ -9352,12 +9342,12 @@ class $$SplitSharesTableTableManager
           $$SplitSharesTableUpdateCompanionBuilder,
           (
             SplitShare,
-            BaseReferences<_$SaplingDatabase, $SplitSharesTable, SplitShare>,
+            BaseReferences<_$LekoDatabase, $SplitSharesTable, SplitShare>,
           ),
           SplitShare,
           PrefetchHooks Function()
         > {
-  $$SplitSharesTableTableManager(_$SaplingDatabase db, $SplitSharesTable table)
+  $$SplitSharesTableTableManager(_$LekoDatabase db, $SplitSharesTable table)
     : super(
         TableManagerState(
           db: db,
@@ -9414,7 +9404,7 @@ class $$SplitSharesTableTableManager
 
 typedef $$SplitSharesTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $SplitSharesTable,
       SplitShare,
       $$SplitSharesTableFilterComposer,
@@ -9424,7 +9414,7 @@ typedef $$SplitSharesTableProcessedTableManager =
       $$SplitSharesTableUpdateCompanionBuilder,
       (
         SplitShare,
-        BaseReferences<_$SaplingDatabase, $SplitSharesTable, SplitShare>,
+        BaseReferences<_$LekoDatabase, $SplitSharesTable, SplitShare>,
       ),
       SplitShare,
       PrefetchHooks Function()
@@ -9447,7 +9437,7 @@ typedef $$DailyCloseoutsTableUpdateCompanionBuilder =
     });
 
 class $$DailyCloseoutsTableFilterComposer
-    extends Composer<_$SaplingDatabase, $DailyCloseoutsTable> {
+    extends Composer<_$LekoDatabase, $DailyCloseoutsTable> {
   $$DailyCloseoutsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -9477,7 +9467,7 @@ class $$DailyCloseoutsTableFilterComposer
 }
 
 class $$DailyCloseoutsTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $DailyCloseoutsTable> {
+    extends Composer<_$LekoDatabase, $DailyCloseoutsTable> {
   $$DailyCloseoutsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -9507,7 +9497,7 @@ class $$DailyCloseoutsTableOrderingComposer
 }
 
 class $$DailyCloseoutsTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $DailyCloseoutsTable> {
+    extends Composer<_$LekoDatabase, $DailyCloseoutsTable> {
   $$DailyCloseoutsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -9531,7 +9521,7 @@ class $$DailyCloseoutsTableAnnotationComposer
 class $$DailyCloseoutsTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $DailyCloseoutsTable,
           DailyCloseout,
           $$DailyCloseoutsTableFilterComposer,
@@ -9541,17 +9531,13 @@ class $$DailyCloseoutsTableTableManager
           $$DailyCloseoutsTableUpdateCompanionBuilder,
           (
             DailyCloseout,
-            BaseReferences<
-              _$SaplingDatabase,
-              $DailyCloseoutsTable,
-              DailyCloseout
-            >,
+            BaseReferences<_$LekoDatabase, $DailyCloseoutsTable, DailyCloseout>,
           ),
           DailyCloseout,
           PrefetchHooks Function()
         > {
   $$DailyCloseoutsTableTableManager(
-    _$SaplingDatabase db,
+    _$LekoDatabase db,
     $DailyCloseoutsTable table,
   ) : super(
         TableManagerState(
@@ -9612,7 +9598,7 @@ class $$DailyCloseoutsTableTableManager
 
 typedef $$DailyCloseoutsTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $DailyCloseoutsTable,
       DailyCloseout,
       $$DailyCloseoutsTableFilterComposer,
@@ -9622,7 +9608,7 @@ typedef $$DailyCloseoutsTableProcessedTableManager =
       $$DailyCloseoutsTableUpdateCompanionBuilder,
       (
         DailyCloseout,
-        BaseReferences<_$SaplingDatabase, $DailyCloseoutsTable, DailyCloseout>,
+        BaseReferences<_$LekoDatabase, $DailyCloseoutsTable, DailyCloseout>,
       ),
       DailyCloseout,
       PrefetchHooks Function()
@@ -9651,7 +9637,7 @@ typedef $$RecoveryPlansTableUpdateCompanionBuilder =
     });
 
 class $$RecoveryPlansTableFilterComposer
-    extends Composer<_$SaplingDatabase, $RecoveryPlansTable> {
+    extends Composer<_$LekoDatabase, $RecoveryPlansTable> {
   $$RecoveryPlansTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -9696,7 +9682,7 @@ class $$RecoveryPlansTableFilterComposer
 }
 
 class $$RecoveryPlansTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $RecoveryPlansTable> {
+    extends Composer<_$LekoDatabase, $RecoveryPlansTable> {
   $$RecoveryPlansTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -9741,7 +9727,7 @@ class $$RecoveryPlansTableOrderingComposer
 }
 
 class $$RecoveryPlansTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $RecoveryPlansTable> {
+    extends Composer<_$LekoDatabase, $RecoveryPlansTable> {
   $$RecoveryPlansTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -9780,7 +9766,7 @@ class $$RecoveryPlansTableAnnotationComposer
 class $$RecoveryPlansTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $RecoveryPlansTable,
           RecoveryPlan,
           $$RecoveryPlansTableFilterComposer,
@@ -9790,19 +9776,13 @@ class $$RecoveryPlansTableTableManager
           $$RecoveryPlansTableUpdateCompanionBuilder,
           (
             RecoveryPlan,
-            BaseReferences<
-              _$SaplingDatabase,
-              $RecoveryPlansTable,
-              RecoveryPlan
-            >,
+            BaseReferences<_$LekoDatabase, $RecoveryPlansTable, RecoveryPlan>,
           ),
           RecoveryPlan,
           PrefetchHooks Function()
         > {
-  $$RecoveryPlansTableTableManager(
-    _$SaplingDatabase db,
-    $RecoveryPlansTable table,
-  ) : super(
+  $$RecoveryPlansTableTableManager(_$LekoDatabase db, $RecoveryPlansTable table)
+    : super(
         TableManagerState(
           db: db,
           table: table,
@@ -9873,7 +9853,7 @@ class $$RecoveryPlansTableTableManager
 
 typedef $$RecoveryPlansTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $RecoveryPlansTable,
       RecoveryPlan,
       $$RecoveryPlansTableFilterComposer,
@@ -9883,7 +9863,7 @@ typedef $$RecoveryPlansTableProcessedTableManager =
       $$RecoveryPlansTableUpdateCompanionBuilder,
       (
         RecoveryPlan,
-        BaseReferences<_$SaplingDatabase, $RecoveryPlansTable, RecoveryPlan>,
+        BaseReferences<_$LekoDatabase, $RecoveryPlansTable, RecoveryPlan>,
       ),
       RecoveryPlan,
       PrefetchHooks Function()
@@ -9902,7 +9882,7 @@ typedef $$SchedulerMetadataTableUpdateCompanionBuilder =
     });
 
 class $$SchedulerMetadataTableFilterComposer
-    extends Composer<_$SaplingDatabase, $SchedulerMetadataTable> {
+    extends Composer<_$LekoDatabase, $SchedulerMetadataTable> {
   $$SchedulerMetadataTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -9922,7 +9902,7 @@ class $$SchedulerMetadataTableFilterComposer
 }
 
 class $$SchedulerMetadataTableOrderingComposer
-    extends Composer<_$SaplingDatabase, $SchedulerMetadataTable> {
+    extends Composer<_$LekoDatabase, $SchedulerMetadataTable> {
   $$SchedulerMetadataTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -9942,7 +9922,7 @@ class $$SchedulerMetadataTableOrderingComposer
 }
 
 class $$SchedulerMetadataTableAnnotationComposer
-    extends Composer<_$SaplingDatabase, $SchedulerMetadataTable> {
+    extends Composer<_$LekoDatabase, $SchedulerMetadataTable> {
   $$SchedulerMetadataTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -9960,7 +9940,7 @@ class $$SchedulerMetadataTableAnnotationComposer
 class $$SchedulerMetadataTableTableManager
     extends
         RootTableManager<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $SchedulerMetadataTable,
           SchedulerMetadataData,
           $$SchedulerMetadataTableFilterComposer,
@@ -9971,7 +9951,7 @@ class $$SchedulerMetadataTableTableManager
           (
             SchedulerMetadataData,
             BaseReferences<
-              _$SaplingDatabase,
+              _$LekoDatabase,
               $SchedulerMetadataTable,
               SchedulerMetadataData
             >,
@@ -9980,7 +9960,7 @@ class $$SchedulerMetadataTableTableManager
           PrefetchHooks Function()
         > {
   $$SchedulerMetadataTableTableManager(
-    _$SaplingDatabase db,
+    _$LekoDatabase db,
     $SchedulerMetadataTable table,
   ) : super(
         TableManagerState(
@@ -10038,7 +10018,7 @@ class $$SchedulerMetadataTableTableManager
 
 typedef $$SchedulerMetadataTableProcessedTableManager =
     ProcessedTableManager<
-      _$SaplingDatabase,
+      _$LekoDatabase,
       $SchedulerMetadataTable,
       SchedulerMetadataData,
       $$SchedulerMetadataTableFilterComposer,
@@ -10049,7 +10029,7 @@ typedef $$SchedulerMetadataTableProcessedTableManager =
       (
         SchedulerMetadataData,
         BaseReferences<
-          _$SaplingDatabase,
+          _$LekoDatabase,
           $SchedulerMetadataTable,
           SchedulerMetadataData
         >,
@@ -10058,9 +10038,9 @@ typedef $$SchedulerMetadataTableProcessedTableManager =
       PrefetchHooks Function()
     >;
 
-class $SaplingDatabaseManager {
-  final _$SaplingDatabase _db;
-  $SaplingDatabaseManager(this._db);
+class $LekoDatabaseManager {
+  final _$LekoDatabase _db;
+  $LekoDatabaseManager(this._db);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
   $$TransactionsTableTableManager get transactions =>

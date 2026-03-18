@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/allowance_providers.dart';
 import '../../../core/providers/recovery_providers.dart';
-import '../../../core/theme/sapling_colors.dart';
+import '../../../core/theme/leko_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../../data/db/sapling_database.dart';
+import '../../../data/db/leko_database.dart';
 import '../../../domain/models/enums.dart';
 import '../../../domain/services/recovery_plan_service.dart';
 
@@ -43,21 +43,21 @@ class BehindBanner extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: SaplingColors.labelRed.withValues(alpha: 0.1),
+        color: LekoColors.labelRed.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border:
-            Border.all(color: SaplingColors.labelRed.withValues(alpha: 0.3)),
+            Border.all(color: LekoColors.labelRed.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           const Icon(Icons.warning_amber_rounded,
-              color: SaplingColors.labelRed, size: 20),
+              color: LekoColors.labelRed, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Behind by ${formatCurrency(behind)}',
               style: const TextStyle(
-                color: SaplingColors.labelRed,
+                color: LekoColors.labelRed,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -93,15 +93,15 @@ class _ActivePlanChip extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: SaplingColors.labelOrange.withValues(alpha: 0.1),
+        color: LekoColors.labelOrange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: SaplingColors.labelOrange.withValues(alpha: 0.3)),
+            color: LekoColors.labelOrange.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           const Icon(Icons.healing,
-              color: SaplingColors.labelOrange, size: 18),
+              color: LekoColors.labelOrange, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -110,7 +110,7 @@ class _ActivePlanChip extends StatelessWidget {
                 Text(
                   'Recovery: $label',
                   style: const TextStyle(
-                    color: SaplingColors.labelOrange,
+                    color: LekoColors.labelOrange,
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -119,7 +119,7 @@ class _ActivePlanChip extends StatelessWidget {
                   Text(
                     'Today: ${formatCurrency(todayAdj)}',
                     style: TextStyle(
-                      color: SaplingColors.labelRed.withValues(alpha: 0.8),
+                      color: LekoColors.labelRed.withValues(alpha: 0.8),
                       fontSize: 11,
                     ),
                   ),
@@ -137,7 +137,7 @@ class _ActivePlanChip extends StatelessWidget {
             ),
             child: const Text('Cancel',
                 style: TextStyle(
-                    color: SaplingColors.labelOrange, fontSize: 12)),
+                    color: LekoColors.labelOrange, fontSize: 12)),
           ),
         ],
       ),

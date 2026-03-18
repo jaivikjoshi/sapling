@@ -1,21 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/domain/models/daily_snapshot.dart';
-import 'package:sapling/domain/services/allowance_engine.dart';
-import 'package:sapling/domain/services/closeout_service.dart';
-import 'package:sapling/domain/services/cycle_window_calculator.dart';
-import 'package:sapling/domain/widget/snapshot_builder.dart';
+import 'package:leko/domain/models/daily_snapshot.dart';
+import 'package:leko/domain/services/allowance_engine.dart';
+import 'package:leko/domain/services/closeout_service.dart';
+import 'package:leko/domain/services/cycle_window_calculator.dart';
+import 'package:leko/domain/widget/snapshot_builder.dart';
 
 void main() {
   group('SnapshotBuilder.treeStageFromStreak', () {
     test('0 streak returns seedling', () {
       expect(SnapshotBuilder.treeStageFromStreak(0), 'seedling');
     });
-    test('1 streak returns sapling', () {
-      expect(SnapshotBuilder.treeStageFromStreak(1), 'sapling');
+    test('1 streak returns leko', () {
+      expect(SnapshotBuilder.treeStageFromStreak(1), 'leko');
     });
-    test('6 streak returns sapling', () {
-      expect(SnapshotBuilder.treeStageFromStreak(6), 'sapling');
+    test('6 streak returns leko', () {
+      expect(SnapshotBuilder.treeStageFromStreak(6), 'leko');
     });
     test('7 streak returns tree', () {
       expect(SnapshotBuilder.treeStageFromStreak(7), 'tree');
@@ -75,7 +75,7 @@ void main() {
       expect(snapshot.todayAllowance, 85);
       expect(snapshot.behindAmount, 0);
       expect(snapshot.primaryGoalProgress, null);
-      expect(snapshot.treeStage, 'sapling');
+      expect(snapshot.treeStage, 'leko');
       expect(
         snapshot.closeoutStatus,
         '3 days streak · Within budget',
@@ -89,7 +89,7 @@ void main() {
         todayAllowance: 50,
         behindAmount: 10,
         primaryGoalProgress: 0.25,
-        treeStage: 'sapling',
+        treeStage: 'leko',
         closeoutStatus: '2 days streak · Within budget',
         timestamp: DateTime(2025, 6, 15, 12, 0),
       );

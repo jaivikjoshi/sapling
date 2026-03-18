@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 /// Converts Drift Companions to Supabase (snake_case) maps for insert/update.
 /// Used by Supabase repositories that keep the Companion API.

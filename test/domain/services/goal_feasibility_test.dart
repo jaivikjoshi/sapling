@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/data/db/sapling_database.dart';
-import 'package:sapling/domain/services/goal_feasibility_service.dart';
+import 'package:leko/data/db/leko_database.dart';
+import 'package:leko/domain/services/goal_feasibility_service.dart';
 
 void main() {
   Goal makeGoal({

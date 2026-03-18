@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../data/repositories/split_entries_repository.dart';
 import '../../data/repositories/split_shares_repository.dart';
 import '../../data/repositories/transactions_repository.dart';

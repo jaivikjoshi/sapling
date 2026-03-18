@@ -4,9 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/providers/bills_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import 'bill_form_sheet.dart';
 import 'mark_paid_sheet.dart';
@@ -232,13 +232,13 @@ class _SummaryCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: SaplingColors.secondary.withValues(alpha: 0.1),
+                  color: LekoColors.secondary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.calendar_month_outlined,
                   size: 16,
-                  color: SaplingColors.secondary,
+                  color: LekoColors.secondary,
                 ),
               ),
               const SizedBox(width: 12),
@@ -301,8 +301,8 @@ class _BillTilePremium extends ConsumerWidget {
     String statusStr = 'Upcoming';
 
     if (daysUntil < 0) {
-      statusBg = SaplingColors.labelGreen.withValues(alpha: 0.15);
-      statusText = SaplingColors.labelGreen;
+      statusBg = LekoColors.labelGreen.withValues(alpha: 0.15);
+      statusText = LekoColors.labelGreen;
       statusStr = 'Processed';
     } else if (isDueSoon) {
       statusBg = _Tok.statusDueSoonBg;
@@ -555,9 +555,9 @@ class _BillTilePremium extends ConsumerWidget {
   }
 
   Color _labelColor(SpendLabel label) => switch (label) {
-    SpendLabel.green => SaplingColors.labelGreen,
-    SpendLabel.orange => SaplingColors.labelOrange,
-    SpendLabel.red => SaplingColors.labelRed,
+    SpendLabel.green => LekoColors.labelGreen,
+    SpendLabel.orange => LekoColors.labelOrange,
+    SpendLabel.red => LekoColors.labelRed,
   };
 }
 
@@ -577,13 +577,13 @@ class _EmptyState extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: SaplingColors.secondary.withValues(alpha: 0.05),
+              color: LekoColors.secondary.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.receipt_long_outlined,
               size: 48,
-              color: SaplingColors.secondary.withValues(alpha: 0.5),
+              color: LekoColors.secondary.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 24),

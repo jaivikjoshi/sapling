@@ -1,6 +1,6 @@
 import '../../core/utils/date_helpers.dart';
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../models/enums.dart';
 
 /// Projects future income and bills into a window [start, end).

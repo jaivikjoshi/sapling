@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/split_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 
 class SettleSplitSheet extends ConsumerStatefulWidget {
   const SettleSplitSheet({super.key, required this.splitEntryId});
@@ -30,7 +30,7 @@ class _SettleSplitSheetState extends ConsumerState<SettleSplitSheet> {
           const SizedBox(height: 8),
           Text(
             'This will mark the split as settled. Balances will update. No bank transaction is created.',
-            style: TextStyle(color: SaplingColors.textSecondary),
+            style: TextStyle(color: LekoColors.textSecondary),
           ),
           const SizedBox(height: 24),
           Row(

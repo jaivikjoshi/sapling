@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/leko_colors.dart';
 import '../onboarding_controller.dart';
 import 'step_scaffold.dart';
 
@@ -18,8 +19,10 @@ class _BalanceStepState extends ConsumerState<BalanceStep> {
   @override
   void initState() {
     super.initState();
-    final balance = ref.read(onboardingControllerProvider).startingBalance;
-    if (balance != 0) _controller.text = balance.toStringAsFixed(2);
+    final currentBalance = ref.read(onboardingControllerProvider).startingBalance;
+    if (currentBalance > 0) {
+      _controller.text = currentBalance.toStringAsFixed(0);
+    }
   }
 
   @override
@@ -28,38 +31,92 @@ class _BalanceStepState extends ConsumerState<BalanceStep> {
     super.dispose();
   }
 
+  void _onBalanceChanged(String value) {
+    final cleanValue = value.replaceAll(RegExp(r'[^0-9]'), '');
+    final balance = double.tryParse(cleanValue) ?? 0.0;
+    ref.read(onboardingControllerProvider.notifier).setBalance(balance);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ctrl = ref.read(onboardingControllerProvider.notifier);
-    final currency = ref.watch(
-      onboardingControllerProvider.select((s) => s.currency),
-    );
-    final symbol = currency.name.toUpperCase();
+    final balance = ref.watch(onboardingControllerProvider.select((s) => s.startingBalance));
 
     return StepScaffold(
       step: OnboardingStep.balance,
-      title: 'Starting balance',
-      subtitle:
-          'Enter your current chequing account balance in $symbol.',
-      onNext: () {
-        final value = double.tryParse(_controller.text) ?? 0;
-        ctrl.setBalance(value);
-        ctrl.next();
-      },
-      onBack: () => ctrl.back(),
-      child: TextField(
-        controller: _controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-        ],
-        style: Theme.of(context).textTheme.headlineMedium,
-        decoration: InputDecoration(
-          prefixText: '\$ ',
-          hintText: '0.00',
-          prefixStyle: Theme.of(context).textTheme.headlineMedium,
+      title: 'Liquid Reality',
+      subtitle: 'How much money is in your primary checking account right now? Don\'t include savings or credit cards.',
+      nextLabel: 'Set Baseline',
+      canProceed: balance > 0,
+      onNext: () => ref.read(onboardingControllerProvider.notifier).next(),
+      onBack: () => ref.read(onboardingControllerProvider.notifier).back(),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              decoration: BoxDecoration(
+                color: LekoColors.onboardingSurface,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text(
+                    '\$',
+                    style: TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.w700,
+                      color: LekoColors.onboardingTextSecondary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IntrinsicWidth(
+                    child: TextField(
+                      controller: _controller,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onChanged: _onBalanceChanged,
+                      style: const TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.w700,
+                        color: LekoColors.onboardingTextPrimary,
+                        letterSpacing: -1,
+                      ),
+                      cursorColor: LekoColors.onboardingFill,
+                      decoration: InputDecoration(
+                        filled: false,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        hintText: '0',
+                        hintStyle: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w700,
+                          color: LekoColors.onboardingTextSecondary,
+                        ).copyWith(color: LekoColors.onboardingTextSecondary.withValues(alpha: 0.3)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Rough estimates are perfectly fine. You can adjust this later.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: LekoColors.onboardingTextSecondary.withOpacity(0.8),
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 48),
+          ],
         ),
-        autofocus: true,
       ),
     );
   }

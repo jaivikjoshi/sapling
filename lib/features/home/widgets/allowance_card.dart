@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/providers/allowance_providers.dart';
-import '../../../core/theme/sapling_colors.dart';
+import '../../../core/theme/leko_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/models/enums.dart';
 import '../../../domain/services/allowance_engine.dart';
@@ -42,7 +42,7 @@ class _ModeToggle extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: SaplingColors.secondary.withValues(alpha: 0.3),
+          color: LekoColors.secondary.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -53,11 +53,11 @@ class _ModeToggle extends ConsumerWidget {
               style: Theme.of(context)
                   .textTheme
                   .labelSmall
-                  ?.copyWith(color: SaplingColors.secondary),
+                  ?.copyWith(color: LekoColors.secondary),
             ),
             const SizedBox(width: 4),
             const Icon(Icons.swap_horiz,
-                size: 14, color: SaplingColors.secondary),
+                size: 14, color: LekoColors.secondary),
           ],
         ),
       ),
@@ -87,7 +87,7 @@ class _PaycheckCard extends ConsumerWidget {
   Widget _buildPaycheckData(BuildContext context, PaycheckAllowanceResult r) {
     final dateFmt = DateFormat.MMMd();
     return Card(
-      color: SaplingColors.primary,
+      color: LekoColors.primary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(28),
       ),
@@ -104,7 +104,7 @@ class _PaycheckCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: SaplingColors.background, letterSpacing: 0.2)),
+                        ?.copyWith(color: LekoColors.background, letterSpacing: 0.2)),
                 const _ModeToggle(),
               ],
             ),
@@ -128,8 +128,8 @@ class _PaycheckCard extends ConsumerWidget {
                   label: 'Banked',
                   value: formatCurrency(r.bankedAllowance),
                   valueColor: r.bankedAllowance >= 0
-                      ? SaplingColors.secondary
-                      : SaplingColors.accent,
+                      ? LekoColors.secondary
+                      : LekoColors.accent,
                 ),
                 _MiniStatBlock(
                   label: 'Days left',
@@ -154,7 +154,7 @@ class _PaycheckCard extends ConsumerWidget {
   Widget _buildShell(BuildContext context,
       {bool loading = false, String? error}) {
     return Card(
-      color: SaplingColors.primary,
+      color: LekoColors.primary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(28),
       ),
@@ -171,7 +171,7 @@ class _PaycheckCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: SaplingColors.background, letterSpacing: 0.2)),
+                        ?.copyWith(color: LekoColors.background, letterSpacing: 0.2)),
                 const _ModeToggle(),
               ],
             ),
@@ -180,13 +180,13 @@ class _PaycheckCard extends ConsumerWidget {
               const SizedBox(
                 height: 56, width: 150,
                 child: LinearProgressIndicator(
-                  color: SaplingColors.secondary,
-                  backgroundColor: SaplingColors.support,
+                  color: LekoColors.secondary,
+                  backgroundColor: LekoColors.support,
                 ),
               )
             else if (error != null)
               Text(error,
-                  style: const TextStyle(color: SaplingColors.labelRed)),
+                  style: const TextStyle(color: LekoColors.labelRed)),
             const SizedBox(height: 32),
           ],
         ),
@@ -217,7 +217,7 @@ class _GoalCard extends ConsumerWidget {
   Widget _buildGoalData(BuildContext context, GoalAllowanceResult r) {
     final dateFmt = DateFormat.MMMd();
     return Card(
-      color: SaplingColors.primary,
+      color: LekoColors.primary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(28),
       ),
@@ -234,7 +234,7 @@ class _GoalCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: SaplingColors.background, letterSpacing: 0.2)),
+                        ?.copyWith(color: LekoColors.background, letterSpacing: 0.2)),
                 const _ModeToggle(),
               ],
             ),
@@ -268,8 +268,8 @@ class _GoalCard extends ConsumerWidget {
                   label: 'Banked',
                   value: formatCurrency(r.bankedAllowance),
                   valueColor: r.bankedAllowance >= 0
-                      ? SaplingColors.secondary
-                      : SaplingColors.accent,
+                      ? LekoColors.secondary
+                      : LekoColors.accent,
                   crossAxisAlignment: CrossAxisAlignment.end,
                 ),
               ],
@@ -286,7 +286,7 @@ class _GoalCard extends ConsumerWidget {
 
   Widget _buildNoGoal(BuildContext context) {
     return Card(
-      color: SaplingColors.primary,
+      color: LekoColors.primary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(28),
       ),
@@ -303,7 +303,7 @@ class _GoalCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: SaplingColors.background, letterSpacing: 0.2)),
+                        ?.copyWith(color: LekoColors.background, letterSpacing: 0.2)),
                 const _ModeToggle(),
               ],
             ),
@@ -313,7 +313,7 @@ class _GoalCard extends ConsumerWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
-                  ?.copyWith(color: SaplingColors.background.withValues(alpha: 0.7)),
+                  ?.copyWith(color: LekoColors.background.withValues(alpha: 0.7)),
             ),
             const SizedBox(height: 16),
           ],
@@ -325,7 +325,7 @@ class _GoalCard extends ConsumerWidget {
   Widget _buildGoalShell(BuildContext context,
       {bool loading = false, String? error}) {
     return Card(
-      color: SaplingColors.primary,
+      color: LekoColors.primary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(28),
       ),
@@ -342,7 +342,7 @@ class _GoalCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: SaplingColors.background, letterSpacing: 0.2)),
+                        ?.copyWith(color: LekoColors.background, letterSpacing: 0.2)),
                 const _ModeToggle(),
               ],
             ),
@@ -351,13 +351,13 @@ class _GoalCard extends ConsumerWidget {
               const SizedBox(
                 height: 56, width: 150,
                 child: LinearProgressIndicator(
-                  color: SaplingColors.secondary,
-                  backgroundColor: SaplingColors.support,
+                  color: LekoColors.secondary,
+                  backgroundColor: LekoColors.support,
                 ),
               )
             else if (error != null)
               Text(error,
-                  style: const TextStyle(color: SaplingColors.labelRed)),
+                  style: const TextStyle(color: LekoColors.labelRed)),
             const SizedBox(height: 32),
           ],
         ),
@@ -378,7 +378,7 @@ class _FeasibilityWarning extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: SaplingColors.labelRed.withValues(alpha: 0.15),
+        color: LekoColors.labelRed.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -387,7 +387,7 @@ class _FeasibilityWarning extends StatelessWidget {
           Text(
             'Short by ${formatCurrency(feasibility.deficit)}',
             style: const TextStyle(
-              color: SaplingColors.labelRed,
+              color: LekoColors.labelRed,
               fontWeight: FontWeight.w600,
               fontSize: 12,
             ),
@@ -398,7 +398,7 @@ class _FeasibilityWarning extends StatelessWidget {
               child: Text(
                 'Suggested date: ${dateFmt.format(feasibility.suggestedDate!)}',
                 style: TextStyle(
-                  color: SaplingColors.accent.withValues(alpha: 0.8),
+                  color: LekoColors.accent.withValues(alpha: 0.8),
                   fontSize: 11,
                 ),
               ),
@@ -432,7 +432,7 @@ class _InfoRow extends StatelessWidget {
                 .textTheme
                 .bodySmall
                 ?.copyWith(
-                    color: SaplingColors.background.withValues(alpha: 0.7))),
+                    color: LekoColors.background.withValues(alpha: 0.7))),
         Flexible(
           child: Text(value,
               style: Theme.of(context)
@@ -467,7 +467,7 @@ class _MiniStatBlock extends StatelessWidget {
         Text(
           label.toUpperCase(),
           style: TextStyle(
-            color: SaplingColors.background.withValues(alpha: 0.6),
+            color: LekoColors.background.withValues(alpha: 0.6),
             fontSize: 10,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,

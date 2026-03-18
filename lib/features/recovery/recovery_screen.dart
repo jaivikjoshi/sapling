@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/recovery_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/services/recovery_plan_service.dart';
 
 class RecoveryScreen extends ConsumerWidget {
@@ -61,23 +61,23 @@ class _PlanDetail extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Overspend Amount',
-                    style: TextStyle(color: SaplingColors.textSecondary)),
+                    style: TextStyle(color: LekoColors.textSecondary)),
                 Text(
                   formatCurrency(plan.overspendAmount),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: SaplingColors.labelRed,
+                        color: LekoColors.labelRed,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
                 const SizedBox(height: 12),
                 Text('Today\'s adjustment',
-                    style: TextStyle(color: SaplingColors.textSecondary)),
+                    style: TextStyle(color: LekoColors.textSecondary)),
                 Text(
                   formatCurrency(todayAdj),
                   style: TextStyle(
                     color: todayAdj < 0
-                        ? SaplingColors.labelRed
-                        : SaplingColors.secondary,
+                        ? LekoColors.labelRed
+                        : LekoColors.secondary,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
@@ -100,14 +100,14 @@ class _PlanDetail extends ConsumerWidget {
                   _isToday(adj.date) ? Icons.today : Icons.calendar_today,
                   size: 18,
                   color: _isToday(adj.date)
-                      ? SaplingColors.labelRed
-                      : SaplingColors.textSecondary,
+                      ? LekoColors.labelRed
+                      : LekoColors.textSecondary,
                 ),
                 title: Text(dateFmt.format(adj.date)),
                 trailing: Text(
                   formatCurrency(adj.adjustment),
                   style: const TextStyle(
-                      color: SaplingColors.labelRed,
+                      color: LekoColors.labelRed,
                       fontWeight: FontWeight.w600),
                 ),
               )),
@@ -118,7 +118,7 @@ class _PlanDetail extends ConsumerWidget {
             await ref.read(recoveryPlanServiceProvider).cancel(plan.id);
           },
           style: OutlinedButton.styleFrom(
-              foregroundColor: SaplingColors.labelRed),
+              foregroundColor: LekoColors.labelRed),
           child: const Text('Cancel Recovery Plan'),
         ),
       ],

@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/split_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/services/split_service.dart';
 import 'settle_split_sheet.dart';
 
@@ -107,12 +107,12 @@ class _SplitDetailBody extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Text(
                         '${dateFmt.format(entry.date)} • ${formatCurrency(entry.totalAmount)}',
-                        style: TextStyle(color: SaplingColors.textSecondary),
+                        style: TextStyle(color: LekoColors.textSecondary),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Paid by: $paidByName',
-                        style: TextStyle(color: SaplingColors.textSecondary),
+                        style: TextStyle(color: LekoColors.textSecondary),
                       ),
                     ],
                   ),
@@ -122,7 +122,7 @@ class _SplitDetailBody extends ConsumerWidget {
               Text(
                 'Shares',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: SaplingColors.textSecondary,
+                      color: LekoColors.textSecondary,
                     ),
               ),
               const SizedBox(height: 8),

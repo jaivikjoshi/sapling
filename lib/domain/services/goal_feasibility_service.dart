@@ -1,4 +1,4 @@
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 
 class GoalFeasibilityResult {
   final bool isFeasible;

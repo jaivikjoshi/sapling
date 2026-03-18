@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../data/repositories/recurring_income_repository.dart';
 import '../../data/repositories_supabase/supabase_recurring_income_repository.dart';
 import '../../domain/services/recurring_income_service.dart';

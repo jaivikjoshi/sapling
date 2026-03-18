@@ -2,12 +2,12 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/data/db/sapling_database.dart';
-import 'package:sapling/data/repositories/daily_closeouts_repository.dart';
-import 'package:sapling/domain/models/enums.dart';
-import 'package:sapling/domain/models/settings_model.dart';
-import 'package:sapling/domain/services/allowance_engine.dart';
-import 'package:sapling/domain/services/closeout_service.dart';
+import 'package:leko/data/db/leko_database.dart';
+import 'package:leko/data/repositories/daily_closeouts_repository.dart';
+import 'package:leko/domain/models/enums.dart';
+import 'package:leko/domain/models/settings_model.dart';
+import 'package:leko/domain/services/allowance_engine.dart';
+import 'package:leko/domain/services/closeout_service.dart';
 
 UserSettings get _testSettings => UserSettings.defaults;
 
@@ -25,13 +25,13 @@ class FakeAllowanceEngineForStreak extends AllowanceEngineForStreak {
 }
 
 void main() {
-  late SaplingDatabase db;
+  late LekoDatabase db;
   late DailyCloseoutsRepository repo;
   late FakeAllowanceEngineForStreak fakeEngine;
   late CloseoutService service;
 
   setUp(() {
-    db = SaplingDatabase.forTesting(NativeDatabase.memory());
+    db = LekoDatabase.forTesting(NativeDatabase.memory());
     repo = DriftDailyCloseoutsRepository(db);
     fakeEngine = FakeAllowanceEngineForStreak();
     service = CloseoutService(repo, fakeEngine);

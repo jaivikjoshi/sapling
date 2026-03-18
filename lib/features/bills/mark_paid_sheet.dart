@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../core/providers/bills_providers.dart';
 import '../../core/providers/widget_snapshot_providers.dart';
-import '../../core/theme/sapling_colors.dart';
-import '../../data/db/sapling_database.dart';
+import '../../core/theme/leko_colors.dart';
+import '../../data/db/leko_database.dart';
 
 class MarkPaidSheet extends ConsumerStatefulWidget {
   const MarkPaidSheet({super.key, required this.bill});
@@ -53,7 +53,7 @@ class _MarkPaidSheetState extends ConsumerState<MarkPaidSheet> {
           const SizedBox(height: 4),
           Text(widget.bill.name,
               style: TextStyle(
-                  color: SaplingColors.textSecondary, fontSize: 14)),
+                  color: LekoColors.textSecondary, fontSize: 14)),
           const SizedBox(height: 16),
           TextFormField(
             controller: _amountCtrl,
@@ -88,7 +88,7 @@ class _MarkPaidSheetState extends ConsumerState<MarkPaidSheet> {
             'This creates an expense transaction and advances the '
             'next due date.',
             style: TextStyle(
-                color: SaplingColors.textSecondary, fontSize: 12),
+                color: LekoColors.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 16),
           ElevatedButton(

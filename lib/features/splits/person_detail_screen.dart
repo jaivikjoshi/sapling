@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/split_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/services/split_service.dart';
 import 'settle_split_sheet.dart';
 
@@ -46,7 +46,7 @@ class PersonDetailScreen extends ConsumerWidget {
                 Text(
                   'Open splits with $name',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: SaplingColors.textSecondary,
+                        color: LekoColors.textSecondary,
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -78,12 +78,12 @@ class _BalanceCard extends StatelessWidget {
             if (owedToYou > 0)
               Row(
                 children: [
-                  Icon(Icons.arrow_downward, color: SaplingColors.labelGreen, size: 20),
+                  Icon(Icons.arrow_downward, color: LekoColors.labelGreen, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     'Owed to you: ${formatCurrency(owedToYou)}',
                     style: TextStyle(
-                      color: SaplingColors.labelGreen,
+                      color: LekoColors.labelGreen,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -93,12 +93,12 @@ class _BalanceCard extends StatelessWidget {
               if (owedToYou > 0) const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.arrow_upward, color: SaplingColors.labelRed, size: 20),
+                  Icon(Icons.arrow_upward, color: LekoColors.labelRed, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     'You owe: ${formatCurrency(youOwe)}',
                     style: TextStyle(
-                      color: SaplingColors.labelRed,
+                      color: LekoColors.labelRed,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -108,7 +108,7 @@ class _BalanceCard extends StatelessWidget {
             if (owedToYou == 0 && youOwe == 0)
               Text(
                 'No open balance with $name',
-                style: TextStyle(color: SaplingColors.textSecondary),
+                style: TextStyle(color: LekoColors.textSecondary),
               ),
           ],
         ),
@@ -132,7 +132,7 @@ class _OpenSplitsForPerson extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Text(
           'No open splits',
-          style: TextStyle(color: SaplingColors.textSecondary),
+          style: TextStyle(color: LekoColors.textSecondary),
         ),
       );
     }

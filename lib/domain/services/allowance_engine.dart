@@ -1,5 +1,5 @@
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../data/repositories/bills_repository.dart';
 import '../../data/repositories/goals_repository.dart';
 import '../../data/repositories/recurring_income_repository.dart';

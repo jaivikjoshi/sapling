@@ -64,15 +64,17 @@ class AuthScaffold extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 440),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
+                  child: SingleChildScrollView(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 440),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                           const Text(
-                            'sapling',
+                            'leko',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontFamily: 'Georgia',
@@ -123,6 +125,7 @@ class AuthScaffold extends StatelessWidget {
                       ),
                     ),
                   ),
+                ),
                 ),
               ],
             ),

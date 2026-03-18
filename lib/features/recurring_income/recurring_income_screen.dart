@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/recurring_income_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../domain/services/recurring_income_service.dart';
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import 'recurring_income_form_sheet.dart';
 
@@ -23,7 +23,7 @@ class RecurringIncomeScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         heroTag: 'recurring_income_fab',
         onPressed: () => _showForm(context),
-        backgroundColor: SaplingColors.secondary,
+        backgroundColor: LekoColors.secondary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: incomesAsync.when(
@@ -79,7 +79,7 @@ class RecurringIncomeScreen extends ConsumerWidget {
               await service.delete(income.id);
             },
             child: Text('Delete',
-                style: TextStyle(color: SaplingColors.error)),
+                style: TextStyle(color: LekoColors.error)),
           ),
         ],
       ),
@@ -97,13 +97,13 @@ class _EmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.account_balance_wallet_outlined,
-              size: 64, color: SaplingColors.textSecondary),
+              size: 64, color: LekoColors.textSecondary),
           const SizedBox(height: 16),
           Text('No recurring income yet',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Text('Tap + to add an income schedule',
-              style: TextStyle(color: SaplingColors.textSecondary)),
+              style: TextStyle(color: LekoColors.textSecondary)),
         ],
       ),
     );
@@ -163,7 +163,7 @@ class _IncomeTile extends StatelessWidget {
   Widget _buildLeading() {
     return CircleAvatar(
       backgroundColor:
-          income.isPaydayAnchor ? SaplingColors.secondary : SaplingColors.support,
+          income.isPaydayAnchor ? LekoColors.secondary : LekoColors.support,
       child: Icon(
         income.isPaydayAnchor ? Icons.star : Icons.attach_money,
         color: Colors.white,
@@ -188,6 +188,6 @@ class _IncomeTile extends StatelessWidget {
       parts.add('⚓ Anchor');
     }
     return Text(parts.join(' · '),
-        style: TextStyle(color: SaplingColors.textSecondary, fontSize: 12));
+        style: TextStyle(color: LekoColors.textSecondary, fontSize: 12));
   }
 }

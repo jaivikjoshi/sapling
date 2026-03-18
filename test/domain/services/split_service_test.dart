@@ -2,16 +2,16 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/data/db/sapling_database.dart';
-import 'package:sapling/data/repositories/persons_repository.dart';
-import 'package:sapling/data/repositories/persons_repository.dart';
-import 'package:sapling/data/repositories/split_entries_repository.dart';
-import 'package:sapling/data/repositories/split_shares_repository.dart';
-import 'package:sapling/data/repositories/transactions_repository.dart';
-import 'package:sapling/domain/services/split_service.dart';
+import 'package:leko/data/db/leko_database.dart';
+import 'package:leko/data/repositories/persons_repository.dart';
+import 'package:leko/data/repositories/persons_repository.dart';
+import 'package:leko/data/repositories/split_entries_repository.dart';
+import 'package:leko/data/repositories/split_shares_repository.dart';
+import 'package:leko/data/repositories/transactions_repository.dart';
+import 'package:leko/domain/services/split_service.dart';
 
 void main() {
-  late SaplingDatabase db;
+  late LekoDatabase db;
   late SplitEntriesRepository entriesRepo;
   late SplitSharesRepository sharesRepo;
   late TransactionsRepository txnRepo;
@@ -19,7 +19,7 @@ void main() {
   late SplitService service;
 
   setUp(() async {
-    db = SaplingDatabase.forTesting(NativeDatabase.memory());
+    db = LekoDatabase.forTesting(NativeDatabase.memory());
     entriesRepo = DriftSplitEntriesRepository(db);
     sharesRepo = DriftSplitSharesRepository(db);
     txnRepo = DriftTransactionsRepository(db);

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/closeout_providers.dart';
 import '../../core/providers/ledger_providers.dart';
 import '../../core/providers/plant_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../domain/models/plant_state.dart';
 import '../transactions/reconcile_sheet.dart';
@@ -25,12 +25,12 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Sapling',
+          'Leko',
           style: TextStyle(
             fontFamily: 'Georgia', // Premium editorial serif fallback
             fontSize: 28,
             fontWeight: FontWeight.w700,
-            color: SaplingColors.primary,
+            color: LekoColors.primary,
             letterSpacing: -0.5,
           ),
         ),
@@ -115,7 +115,7 @@ class _PlantSectionState extends State<_PlantSection> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
-        color: SaplingColors.surface,
+        color: LekoColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -141,7 +141,7 @@ class _PlantSectionState extends State<_PlantSection> {
                 'Health: ${_debug.healthScore} (stage ${_debug.healthStage})',
                 style: TextStyle(
                   fontSize: 10,
-                  color: SaplingColors.textSecondary.withValues(alpha: 0.6),
+                  color: LekoColors.textSecondary.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -164,7 +164,7 @@ class _DebugBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: SaplingColors.secondary.withValues(alpha: 0.12),
+          color: LekoColors.secondary.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -172,7 +172,7 @@ class _DebugBtn extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: SaplingColors.primary,
+            color: LekoColors.primary,
           ),
         ),
       ),
@@ -197,7 +197,7 @@ class _BalanceCard extends ConsumerWidget {
               Text(
                 'Current Balance',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: SaplingColors.textSecondary,
+                  color: LekoColors.textSecondary,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                 ),
@@ -207,7 +207,7 @@ class _BalanceCard extends ConsumerWidget {
                 width: 8,
                 height: 8,
                 decoration: const BoxDecoration(
-                  color: SaplingColors.secondary,
+                  color: LekoColors.secondary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -215,7 +215,7 @@ class _BalanceCard extends ConsumerWidget {
               Text(
                 'USD',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: SaplingColors.textSecondary,
+                  color: LekoColors.textSecondary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -230,7 +230,7 @@ class _BalanceCard extends ConsumerWidget {
                     fontWeight: FontWeight.w700,
                     fontSize: 42,
                     letterSpacing: -1.5,
-                    color: SaplingColors.primary,
+                    color: LekoColors.primary,
                   ),
                 ),
             loading:
@@ -238,14 +238,14 @@ class _BalanceCard extends ConsumerWidget {
                   height: 48,
                   width: 150,
                   child: LinearProgressIndicator(
-                    color: SaplingColors.shimmer,
+                    color: LekoColors.shimmer,
                     backgroundColor: Colors.transparent,
                   ),
                 ),
             error:
                 (e, _) => Text(
                   'Error: $e',
-                  style: const TextStyle(color: SaplingColors.error),
+                  style: const TextStyle(color: LekoColors.error),
                 ),
           ),
         ],
@@ -268,13 +268,13 @@ class _CloseoutStatusCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(24),
         child: Container(
           decoration: BoxDecoration(
-            color: SaplingColors.secondary.withValues(alpha: 0.15),
+            color: LekoColors.secondary.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(24),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              const Icon(Icons.eco, color: SaplingColors.secondary, size: 20),
+              const Icon(Icons.eco, color: LekoColors.secondary, size: 20),
               const SizedBox(width: 8),
               streakAsync.when(
                 data:
@@ -282,7 +282,7 @@ class _CloseoutStatusCard extends ConsumerWidget {
                       '${s.currentStreak}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: SaplingColors.secondary,
+                        color: LekoColors.secondary,
                         fontSize: 16,
                       ),
                     ),
@@ -294,7 +294,7 @@ class _CloseoutStatusCard extends ConsumerWidget {
                 'Budget streak...',
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
-                  color: SaplingColors.secondary.withValues(alpha: 0.8),
+                  color: LekoColors.secondary.withValues(alpha: 0.8),
                   fontSize: 14,
                 ),
               ),
@@ -331,26 +331,26 @@ class _QuickActions extends StatelessWidget {
           _ActionButton(
             icon: Icons.horizontal_rule_rounded,
             label: 'Expense',
-            color: SaplingColors.accent,
+            color: LekoColors.accent,
             onTap: onAddExpense,
           ),
           _ActionButton(
             icon: Icons.attach_money_rounded,
             label: 'Income',
-            color: SaplingColors.secondary,
+            color: LekoColors.secondary,
             onTap: onAddIncome,
           ),
           _ActionButton(
             icon: Icons.receipt_long_rounded,
             label: 'Pay Bill',
-            color: SaplingColors.surfaceNav,
+            color: LekoColors.surfaceNav,
             onTap: onMarkBillPaid,
             iconColor: Colors.white,
           ),
           _ActionButton(
             icon: Icons.call_split_rounded,
             label: 'Split',
-            color: SaplingColors.secondary.withValues(alpha: 0.4),
+            color: LekoColors.secondary.withValues(alpha: 0.4),
             onTap: onSplits,
           ),
         ],
@@ -396,7 +396,7 @@ class _ActionButton extends StatelessWidget {
                   icon,
                   color:
                       iconColor ??
-                      (color.a == 1.0 ? color : SaplingColors.primary),
+                      (color.a == 1.0 ? color : LekoColors.primary),
                   size: 32,
                 ),
               ),
@@ -407,7 +407,7 @@ class _ActionButton extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: SaplingColors.textPrimary,
+            color: LekoColors.textPrimary,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
@@ -463,7 +463,7 @@ class _RecentTransactions extends ConsumerWidget {
                 child: Center(
                   child: Text(
                     'No transactions yet.',
-                    style: TextStyle(color: SaplingColors.textSecondary),
+                    style: TextStyle(color: LekoColors.textSecondary),
                   ),
                 ),
               );

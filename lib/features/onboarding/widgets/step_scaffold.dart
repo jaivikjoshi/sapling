@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/sapling_colors.dart';
+import '../../../core/theme/leko_colors.dart';
 import '../onboarding_controller.dart';
 
 class StepScaffold extends StatelessWidget {
@@ -7,22 +7,26 @@ class StepScaffold extends StatelessWidget {
     super.key,
     required this.step,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.child,
     required this.onNext,
     this.onBack,
     this.nextLabel = 'Continue',
+    this.secondaryLabel,
+    this.onSecondary,
     this.canProceed = true,
     this.isLoading = false,
   });
 
   final OnboardingStep step;
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final Widget child;
   final VoidCallback onNext;
   final VoidCallback? onBack;
   final String nextLabel;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
   final bool canProceed;
   final bool isLoading;
 
@@ -32,49 +36,116 @@ class StepScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+    return Scaffold(
+      backgroundColor: LekoColors.onboardingBackground,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: LekoColors.onboardingTextSecondary, size: 20),
+                onPressed: onBack,
+              )
+            : null,
+      ),
+      body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: _progress,
-                minHeight: 4,
-                backgroundColor: SaplingColors.divider,
-                valueColor: const AlwaysStoppedAnimation(SaplingColors.secondary),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: _progress,
+                  minHeight: 3,
+                  backgroundColor: LekoColors.onboardingTrack,
+                  valueColor: const AlwaysStoppedAnimation(LekoColors.onboardingFill),
+                ),
               ),
             ),
             const SizedBox(height: 32),
-            Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: SaplingColors.primary,
-            )),
-            const SizedBox(height: 8),
-            Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: SaplingColors.textSecondary,
-            )),
-            const SizedBox(height: 32),
-            Expanded(child: child),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: canProceed && !isLoading ? onNext : null,
-              child: isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : Text(nextLabel),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: LekoColors.onboardingTextPrimary,
+                      letterSpacing: -0.5,
+                      height: 1.2,
+                    ),
+              ),
             ),
-            if (onBack != null) ...[
-              const SizedBox(height: 8),
-              TextButton(onPressed: onBack, child: const Text('Back')),
+            if (subtitle != null) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  subtitle!,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: LekoColors.onboardingTextSecondary,
+                        height: 1.4,
+                      ),
+                ),
+              ),
             ],
+            const SizedBox(height: 32),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: child,
+              ),
+            ),
             const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: LekoColors.onboardingButton,
+                      foregroundColor: LekoColors.onboardingButtonText,
+                      disabledBackgroundColor: LekoColors.onboardingButton.withOpacity(0.3),
+                      disabledForegroundColor: LekoColors.onboardingButtonText.withOpacity(0.5),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: canProceed && !isLoading ? onNext : null,
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: LekoColors.onboardingButtonText),
+                          )
+                        : Text(
+                            nextLabel,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                  if (secondaryLabel != null && onSecondary != null) ...[
+                    const SizedBox(height: 16),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: LekoColors.onboardingTextSecondary,
+                      ),
+                      onPressed: onSecondary,
+                      child: Text(
+                        secondaryLabel!,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),

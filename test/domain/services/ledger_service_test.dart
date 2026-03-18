@@ -1,18 +1,18 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/data/db/sapling_database.dart';
-import 'package:sapling/data/repositories/transactions_repository.dart';
-import 'package:sapling/domain/models/enums.dart';
-import 'package:sapling/domain/services/ledger_service.dart';
+import 'package:leko/data/db/leko_database.dart';
+import 'package:leko/data/repositories/transactions_repository.dart';
+import 'package:leko/domain/models/enums.dart';
+import 'package:leko/domain/services/ledger_service.dart';
 
 void main() {
-  late SaplingDatabase db;
+  late LekoDatabase db;
   late TransactionsRepository repo;
   late LedgerService ledger;
 
   setUp(() {
-    db = SaplingDatabase.forTesting(NativeDatabase.memory());
+    db = LekoDatabase.forTesting(NativeDatabase.memory());
     repo = DriftTransactionsRepository(db);
     ledger = LedgerService(repo);
   });

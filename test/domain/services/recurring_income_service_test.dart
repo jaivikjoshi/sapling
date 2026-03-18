@@ -1,19 +1,19 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/core/utils/date_helpers.dart';
-import 'package:sapling/data/db/sapling_database.dart';
-import 'package:sapling/data/repositories/recurring_income_repository.dart';
-import 'package:sapling/domain/models/enums.dart';
-import 'package:sapling/domain/services/recurring_income_service.dart';
+import 'package:leko/core/utils/date_helpers.dart';
+import 'package:leko/data/db/leko_database.dart';
+import 'package:leko/data/repositories/recurring_income_repository.dart';
+import 'package:leko/domain/models/enums.dart';
+import 'package:leko/domain/services/recurring_income_service.dart';
 
 void main() {
-  late SaplingDatabase db;
+  late LekoDatabase db;
   late RecurringIncomeRepository repo;
   late RecurringIncomeService service;
 
   setUp(() {
-    db = SaplingDatabase.forTesting(NativeDatabase.memory());
+    db = LekoDatabase.forTesting(NativeDatabase.memory());
     repo = DriftRecurringIncomeRepository(db);
     service = RecurringIncomeService(repo);
   });

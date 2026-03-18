@@ -1,20 +1,20 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/data/db/sapling_database.dart';
-import 'package:sapling/data/repositories/goals_repository.dart';
-import 'package:sapling/data/repositories/settings_repository.dart';
-import 'package:sapling/domain/models/enums.dart';
-import 'package:sapling/domain/services/goals_service.dart';
+import 'package:leko/data/db/leko_database.dart';
+import 'package:leko/data/repositories/goals_repository.dart';
+import 'package:leko/data/repositories/settings_repository.dart';
+import 'package:leko/domain/models/enums.dart';
+import 'package:leko/domain/services/goals_service.dart';
 
 void main() {
-  late SaplingDatabase db;
+  late LekoDatabase db;
   late GoalsRepository goalsRepo;
   late SettingsRepository settingsRepo;
   late GoalsService service;
 
   setUp(() {
-    db = SaplingDatabase.forTesting(NativeDatabase.memory());
+    db = LekoDatabase.forTesting(NativeDatabase.memory());
     goalsRepo = DriftGoalsRepository(db);
     settingsRepo = DriftSettingsRepository(db);
     service = GoalsService(goalsRepo, settingsRepo);

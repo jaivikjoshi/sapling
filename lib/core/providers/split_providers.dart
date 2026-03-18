@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../data/repositories/persons_repository.dart';
 import '../../data/repositories/split_entries_repository.dart';
 import '../../data/repositories/split_shares_repository.dart';

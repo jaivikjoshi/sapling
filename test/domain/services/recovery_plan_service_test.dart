@@ -3,17 +3,17 @@ import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/data/db/sapling_database.dart';
-import 'package:sapling/data/repositories/recovery_plans_repository.dart';
-import 'package:sapling/domain/services/recovery_plan_service.dart';
+import 'package:leko/data/db/leko_database.dart';
+import 'package:leko/data/repositories/recovery_plans_repository.dart';
+import 'package:leko/domain/services/recovery_plan_service.dart';
 
 void main() {
-  late SaplingDatabase db;
+  late LekoDatabase db;
   late RecoveryPlansRepository repo;
   late RecoveryPlanService service;
 
   setUp(() {
-    db = SaplingDatabase.forTesting(NativeDatabase.memory());
+    db = LekoDatabase.forTesting(NativeDatabase.memory());
     repo = DriftRecoveryPlansRepository(db);
     service = RecoveryPlanService(repo);
   });

@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 abstract class SplitSharesRepository {
   Future<List<SplitShare>> getBySplitEntryId(String splitEntryId);
@@ -12,7 +12,7 @@ abstract class SplitSharesRepository {
 }
 
 class DriftSplitSharesRepository implements SplitSharesRepository {
-  final SaplingDatabase _db;
+  final LekoDatabase _db;
 
   DriftSplitSharesRepository(this._db);
 

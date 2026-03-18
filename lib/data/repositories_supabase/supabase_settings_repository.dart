@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 import '../repositories/settings_repository.dart';
 import '../supabase/entity_mappers.dart';
 
@@ -13,6 +13,9 @@ class SupabaseSettingsRepository implements SettingsRepository {
   final String _userId;
 
   static const _pollInterval = Duration(seconds: 30);
+
+  /// Single-flight: prevents concurrent _ensureAndGet from racing on insert.
+  Future<AppSetting>? _ensureFuture;
 
   AppSetting _defaultSettings() {
     return const AppSetting(
@@ -35,10 +38,21 @@ class SupabaseSettingsRepository implements SettingsRepository {
   }
 
   /// Ensures app_settings row exists for user; creates with defaults if not.
+  /// Single-flight: concurrent callers share the same request to avoid duplicate-insert races.
   Future<AppSetting> _ensureAndGet() async {
     if (_client.auth.currentUser?.id != _userId) {
       return _defaultSettings();
     }
+    if (_ensureFuture != null) return _ensureFuture!;
+    _ensureFuture = _ensureAndGetImpl();
+    try {
+      return await _ensureFuture!;
+    } finally {
+      _ensureFuture = null;
+    }
+  }
+
+  Future<AppSetting> _ensureAndGetImpl() async {
     final res = await _client
         .from('app_settings')
         .select()
@@ -53,7 +67,25 @@ class SupabaseSettingsRepository implements SettingsRepository {
     map['user_id'] = _userId;
     map['created_at'] = now.toIso8601String();
     map['updated_at'] = now.toIso8601String();
-    await _client.from('app_settings').upsert(map, onConflict: 'user_id');
+    map.remove('id');
+    try {
+      await _client.from('app_settings').upsert(
+        map,
+        onConflict: 'user_id',
+        ignoreDuplicates: true,
+      );
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') {
+        final retry = await _client
+            .from('app_settings')
+            .select()
+            .eq('user_id', _userId)
+            .maybeSingle();
+        if (retry != null) return appSettingFromSupabase(retry);
+        rethrow;
+      }
+      rethrow;
+    }
     return defaults;
   }
 

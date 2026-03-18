@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/recurring_income_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/services/recurring_income_service.dart';
 
@@ -90,7 +90,7 @@ class _RecurringIncomeFormSheetState
               if (_autoPostError != null) ...[
                 const SizedBox(height: 4),
                 Text(_autoPostError!,
-                    style: TextStyle(color: SaplingColors.error, fontSize: 12)),
+                    style: TextStyle(color: LekoColors.error, fontSize: 12)),
               ],
               const SizedBox(height: 12),
               _buildAnchorToggle(),
@@ -162,7 +162,7 @@ class _RecurringIncomeFormSheetState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Payday Behavior',
-            style: TextStyle(fontSize: 12, color: SaplingColors.textSecondary)),
+            style: TextStyle(fontSize: 12, color: LekoColors.textSecondary)),
         RadioListTile<PaydayBehavior>(
           value: PaydayBehavior.confirmActualOnPayday,
           groupValue: _behavior,

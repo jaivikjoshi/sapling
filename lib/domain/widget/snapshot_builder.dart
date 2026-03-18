@@ -8,7 +8,7 @@ class SnapshotBuilder {
   /// Tree stage from budget streak. Pure function for testing.
   static String treeStageFromStreak(int currentStreak) {
     if (currentStreak >= 7) return 'tree';
-    if (currentStreak >= 1) return 'sapling';
+    if (currentStreak >= 1) return 'leko';
     return 'seedling';
   }
 

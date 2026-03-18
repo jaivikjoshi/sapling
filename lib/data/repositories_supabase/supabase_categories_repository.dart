@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 import '../repositories/categories_repository.dart';
 import '../supabase/entity_mappers.dart';
 

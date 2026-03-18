@@ -4,7 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 
 /// Schedules closeout, payday, bill, and overspend notifications.
 class CloseoutNotificationService {

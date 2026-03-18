@@ -136,7 +136,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       children: [
                         // Brand wordmark
                         const Text(
-                          'sapling',
+                          'leko',
                           style: TextStyle(
                             fontFamily: 'Georgia',
                             fontSize: 36,

@@ -5,10 +5,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/reports_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../domain/services/reports_service.dart';
-import '../../data/db/sapling_database.dart' show Transaction;
+import '../../data/db/leko_database.dart' show Transaction;
 
 class CyclePeriod {
   final DateTime start;

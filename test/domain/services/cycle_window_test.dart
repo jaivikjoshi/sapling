@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/domain/models/enums.dart';
-import 'package:sapling/domain/services/cycle_window_calculator.dart';
+import 'package:leko/domain/models/enums.dart';
+import 'package:leko/domain/services/cycle_window_calculator.dart';
 
 void main() {
   group('CycleWindowCalculator — monthly', () {

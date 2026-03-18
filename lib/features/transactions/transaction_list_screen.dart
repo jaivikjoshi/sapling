@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/ledger_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 
 class TransactionListScreen extends ConsumerWidget {
   const TransactionListScreen({super.key});
@@ -52,10 +52,10 @@ class TransactionTile extends StatelessWidget {
             : Icons.sync_alt;
 
     final color = isExpense
-        ? SaplingColors.labelRed
+        ? LekoColors.labelRed
         : isIncome
-            ? SaplingColors.labelGreen
-            : SaplingColors.support;
+            ? LekoColors.labelGreen
+            : LekoColors.support;
 
     final sign = isExpense
         ? '-'
@@ -82,7 +82,7 @@ class TransactionTile extends StatelessWidget {
       ),
       subtitle: Text(
         '$dateStr • ${transaction.type}',
-        style: TextStyle(color: SaplingColors.textSecondary, fontSize: 12),
+        style: TextStyle(color: LekoColors.textSecondary, fontSize: 12),
       ),
       trailing: Text(
         '$sign${formatCurrency(transaction.amount.abs())}',

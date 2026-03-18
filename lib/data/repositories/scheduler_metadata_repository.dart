@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 abstract class SchedulerMetadataRepository {
   Future<String?> get(String key);
@@ -8,7 +8,7 @@ abstract class SchedulerMetadataRepository {
 }
 
 class DriftSchedulerMetadataRepository implements SchedulerMetadataRepository {
-  final SaplingDatabase _db;
+  final LekoDatabase _db;
 
   DriftSchedulerMetadataRepository(this._db);
 

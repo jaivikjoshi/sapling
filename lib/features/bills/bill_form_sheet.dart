@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/providers/bills_providers.dart';
 import '../../core/providers/ledger_providers.dart';
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/services/bills_service.dart';
 

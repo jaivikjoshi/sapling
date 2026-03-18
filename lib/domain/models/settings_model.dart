@@ -1,6 +1,6 @@
 import '../models/enums.dart';
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 
 class UserSettings {
   final Currency baseCurrency;

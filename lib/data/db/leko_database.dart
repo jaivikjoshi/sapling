@@ -18,7 +18,7 @@ import 'tables/daily_closeouts_table.dart';
 import 'tables/recovery_plans_table.dart';
 import 'tables/scheduler_metadata_table.dart';
 
-part 'sapling_database.g.dart';
+part 'leko_database.g.dart';
 
 @DriftDatabase(tables: [
   AppSettings,
@@ -34,10 +34,10 @@ part 'sapling_database.g.dart';
   RecoveryPlans,
   SchedulerMetadata,
 ])
-class SaplingDatabase extends _$SaplingDatabase {
-  SaplingDatabase() : super(_openConnection());
+class LekoDatabase extends _$LekoDatabase {
+  LekoDatabase() : super(_openConnection());
 
-  SaplingDatabase.forTesting(super.e);
+  LekoDatabase.forTesting(super.e);
 
   @override
   int get schemaVersion => 2;
@@ -94,7 +94,7 @@ class SaplingDatabase extends _$SaplingDatabase {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'sapling.sqlite'));
+    final file = File(p.join(dir.path, 'leko.sqlite'));
     return NativeDatabase.createInBackground(file);
   });
 }

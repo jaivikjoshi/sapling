@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/ledger_providers.dart';
 import '../../core/providers/widget_snapshot_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 
 class ReconcileSheet extends ConsumerStatefulWidget {
@@ -70,7 +70,7 @@ class _ReconcileSheetState extends ConsumerState<ReconcileSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('App balance',
-                    style: TextStyle(color: SaplingColors.textSecondary)),
+                    style: TextStyle(color: LekoColors.textSecondary)),
                 Text(
                   formatCurrency(currentBalance),
                   style: const TextStyle(
@@ -100,16 +100,16 @@ class _ReconcileSheetState extends ConsumerState<ReconcileSheet> {
           const SizedBox(height: 12),
           Card(
             color: adjustment >= 0
-                ? SaplingColors.labelGreen.withValues(alpha: 0.1)
-                : SaplingColors.labelRed.withValues(alpha: 0.1),
+                ? LekoColors.labelGreen.withValues(alpha: 0.1)
+                : LekoColors.labelRed.withValues(alpha: 0.1),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Text(
                 'Adjustment: ${adjustment >= 0 ? "+" : ""}${formatCurrency(adjustment)}',
                 style: TextStyle(
                   color: adjustment >= 0
-                      ? SaplingColors.labelGreen
-                      : SaplingColors.labelRed,
+                      ? LekoColors.labelGreen
+                      : LekoColors.labelRed,
                   fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center,

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/category_providers.dart';
 import '../../core/providers/ledger_providers.dart';
-import '../../core/theme/sapling_colors.dart';
-import '../../data/db/sapling_database.dart';
+import '../../core/theme/leko_colors.dart';
+import '../../data/db/leko_database.dart';
 import 'category_form_sheet.dart';
 
 class CategoriesScreen extends ConsumerWidget {
@@ -70,7 +70,7 @@ class CategoriesScreen extends ConsumerWidget {
               Navigator.pop(ctx);
               await ref.read(categoryServiceProvider).delete(cat.id);
             },
-            child: Text('Delete', style: TextStyle(color: SaplingColors.error)),
+            child: Text('Delete', style: TextStyle(color: LekoColors.error)),
           ),
         ],
       ),
@@ -90,9 +90,9 @@ class _CategoryTile extends StatelessWidget {
   final VoidCallback onDelete;
 
   Color get _labelColor => switch (category.defaultLabel) {
-        'orange' => SaplingColors.labelOrange,
-        'red' => SaplingColors.labelRed,
-        _ => SaplingColors.labelGreen,
+        'orange' => LekoColors.labelOrange,
+        'red' => LekoColors.labelRed,
+        _ => LekoColors.labelGreen,
       };
 
   @override
@@ -108,7 +108,7 @@ class _CategoryTile extends StatelessWidget {
       ),
       subtitle: Text(
         category.isSystem ? 'System' : 'Custom',
-        style: TextStyle(color: SaplingColors.textSecondary, fontSize: 12),
+        style: TextStyle(color: LekoColors.textSecondary, fontSize: 12),
       ),
       trailing: category.isSystem
           ? null

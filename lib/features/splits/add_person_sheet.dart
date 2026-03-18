@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/providers/split_providers.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 
 class AddPersonSheet extends ConsumerStatefulWidget {
   const AddPersonSheet({super.key});

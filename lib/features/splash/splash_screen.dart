@@ -47,10 +47,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _fadeCtrl.forward();
     _fallbackTimer = Timer(const Duration(seconds: 15), () {
       if (_hasNavigated || !mounted) return;
-      _hasNavigated = true;
       _loginRedirectTimer?.cancel();
       final user = ref.read(currentUserProvider);
-      context.go(user != null ? '/home' : '/welcome');
+      _navigateToApp(user != null);
     });
   }
 
@@ -122,7 +121,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         error: (_, __) => _navigateFromAuthError(),
       );
     });
-    ref.watch(authStateProvider);
+    // Note: ref.listen in flutter_riverpod doesn't support fireImmediately.
+    // Use the authAsync.whenData check below when landing with session already present.
+    final authAsync = ref.watch(authStateProvider);
+    // When landing on splash with session already present (e.g. redirect from login),
+    // the listen may not fire—check current value and navigate if needed.
+    authAsync.whenData((event) {
+      if (event.session != null && !_hasNavigated) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_hasNavigated) {
+            _loginRedirectTimer?.cancel();
+            _navigateToApp(true);
+          }
+        });
+      }
+    });
 
     return Scaffold(
       body: Container(
@@ -134,7 +147,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFFBF9F6), // Sapling warm cream top
+              Color(0xFFFBF9F6), // Leko warm cream top
               Color(0xFFEAF6F2), // Very subtle mint midpoint
               Color(0xFFCBEDE3), // Soft green wash at bottom
             ],
@@ -149,12 +162,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               children: [
                 // The wordmark in the same serif font used on the home page
                 const Text(
-                  'sapling',
+                  'leko',
                   style: TextStyle(
                     fontFamily: 'Georgia',
                     fontSize: 42,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1B3B42), // SaplingColors.primary
+                    color: Color(0xFF1B3B42), // LekoColors.primary
                     letterSpacing: -1.0,
                   ),
                 ),

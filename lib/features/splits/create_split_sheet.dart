@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/split_providers.dart';
-import '../../core/theme/sapling_colors.dart';
-import '../../data/db/sapling_database.dart';
+import '../../core/theme/leko_colors.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/services/split_service.dart';
 
 class CreateSplitSheet extends ConsumerStatefulWidget {
@@ -82,14 +82,14 @@ class _CreateSplitSheetState extends ConsumerState<CreateSplitSheet> {
             Text(
               'Who paid sets who owes whom. Amount is split equally between you and the people below.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: SaplingColors.textSecondary,
+                    color: LekoColors.textSecondary,
                   ),
             ),
             const SizedBox(height: 12),
             Text(
               'Who is in this split? (pick at least one)',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: SaplingColors.textSecondary,
+                    color: LekoColors.textSecondary,
                   ),
             ),
             ...widget.persons.map((p) => CheckboxListTile(

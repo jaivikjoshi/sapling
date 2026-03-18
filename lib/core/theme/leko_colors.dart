@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-abstract final class SaplingColors {
+abstract final class LekoColors {
   // Editorial luxury palette
   static const Color primary = Color(0xFF1B3B42); // Deep Teal
   static const Color secondary = Color(0xFF3B9797); // Jade / Seafoam
@@ -23,4 +23,14 @@ abstract final class SaplingColors {
 
   static const Color divider = Color(0xFFECEAE5);
   static const Color shimmer = Color(0xFFEEEEEE);
+
+  // Premium Onboarding Flow (Dark Immerse)
+  static const Color onboardingBackground = Color(0xFF0F1A1B); // Deep midnight forest green
+  static const Color onboardingSurface = Color(0xFF19292A);
+  static const Color onboardingTextPrimary = Color(0xFFF7F5F0); // Off-white/cream
+  static const Color onboardingTextSecondary = Color(0xFFA1B3B0); // Soft glowing sage/grey
+  static const Color onboardingButton = Color(0xFF3B9797); // Seafoam jade as CTA
+  static const Color onboardingButtonText = Colors.white;
+  static const Color onboardingTrack = Color(0xFF1A2D2E);
+  static const Color onboardingFill = Color(0xFF5CBBA7);
 }

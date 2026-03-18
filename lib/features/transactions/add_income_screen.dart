@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import '../../core/providers/ledger_providers.dart';
 import '../../core/providers/recurring_income_providers.dart';
 import '../../core/providers/widget_snapshot_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../domain/models/enums.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -394,7 +394,7 @@ class _DateRow extends StatelessWidget {
               child: const Icon(
                 Icons.calendar_today_outlined,
                 size: 18,
-                color: SaplingColors.secondary,
+                color: LekoColors.secondary,
               ),
             ),
             const SizedBox(width: 14),
@@ -468,7 +468,7 @@ class _TextRow extends StatelessWidget {
               color: _Tok.iconContainerBg,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: SaplingColors.secondary),
+            child: Icon(icon, size: 18, color: LekoColors.secondary),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -504,7 +504,7 @@ class _TextRow extends StatelessWidget {
                     floatingLabelStyle: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: SaplingColors.secondary,
+                      color: LekoColors.secondary,
                     ),
                     hintText: hint,
                     hintStyle: const TextStyle(
@@ -589,7 +589,7 @@ class _ToggleRow extends StatelessWidget {
               color: _Tok.iconContainerBg,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: SaplingColors.secondary),
+            child: Icon(icon, size: 18, color: LekoColors.secondary),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -605,8 +605,8 @@ class _ToggleRow extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: SaplingColors.secondary,
-            activeTrackColor: SaplingColors.secondary.withValues(alpha: 0.2),
+            activeColor: LekoColors.secondary,
+            activeTrackColor: LekoColors.secondary.withValues(alpha: 0.2),
           ),
         ],
       ),
@@ -663,7 +663,7 @@ class _FrequencyRow extends StatelessWidget {
                         decoration: BoxDecoration(
                           color:
                               isEq
-                                  ? SaplingColors.secondary.withValues(
+                                  ? LekoColors.secondary.withValues(
                                     alpha: 0.12,
                                   )
                                   : Colors.transparent,
@@ -671,7 +671,7 @@ class _FrequencyRow extends StatelessWidget {
                           border: Border.all(
                             color:
                                 isEq
-                                    ? SaplingColors.secondary.withValues(
+                                    ? LekoColors.secondary.withValues(
                                       alpha: 0.5,
                                     )
                                     : _Tok.borderSubtle,
@@ -686,7 +686,7 @@ class _FrequencyRow extends StatelessWidget {
                                 isEq ? FontWeight.w700 : FontWeight.w500,
                             color:
                                 isEq
-                                    ? SaplingColors.secondary
+                                    ? LekoColors.secondary
                                     : _Tok.textPlaceholder,
                           ),
                         ),

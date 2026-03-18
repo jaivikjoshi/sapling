@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 abstract class RecoveryPlansRepository {
   Future<List<RecoveryPlan>> getAll();
@@ -11,7 +11,7 @@ abstract class RecoveryPlansRepository {
 }
 
 class DriftRecoveryPlansRepository implements RecoveryPlansRepository {
-  final SaplingDatabase _db;
+  final LekoDatabase _db;
 
   DriftRecoveryPlansRepository(this._db);
 

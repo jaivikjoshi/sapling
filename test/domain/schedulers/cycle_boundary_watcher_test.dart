@@ -2,23 +2,23 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/core/utils/enum_serialization.dart';
-import 'package:sapling/data/db/sapling_database.dart';
-import 'package:sapling/data/repositories/recurring_income_repository.dart';
-import 'package:sapling/data/repositories/scheduler_metadata_repository.dart';
-import 'package:sapling/data/repositories/settings_repository.dart';
-import 'package:sapling/domain/models/enums.dart';
-import 'package:sapling/domain/schedulers/cycle_boundary_watcher.dart';
+import 'package:leko/core/utils/enum_serialization.dart';
+import 'package:leko/data/db/leko_database.dart';
+import 'package:leko/data/repositories/recurring_income_repository.dart';
+import 'package:leko/data/repositories/scheduler_metadata_repository.dart';
+import 'package:leko/data/repositories/settings_repository.dart';
+import 'package:leko/domain/models/enums.dart';
+import 'package:leko/domain/schedulers/cycle_boundary_watcher.dart';
 
 void main() {
-  late SaplingDatabase db;
+  late LekoDatabase db;
   late SchedulerMetadataRepository metadataRepo;
   late SettingsRepository settingsRepo;
   late RecurringIncomeRepository incomeRepo;
   late CycleBoundaryWatcher watcher;
 
   setUp(() async {
-    db = SaplingDatabase.forTesting(NativeDatabase.memory());
+    db = LekoDatabase.forTesting(NativeDatabase.memory());
     metadataRepo = DriftSchedulerMetadataRepository(db);
     settingsRepo = DriftSettingsRepository(db);
     incomeRepo = DriftRecurringIncomeRepository(db);

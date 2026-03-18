@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/goals_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/services/goals_service.dart';
 
@@ -71,7 +71,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: SaplingColors.divider,
+                    color: LekoColors.divider,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -80,7 +80,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                 _isEditing ? 'Edit Goal' : 'New Goal',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: SaplingColors.textPrimary,
+                  color: LekoColors.textPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -96,7 +96,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
               ElevatedButton(
                 onPressed: _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: SaplingColors.textPrimary,
+                  backgroundColor: LekoColors.textPrimary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -168,18 +168,18 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Target Date',
-          style: TextStyle(color: SaplingColors.textSecondary, fontSize: 13),
+          style: TextStyle(color: LekoColors.textSecondary, fontSize: 13),
         ),
         subtitle: Text(
           DateFormat.yMMMd().format(_targetDate),
           style: const TextStyle(
             fontWeight: FontWeight.w600,
-            color: SaplingColors.textPrimary,
+            color: LekoColors.textPrimary,
           ),
         ),
         trailing: const Icon(
           Icons.calendar_today_rounded,
-          color: SaplingColors.textSecondary,
+          color: LekoColors.textSecondary,
         ),
         onTap: () async {
           final picked = await showDatePicker(
@@ -204,7 +204,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             'Saving Style',
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: SaplingColors.textSecondary),
+            ).textTheme.bodySmall?.copyWith(color: LekoColors.textSecondary),
           ),
         ),
         const SizedBox(height: 8),
@@ -247,7 +247,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
           child: Text(
             _styleHint(_style),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: SaplingColors.textSecondary,
+              color: LekoColors.textSecondary,
               fontSize: 12,
             ),
           ),
@@ -257,9 +257,9 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
   }
 
   Color _styleColor(SavingStyle s) => switch (s) {
-    SavingStyle.easy => SaplingColors.labelGreen,
-    SavingStyle.natural => SaplingColors.labelOrange,
-    SavingStyle.aggressive => SaplingColors.labelRed,
+    SavingStyle.easy => LekoColors.labelGreen,
+    SavingStyle.natural => LekoColors.labelOrange,
+    SavingStyle.aggressive => LekoColors.labelRed,
   };
 
   String _styleHint(SavingStyle s) => switch (s) {

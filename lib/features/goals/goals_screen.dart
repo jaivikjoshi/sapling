@@ -4,10 +4,10 @@ import 'package:intl/intl.dart';
 
 import '../../core/providers/goals_providers.dart';
 import '../../core/providers/settings_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import 'goal_form_sheet.dart';
 
@@ -20,7 +20,7 @@ class GoalsScreen extends ConsumerWidget {
     final settingsAsync = ref.watch(settingsStreamProvider);
 
     return Scaffold(
-      backgroundColor: SaplingColors.background,
+      backgroundColor: LekoColors.background,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -31,7 +31,7 @@ class GoalsScreen extends ConsumerWidget {
               'Goals',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: SaplingColors.textPrimary,
+                color: LekoColors.textPrimary,
               ),
             ),
             actions: [
@@ -42,7 +42,7 @@ class GoalsScreen extends ConsumerWidget {
                   icon: const Icon(Icons.add),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: SaplingColors.textPrimary,
+                    foregroundColor: LekoColors.textPrimary,
                     shape: const CircleBorder(),
                   ),
                 ),
@@ -70,7 +70,7 @@ class GoalsScreen extends ConsumerWidget {
                           const Icon(
                             Icons.flag_rounded,
                             size: 64,
-                            color: SaplingColors.support,
+                            color: LekoColors.support,
                           ),
                           const SizedBox(height: 24),
                           Text(
@@ -79,7 +79,7 @@ class GoalsScreen extends ConsumerWidget {
                             style: Theme.of(
                               context,
                             ).textTheme.titleMedium?.copyWith(
-                              color: SaplingColors.textSecondary,
+                              color: LekoColors.textSecondary,
                               height: 1.5,
                             ),
                           ),
@@ -115,7 +115,7 @@ class GoalsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: SaplingColors.background,
+      backgroundColor: LekoColors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
@@ -176,12 +176,12 @@ class _GoalTile extends ConsumerWidget {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: SaplingColors.background,
+                        color: LekoColors.background,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
                         Icons.flag_rounded,
-                        color: SaplingColors.textSecondary,
+                        color: LekoColors.textSecondary,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -198,7 +198,7 @@ class _GoalTile extends ConsumerWidget {
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 1.1,
-                                  color: SaplingColors.secondary,
+                                  color: LekoColors.secondary,
                                 ),
                               ),
                             ),
@@ -210,7 +210,7 @@ class _GoalTile extends ConsumerWidget {
                               fontWeight: FontWeight.bold,
                               fontSize: 19,
                               letterSpacing: -0.5,
-                              color: SaplingColors.textPrimary,
+                              color: LekoColors.textPrimary,
                             ),
                           ),
                         ],
@@ -219,7 +219,7 @@ class _GoalTile extends ConsumerWidget {
                     PopupMenuButton<String>(
                       icon: const Icon(
                         Icons.more_horiz,
-                        color: SaplingColors.textSecondary,
+                        color: LekoColors.textSecondary,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -245,7 +245,7 @@ class _GoalTile extends ConsumerWidget {
                               value: 'delete',
                               child: Text(
                                 'Delete',
-                                style: TextStyle(color: SaplingColors.labelRed),
+                                style: TextStyle(color: LekoColors.labelRed),
                               ),
                             ),
                           ],
@@ -263,7 +263,7 @@ class _GoalTile extends ConsumerWidget {
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
-                        color: SaplingColors.textPrimary,
+                        color: LekoColors.textPrimary,
                       ),
                     ),
                     Padding(
@@ -273,7 +273,7 @@ class _GoalTile extends ConsumerWidget {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: SaplingColors.textSecondary,
+                          color: LekoColors.textSecondary,
                         ),
                       ),
                     ),
@@ -285,13 +285,13 @@ class _GoalTile extends ConsumerWidget {
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 10,
-                    backgroundColor: SaplingColors.divider.withValues(
+                    backgroundColor: LekoColors.divider.withValues(
                       alpha: 0.5,
                     ),
                     valueColor: AlwaysStoppedAnimation(
                       isPrimary
-                          ? SaplingColors.secondary
-                          : SaplingColors.textSecondary,
+                          ? LekoColors.secondary
+                          : LekoColors.textSecondary,
                     ),
                   ),
                 ),
@@ -319,9 +319,9 @@ class _GoalTile extends ConsumerWidget {
   }
 
   Color _styleColor(SavingStyle s) => switch (s) {
-    SavingStyle.easy => SaplingColors.labelGreen,
-    SavingStyle.natural => SaplingColors.labelOrange,
-    SavingStyle.aggressive => SaplingColors.labelRed,
+    SavingStyle.easy => LekoColors.labelGreen,
+    SavingStyle.natural => LekoColors.labelOrange,
+    SavingStyle.aggressive => LekoColors.labelRed,
   };
 
   Future<void> _handleAction(
@@ -360,7 +360,7 @@ class _IconChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = color ?? SaplingColors.textSecondary;
+    final effectiveColor = color ?? LekoColors.textSecondary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -439,7 +439,7 @@ class _GoalDetailBody extends ConsumerWidget {
           const Text(
             'Primary Goal',
             style: TextStyle(
-              color: SaplingColors.secondary,
+              color: LekoColors.secondary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -483,7 +483,7 @@ class _DetailRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(color: SaplingColors.textSecondary),
+            style: const TextStyle(color: LekoColors.textSecondary),
           ),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],

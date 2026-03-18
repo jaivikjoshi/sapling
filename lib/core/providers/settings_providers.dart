@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../data/repositories_supabase/supabase_settings_repository.dart';
 import '../../domain/models/enums.dart';

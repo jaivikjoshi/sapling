@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/split_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/services/split_service.dart';
 import 'create_split_sheet.dart';
 import 'add_person_sheet.dart';
@@ -42,7 +42,7 @@ class SplitsScreen extends ConsumerWidget {
             Text(
               'Open splits',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: SaplingColors.textSecondary,
+                    color: LekoColors.textSecondary,
                   ),
             ),
             const SizedBox(height: 8),
@@ -54,7 +54,7 @@ class SplitsScreen extends ConsumerWidget {
                 padding: EdgeInsets.all(24),
                 child: CircularProgressIndicator(),
               )),
-              error: (e, _) => Text('Error: $e', style: TextStyle(color: SaplingColors.error)),
+              error: (e, _) => Text('Error: $e', style: TextStyle(color: LekoColors.error)),
             ),
           ],
         ),
@@ -62,7 +62,7 @@ class SplitsScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         heroTag: 'splits_fab',
         onPressed: () => _showCreateSplit(context, ref),
-        backgroundColor: SaplingColors.secondary,
+        backgroundColor: LekoColors.secondary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -118,7 +118,7 @@ class _BalancesSection extends StatelessWidget {
             Text(
               'Balances',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: SaplingColors.textSecondary,
+                    color: LekoColors.textSecondary,
                   ),
             ),
             const SizedBox(height: 8),
@@ -134,8 +134,8 @@ class _BalancesSection extends StatelessWidget {
                         : 'You owe ${formatCurrency(b.youOwe)}',
                     style: TextStyle(
                       color: b.owedToYou > 0
-                          ? SaplingColors.labelGreen
-                          : SaplingColors.labelRed,
+                          ? LekoColors.labelGreen
+                          : LekoColors.labelRed,
                     ),
                   ),
                   trailing: const Icon(Icons.chevron_right),
@@ -189,18 +189,18 @@ class _EmptySplits extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.receipt_long_outlined,
-                size: 48, color: SaplingColors.textSecondary),
+                size: 48, color: LekoColors.textSecondary),
             const SizedBox(height: 12),
             Text(
               'No open splits',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: SaplingColors.textSecondary,
+                    color: LekoColors.textSecondary,
                   ),
             ),
             const SizedBox(height: 4),
             Text(
               'Tap + to create a split',
-              style: TextStyle(fontSize: 12, color: SaplingColors.textSecondary),
+              style: TextStyle(fontSize: 12, color: LekoColors.textSecondary),
             ),
           ],
         ),

@@ -1,11 +1,17 @@
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 import 'supabase_json.dart';
 
 /// Maps Supabase (snake_case) rows to/from Drift entity types.
 /// Used by Supabase repositories.
 
-AppSetting appSettingFromSupabase(Map<String, dynamic> row) =>
-    AppSetting.fromJson(camelCaseKeys(row));
+AppSetting appSettingFromSupabase(Map<String, dynamic> row) {
+  final camel = camelCaseKeys(row);
+  // Supabase app_settings uses user_id as PK and has no 'id' column.
+  // Drift's AppSetting requires a non-nullable 'id'; inject the
+  // well-known singleton value used throughout the app.
+  camel.putIfAbsent('id', () => 'singleton');
+  return AppSetting.fromJson(camel);
+}
 
 Map<String, dynamic> appSettingToSupabase(AppSetting e) =>
     prepareForSupabase(e.toJson());

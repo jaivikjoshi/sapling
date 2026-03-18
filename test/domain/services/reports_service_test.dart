@@ -2,19 +2,19 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sapling/data/db/sapling_database.dart';
-import 'package:sapling/data/repositories/categories_repository.dart';
-import 'package:sapling/data/repositories/transactions_repository.dart';
-import 'package:sapling/domain/services/reports_service.dart';
+import 'package:leko/data/db/leko_database.dart';
+import 'package:leko/data/repositories/categories_repository.dart';
+import 'package:leko/data/repositories/transactions_repository.dart';
+import 'package:leko/domain/services/reports_service.dart';
 
 void main() {
-  late SaplingDatabase db;
+  late LekoDatabase db;
   late TransactionsRepository txnRepo;
   late CategoriesRepository categoriesRepo;
   late ReportsService service;
 
   setUp(() async {
-    db = SaplingDatabase.forTesting(NativeDatabase.memory());
+    db = LekoDatabase.forTesting(NativeDatabase.memory());
     txnRepo = DriftTransactionsRepository(db);
     categoriesRepo = DriftCategoriesRepository(db);
     service = ReportsService(txnRepo, categoriesRepo);

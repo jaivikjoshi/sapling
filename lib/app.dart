@@ -1,5 +1,9 @@
+import 'dart:async';
+
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/notifications/closeout_notification_service.dart';
 import 'core/providers/bills_providers.dart';
@@ -8,18 +12,40 @@ import 'core/providers/scheduler_providers.dart';
 import 'core/providers/settings_providers.dart';
 import 'core/providers/widget_snapshot_providers.dart';
 import 'core/routing/app_router.dart';
-import 'core/theme/sapling_theme.dart';
+import 'core/theme/leko_theme.dart';
 
-class SaplingApp extends ConsumerStatefulWidget {
-  const SaplingApp({super.key});
-
-  @override
-  ConsumerState<SaplingApp> createState() => _SaplingAppState();
+bool _isAuthCallback(Uri uri) {
+  return uri.scheme == 'com.jaivik.leko' &&
+      (uri.host == 'auth-callback' || uri.host == 'login-callback');
 }
 
-class _SaplingAppState extends ConsumerState<SaplingApp> {
+class LekoApp extends ConsumerStatefulWidget {
+  const LekoApp({super.key});
+
+  @override
+  ConsumerState<LekoApp> createState() => _LekoAppState();
+}
+
+class _LekoAppState extends ConsumerState<LekoApp> {
   bool _closeoutCallbackSet = false;
   bool _schedulersRunOnce = false;
+  StreamSubscription<Uri>? _deepLinkSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _deepLinkSubscription = AppLinks().uriLinkStream.listen((uri) {
+      if (_isAuthCallback(uri)) {
+        Supabase.instance.client.auth.getSessionFromUrl(uri).ignore();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _deepLinkSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -71,8 +97,8 @@ class _SaplingAppState extends ConsumerState<SaplingApp> {
     });
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'Sapling',
-      theme: SaplingTheme.light,
+      title: 'Leko',
+      theme: LekoTheme.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

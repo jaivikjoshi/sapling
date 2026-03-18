@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../domain/models/daily_snapshot.dart';
 
@@ -17,7 +17,7 @@ class WidgetPreviewScreen extends ConsumerStatefulWidget {
 }
 
 class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
-  static const _key = 'sapling_daily_snapshot';
+  static const _key = 'leko_daily_snapshot';
   DailySnapshot? _snapshot;
   String? _error;
 
@@ -69,7 +69,7 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48, color: SaplingColors.labelRed),
+              Icon(Icons.error_outline, size: 48, color: LekoColors.labelRed),
               const SizedBox(height: 16),
               Text(_error!, textAlign: TextAlign.center),
             ],
@@ -90,29 +90,29 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Allowance today', style: TextStyle(color: SaplingColors.textSecondary)),
+                Text('Allowance today', style: TextStyle(color: LekoColors.textSecondary)),
                 const SizedBox(height: 4),
                 Text(formatCurrency(s.todayAllowance), style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 12),
-                Text('Behind', style: TextStyle(color: SaplingColors.textSecondary)),
+                Text('Behind', style: TextStyle(color: LekoColors.textSecondary)),
                 const SizedBox(height: 4),
-                Text(formatCurrency(s.behindAmount), style: TextStyle(color: s.behindAmount > 0 ? SaplingColors.labelRed : null)),
+                Text(formatCurrency(s.behindAmount), style: TextStyle(color: s.behindAmount > 0 ? LekoColors.labelRed : null)),
                 if (s.primaryGoalProgress != null) ...[
                   const SizedBox(height: 12),
-                  Text('Goal progress', style: TextStyle(color: SaplingColors.textSecondary)),
+                  Text('Goal progress', style: TextStyle(color: LekoColors.textSecondary)),
                   const SizedBox(height: 4),
                   Text('${(s.primaryGoalProgress! * 100).toStringAsFixed(0)}%', style: Theme.of(context).textTheme.titleMedium),
                 ],
                 const SizedBox(height: 12),
-                Text('Tree stage', style: TextStyle(color: SaplingColors.textSecondary)),
+                Text('Tree stage', style: TextStyle(color: LekoColors.textSecondary)),
                 const SizedBox(height: 4),
                 Text(s.treeStage, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 12),
-                Text('Closeout', style: TextStyle(color: SaplingColors.textSecondary)),
+                Text('Closeout', style: TextStyle(color: LekoColors.textSecondary)),
                 const SizedBox(height: 4),
                 Text(s.closeoutStatus),
                 const SizedBox(height: 12),
-                Text('Updated', style: TextStyle(color: SaplingColors.textSecondary)),
+                Text('Updated', style: TextStyle(color: LekoColors.textSecondary)),
                 const SizedBox(height: 4),
                 Text(s.timestamp.toIso8601String()),
               ],

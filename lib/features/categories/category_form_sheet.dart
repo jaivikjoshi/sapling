@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/category_providers.dart';
-import '../../core/theme/sapling_colors.dart';
-import '../../data/db/sapling_database.dart';
+import '../../core/theme/leko_colors.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/services/category_service.dart';
 
@@ -74,7 +74,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
-                  ?.copyWith(color: SaplingColors.textSecondary)),
+                  ?.copyWith(color: LekoColors.textSecondary)),
           const SizedBox(height: 8),
           Row(
             children: SpendLabel.values.map((l) {
@@ -110,9 +110,9 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   }
 
   Color _colorFor(SpendLabel l) => switch (l) {
-        SpendLabel.green => SaplingColors.labelGreen,
-        SpendLabel.orange => SaplingColors.labelOrange,
-        SpendLabel.red => SaplingColors.labelRed,
+        SpendLabel.green => LekoColors.labelGreen,
+        SpendLabel.orange => LekoColors.labelOrange,
+        SpendLabel.red => LekoColors.labelRed,
       };
 
   Future<void> _save() async {

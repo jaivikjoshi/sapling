@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 /// Interface for transactions repository (Drift or Supabase implementation).
 abstract class TransactionsRepository {
@@ -19,7 +19,7 @@ abstract class TransactionsRepository {
 }
 
 class DriftTransactionsRepository implements TransactionsRepository {
-  final SaplingDatabase _db;
+  final LekoDatabase _db;
 
   DriftTransactionsRepository(this._db);
 

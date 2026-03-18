@@ -38,7 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         password: _passwordCtrl.text,
       );
       if (!mounted) return;
-      context.go('/home');
+      context.go('/');
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
@@ -59,7 +59,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final client = ref.read(supabaseClientProvider);
       await client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'com.jaivik.sapling://login-callback',
+        redirectTo: 'com.jaivik.leko://login-callback',
       );
       // On mobile, browser opens then returns via deep link; auth stream will update.
       // Splash will route based on the new session.

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 
 class SmallTransactionTile extends StatelessWidget {
   const SmallTransactionTile({super.key, required this.transaction});
@@ -47,7 +47,7 @@ class SmallTransactionTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color:
-            SaplingColors
+            LekoColors
                 .surface, // Or Colors.white if the background is off-white
         borderRadius: BorderRadius.circular(24), // Pill shape
       ),

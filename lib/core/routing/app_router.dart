@@ -13,6 +13,7 @@ import '../../features/reports/reports_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/signup_screen.dart';
+// import '../../features/auth/confirm_email_screen.dart'; // Disabled: no email verification
 import '../../features/auth/welcome_screen.dart';
 import '../../features/transactions/add_expense_screen.dart';
 import '../../features/transactions/add_income_screen.dart';
@@ -37,7 +38,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       final loc = state.matchedLocation;
       final hasSession = user != null;
       final isWelcomeFlow = loc == '/welcome' || loc.startsWith('/welcome/');
-      if (hasSession && isWelcomeFlow) return '/home';
+      // final isConfirmEmail = loc.startsWith('/welcome/confirm-email'); // Disabled: no email verification
+      // if (hasSession && isConfirmEmail) return '/onboarding'; // Disabled
+      if (hasSession && isWelcomeFlow) return '/';
       if (!hasSession && !isWelcomeFlow && loc != '/') return '/welcome';
       return null;
     },
@@ -55,6 +58,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'signup',
             builder: (context, state) => const SignupScreen(),
           ),
+          // Disabled: no email verification
+          // GoRoute(
+          //   path: 'confirm-email',
+          //   builder: (context, state) {
+          //     final email = state.uri.queryParameters['email'];
+          //     return ConfirmEmailScreen(email: email);
+          //   },
+          // ),
         ],
       ),
       GoRoute(

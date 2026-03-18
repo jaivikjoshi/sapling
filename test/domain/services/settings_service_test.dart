@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sapling/domain/models/enums.dart';
-import 'package:sapling/domain/services/settings_service.dart';
+import 'package:leko/domain/models/enums.dart';
+import 'package:leko/domain/services/settings_service.dart';
 
 void main() {
   group('SettingsValidation.validateRolloverType', () {

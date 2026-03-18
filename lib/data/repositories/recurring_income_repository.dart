@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import '../db/sapling_database.dart';
+import '../db/leko_database.dart';
 
 abstract class RecurringIncomeRepository {
   Future<List<RecurringIncome>> getAll();
@@ -14,7 +14,7 @@ abstract class RecurringIncomeRepository {
 }
 
 class DriftRecurringIncomeRepository implements RecurringIncomeRepository {
-  final SaplingDatabase _db;
+  final LekoDatabase _db;
 
   DriftRecurringIncomeRepository(this._db);
 

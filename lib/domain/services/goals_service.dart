@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/utils/enum_serialization.dart';
-import '../../data/db/sapling_database.dart';
+import '../../data/db/leko_database.dart';
 import '../../data/repositories/goals_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../models/enums.dart';

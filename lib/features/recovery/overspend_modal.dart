@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/recovery_providers.dart';
 import '../../core/providers/widget_snapshot_providers.dart';
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../domain/services/overspend_detector.dart';
 
@@ -29,13 +29,13 @@ class OverspendModal extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Icon(Icons.warning_amber_rounded,
-              color: SaplingColors.labelRed, size: 48),
+              color: LekoColors.labelRed, size: 48),
           const SizedBox(height: 12),
           Text(
             'You overspent today',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: SaplingColors.labelRed,
+                  color: LekoColors.labelRed,
                 ),
             textAlign: TextAlign.center,
           ),
@@ -51,7 +51,7 @@ class OverspendModal extends ConsumerWidget {
             style: Theme.of(context)
                 .textTheme
                 .bodySmall
-                ?.copyWith(color: SaplingColors.textSecondary),
+                ?.copyWith(color: LekoColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -147,7 +147,7 @@ class _PlanOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: SaplingColors.labelRed.withValues(alpha: 0.05),
+      color: LekoColors.labelRed.withValues(alpha: 0.05),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -156,7 +156,7 @@ class _PlanOption extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              Icon(icon, color: SaplingColors.labelRed, size: 24),
+              Icon(icon, color: LekoColors.labelRed, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -169,11 +169,11 @@ class _PlanOption extends StatelessWidget {
                     Text(subtitle,
                         style: TextStyle(
                             fontSize: 12,
-                            color: SaplingColors.textSecondary)),
+                            color: LekoColors.textSecondary)),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: SaplingColors.divider),
+              const Icon(Icons.chevron_right, color: LekoColors.divider),
             ],
           ),
         ),

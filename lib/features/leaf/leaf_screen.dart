@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/sapling_colors.dart';
+import '../../core/theme/leko_colors.dart';
 import 'widgets/plant_simulation_view.dart';
 
 class LeafScreen extends ConsumerWidget {
@@ -15,7 +15,7 @@ class LeafScreen extends ConsumerWidget {
     final double safeBottomPadding = bottomPadding + 16.0;
 
     return Scaffold(
-      backgroundColor: SaplingColors.background, // Matches #F7F6F3 off-white
+      backgroundColor: LekoColors.background, // Matches #F7F6F3 off-white
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -36,7 +36,7 @@ class LeafScreen extends ConsumerWidget {
                               'Georgia', // Editorial serif to match inspiration
                           fontSize: 28,
                           fontWeight: FontWeight.w500,
-                          color: SaplingColors.textPrimary,
+                          color: LekoColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -50,7 +50,7 @@ class LeafScreen extends ConsumerWidget {
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: SaplingColors.textSecondary.withValues(
+                            color: LekoColors.textSecondary.withValues(
                               alpha: 0.2,
                             ),
                             width: 1,
@@ -64,7 +64,7 @@ class LeafScreen extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
-                                color: SaplingColors.textSecondary.withValues(
+                                color: LekoColors.textSecondary.withValues(
                                   alpha: 0.8,
                                 ),
                               ),
@@ -73,7 +73,7 @@ class LeafScreen extends ConsumerWidget {
                             Icon(
                               Icons.close_rounded,
                               size: 14,
-                              color: SaplingColors.textSecondary.withValues(
+                              color: LekoColors.textSecondary.withValues(
                                 alpha: 0.6,
                               ),
                             ),
@@ -126,7 +126,7 @@ class LeafScreen extends ConsumerWidget {
                         'Assign a task or ask anything',
                         style: TextStyle(
                           fontSize: 15,
-                          color: SaplingColors.textSecondary.withValues(
+                          color: LekoColors.textSecondary.withValues(
                             alpha: 0.6,
                           ),
                           fontWeight: FontWeight.w400,
@@ -142,7 +142,7 @@ class LeafScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: SaplingColors.textSecondary.withValues(
+                                color: LekoColors.textSecondary.withValues(
                                   alpha: 0.2,
                                 ),
                                 width: 1,
@@ -150,7 +150,7 @@ class LeafScreen extends ConsumerWidget {
                             ),
                             child: const Icon(
                               Icons.add_rounded,
-                              color: SaplingColors.textPrimary,
+                              color: LekoColors.textPrimary,
                               size: 20,
                             ),
                           ),
@@ -160,10 +160,10 @@ class LeafScreen extends ConsumerWidget {
                             height: 36,
                             padding: const EdgeInsets.symmetric(horizontal: 14),
                             decoration: BoxDecoration(
-                              color: SaplingColors.background,
+                              color: LekoColors.background,
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: SaplingColors.textSecondary.withValues(
+                                color: LekoColors.textSecondary.withValues(
                                   alpha: 0.1,
                                 ),
                                 width: 1,
@@ -173,7 +173,7 @@ class LeafScreen extends ConsumerWidget {
                               children: [
                                 const Icon(
                                   Icons.eco_rounded,
-                                  color: SaplingColors.secondary,
+                                  color: LekoColors.secondary,
                                   size: 16,
                                 ),
                                 const SizedBox(width: 6),
@@ -182,7 +182,7 @@ class LeafScreen extends ConsumerWidget {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: SaplingColors.textPrimary.withValues(
+                                    color: LekoColors.textPrimary.withValues(
                                       alpha: 0.9,
                                     ),
                                   ),
@@ -194,7 +194,7 @@ class LeafScreen extends ConsumerWidget {
                           // Microphone
                           Icon(
                             Icons.mic_none_rounded,
-                            color: SaplingColors.textPrimary.withValues(
+                            color: LekoColors.textPrimary.withValues(
                               alpha: 0.8,
                             ),
                             size: 24,
@@ -205,14 +205,14 @@ class LeafScreen extends ConsumerWidget {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: SaplingColors.background.withValues(
+                              color: LekoColors.background.withValues(
                                 alpha: 0.8,
                               ),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.arrow_upward_rounded,
-                              color: SaplingColors.textSecondary.withValues(
+                              color: LekoColors.textSecondary.withValues(
                                 alpha: 0.4,
                               ),
                               size: 20,

@@ -9,8 +9,8 @@ import '../../core/providers/recovery_providers.dart';
 import '../../core/providers/scheduler_providers.dart';
 import '../../core/providers/settings_providers.dart';
 import '../../core/providers/widget_snapshot_providers.dart';
-import '../../core/theme/sapling_colors.dart';
-import '../../data/db/sapling_database.dart';
+import '../../core/theme/leko_colors.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/services/category_service.dart';
 import '../recovery/overspend_modal.dart';
@@ -437,7 +437,7 @@ class _CategoryRow extends StatelessWidget {
               child: const Icon(
                 Icons.category_outlined,
                 size: 18,
-                color: SaplingColors.secondary,
+                color: LekoColors.secondary,
               ),
             ),
             const SizedBox(width: 14),
@@ -555,7 +555,7 @@ class _CategoryRow extends StatelessWidget {
                                   isSelected
                                       ? const Icon(
                                         Icons.check_circle,
-                                        color: SaplingColors.secondary,
+                                        color: LekoColors.secondary,
                                         size: 22,
                                       )
                                       : null,
@@ -576,9 +576,9 @@ class _CategoryRow extends StatelessWidget {
   }
 
   Color _labelColor(String label) => switch (label) {
-    'orange' => SaplingColors.labelOrange,
-    'red' => SaplingColors.labelRed,
-    _ => SaplingColors.labelGreen,
+    'orange' => LekoColors.labelOrange,
+    'red' => LekoColors.labelRed,
+    _ => LekoColors.labelGreen,
   };
 }
 
@@ -609,7 +609,7 @@ class _DateRow extends StatelessWidget {
               child: const Icon(
                 Icons.calendar_today_outlined,
                 size: 18,
-                color: SaplingColors.secondary,
+                color: LekoColors.secondary,
               ),
             ),
             const SizedBox(width: 14),
@@ -674,7 +674,7 @@ class _NoteRow extends StatelessWidget {
             child: const Icon(
               Icons.edit_note_outlined,
               size: 18,
-              color: SaplingColors.secondary,
+              color: LekoColors.secondary,
             ),
           ),
           const SizedBox(width: 14),
@@ -784,7 +784,7 @@ class _LabelSection extends StatelessWidget {
                 child: const Text(
                   'reset',
                   style: TextStyle(
-                    color: SaplingColors.secondary,
+                    color: LekoColors.secondary,
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),

@@ -21,7 +21,7 @@ class SnapshotWriter {
   final CloseoutService _closeoutService;
   final GoalsRepository? _goalsRepo;
 
-  static const String _dataKey = 'sapling_daily_snapshot';
+  static const String _dataKey = 'leko_daily_snapshot';
 
   SnapshotWriter(
     this._settingsRepo,
@@ -63,8 +63,8 @@ class SnapshotWriter {
     final json = jsonEncode(snapshot.toJson());
     await HomeWidget.saveWidgetData<String>(_dataKey, json);
     await HomeWidget.updateWidget(
-      iOSName: 'SaplingWidget',
-      androidName: 'SaplingWidget',
+      iOSName: 'LekoWidget',
+      androidName: 'LekoWidget',
     );
   }
 }
