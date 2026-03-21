@@ -12,15 +12,14 @@ class WelcomeStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return StepScaffold(
       step: OnboardingStep.welcome,
-      title: 'Welcome to Léko.',
-      subtitle: 'Money without the stress. A system designed to give you clarity, protect your bills, and build your future.',
-      nextLabel: 'Let\'s begin',
+      title: 'Grow your money with more clarity.',
+      subtitle: 'Léko helps you track spending, plan ahead, and know what you can safely spend — without falling behind on bills or goals.',
+      nextLabel: 'Continue',
       onNext: () => ref.read(onboardingControllerProvider.notifier).next(),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // A placeholder for a beautiful premium graphic/logo
             Container(
               width: 120,
               height: 120,

@@ -12,13 +12,11 @@ class PermissionsStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return StepScaffold(
       step: OnboardingStep.permissions,
-      title: 'Stay connected',
-      subtitle: 'To provide the coaching style you just selected, Léko needs permission to send you timely updates.',
-      nextLabel: 'Enable Notifications',
-      secondaryLabel: 'Maybe later',
+      title: 'Stay ahead of bills, goals, and spending.',
+      subtitle: 'Léko can remind you before bills hit, keep you aware of your daily spending pace, and help you maintain your streaks.',
+      nextLabel: 'Enable notifications',
+      secondaryLabel: 'Not now',
       onNext: () {
-        // Here we would use permission_handler to actually request notifications
-        // For now we just record they tapped it and move on
         ref.read(onboardingControllerProvider.notifier).setHasRequestedNotifications();
         ref.read(onboardingControllerProvider.notifier).next();
       },
@@ -26,12 +24,13 @@ class PermissionsStep extends ConsumerWidget {
         ref.read(onboardingControllerProvider.notifier).next();
       },
       onBack: () => ref.read(onboardingControllerProvider.notifier).back(),
-      child: Center(
+      child: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const SizedBox(height: 24),
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: LekoColors.onboardingSurface,
                 shape: BoxShape.circle,
@@ -39,17 +38,17 @@ class PermissionsStep extends ConsumerWidget {
               ),
               child: const Icon(
                 Icons.notifications_active_rounded,
-                size: 64,
+                size: 48,
                 color: LekoColors.onboardingFill,
               ),
             ),
-            const SizedBox(height: 48),
-            _buildBenefitRow(Icons.check_circle_outline, 'Get notified when it\'s safe to spend'),
+            const SizedBox(height: 32),
+            _buildBenefitRow(Icons.check_circle_outline, 'Know what you can safely spend each day'),
             const SizedBox(height: 16),
-            _buildBenefitRow(Icons.check_circle_outline, 'Receive timely bill reminders'),
+            _buildBenefitRow(Icons.check_circle_outline, 'Get a heads-up before bills arrive'),
             const SizedBox(height: 16),
-            _buildBenefitRow(Icons.check_circle_outline, 'See your progress toward goals'),
-            const SizedBox(height: 48),
+            _buildBenefitRow(Icons.check_circle_outline, 'Track your streaks and progress'),
+            const SizedBox(height: 24),
           ],
         ),
       ),

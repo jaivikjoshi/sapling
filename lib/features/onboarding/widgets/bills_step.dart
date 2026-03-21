@@ -26,9 +26,9 @@ class BillsStep extends ConsumerWidget {
 
     return StepScaffold(
       step: OnboardingStep.bills,
-      title: 'The Horizon',
-      subtitle: 'Select the major categories you want Léko to protect funds for. We\'ll dial in the exact amounts later.',
-      nextLabel: selectedBills.isEmpty ? 'Skip for now' : 'Protect ${selectedBills.length} Bill${selectedBills.length == 1 ? '' : 's'}',
+      title: 'What bills do you need to protect?',
+      subtitle: 'Select categories you want Léko to reserve funds for. We\'ll set exact amounts later.',
+      nextLabel: selectedBills.isEmpty ? 'Skip for now' : 'Protect ${selectedBills.length} bill${selectedBills.length == 1 ? '' : 's'}',
       onNext: () => controller.next(),
       onBack: () => controller.back(),
       child: GridView.builder(

@@ -43,9 +43,9 @@ class _BalanceStepState extends ConsumerState<BalanceStep> {
 
     return StepScaffold(
       step: OnboardingStep.balance,
-      title: 'Liquid Reality',
-      subtitle: 'How much money is in your primary checking account right now? Don\'t include savings or credit cards.',
-      nextLabel: 'Set Baseline',
+      title: 'Let\'s build your first plan',
+      subtitle: 'How much is in your primary checking account right now? You can edit everything later.',
+      nextLabel: 'Continue',
       canProceed: balance > 0,
       onNext: () => ref.read(onboardingControllerProvider.notifier).next(),
       onBack: () => ref.read(onboardingControllerProvider.notifier).back(),
@@ -97,8 +97,8 @@ class _BalanceStepState extends ConsumerState<BalanceStep> {
                         hintStyle: TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.w700,
-                          color: LekoColors.onboardingTextSecondary,
-                        ).copyWith(color: LekoColors.onboardingTextSecondary.withValues(alpha: 0.3)),
+                          color: LekoColors.onboardingTextSecondary.withValues(alpha: 0.3),
+                        ),
                       ),
                     ),
                   ),
@@ -107,7 +107,7 @@ class _BalanceStepState extends ConsumerState<BalanceStep> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Rough estimates are perfectly fine. You can adjust this later.',
+              'Rough estimates are perfectly fine.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: LekoColors.onboardingTextSecondary.withOpacity(0.8),

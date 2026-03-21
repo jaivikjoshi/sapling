@@ -15,40 +15,42 @@ class PrimaryNeedStep extends ConsumerWidget {
 
     return StepScaffold(
       step: OnboardingStep.primaryNeed,
-      title: 'What brings you to Léko?',
-      subtitle: 'We\'ll personalize your experience based on what matters most right now.',
+      title: 'What do you want Léko to help with first?',
+      subtitle: 'We\'ll tailor your setup so Léko feels useful from day one.',
       canProceed: selectedNeed != null,
       onNext: () => controller.next(),
       onBack: () => controller.back(),
       child: ListView(
         children: [
           SingleSelectCard(
-            title: 'Protect my bills',
-            description: 'Stop stressing about what\'s due and when.',
-            icon: Icons.shield_rounded,
+            title: 'Stop overspending',
+            isSelected: selectedNeed == 'overspending',
+            onTap: () => controller.setPrimaryNeed('overspending'),
+          ),
+          SingleSelectCard(
+            title: 'Stay on top of bills',
             isSelected: selectedNeed == 'bills',
             onTap: () => controller.setPrimaryNeed('bills'),
           ),
           SingleSelectCard(
-            title: 'Know my safe to spend',
-            description: 'Understand exactly how much I can guilt-free spend today.',
-            icon: Icons.account_balance_wallet_rounded,
-            isSelected: selectedNeed == 'spend',
-            onTap: () => controller.setPrimaryNeed('spend'),
-          ),
-          SingleSelectCard(
-            title: 'Grow my savings',
-            description: 'Build a safety net and reach financial goals faster.',
-            icon: Icons.trending_up_rounded,
+            title: 'Save more consistently',
             isSelected: selectedNeed == 'save',
             onTap: () => controller.setPrimaryNeed('save'),
           ),
           SingleSelectCard(
-            title: 'Gain overall clarity',
-            description: 'Just want a clearer picture of where my money is going.',
-            icon: Icons.visibility_rounded,
+            title: 'Understand where my money goes',
             isSelected: selectedNeed == 'clarity',
             onTap: () => controller.setPrimaryNeed('clarity'),
+          ),
+          SingleSelectCard(
+            title: 'Build better money habits',
+            isSelected: selectedNeed == 'habits',
+            onTap: () => controller.setPrimaryNeed('habits'),
+          ),
+          SingleSelectCard(
+            title: 'Plan around irregular income',
+            isSelected: selectedNeed == 'irregular',
+            onTap: () => controller.setPrimaryNeed('irregular'),
           ),
         ],
       ),

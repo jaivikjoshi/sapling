@@ -5,41 +5,38 @@ class SingleSelectCard extends StatelessWidget {
   const SingleSelectCard({
     super.key,
     required this.title,
-    required this.description,
+    this.description,
     this.icon,
     required this.isSelected,
     required this.onTap,
   });
 
   final String title;
-  final String description;
+  final String? description;
   final IconData? icon;
   final bool isSelected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final bool compact = description == null && icon == null;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: compact ? 16 : 20,
+        ),
         decoration: BoxDecoration(
           color: isSelected ? LekoColors.onboardingFill.withOpacity(0.15) : LekoColors.onboardingSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? LekoColors.onboardingFill : Colors.transparent,
+            color: isSelected ? LekoColors.onboardingFill : LekoColors.onboardingSurface,
             width: 2,
           ),
-          boxShadow: [
-            if (!isSelected)
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-          ],
         ),
         child: Row(
           children: [
@@ -58,37 +55,40 @@ class SingleSelectCard extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: compact ? 16 : 18,
                       fontWeight: FontWeight.w600,
                       color: isSelected ? LekoColors.onboardingTextPrimary : LekoColors.onboardingTextPrimary.withOpacity(0.9),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: LekoColors.onboardingTextSecondary,
-                      height: 1.3,
+                  if (description != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      description!,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: LekoColors.onboardingTextSecondary,
+                        height: 1.3,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
             const SizedBox(width: 16),
-            Container(
-              width: 24,
-              height: 24,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 22,
+              height: 22,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? LekoColors.onboardingFill : LekoColors.onboardingTextSecondary.withOpacity(0.5),
+                  color: isSelected ? LekoColors.onboardingFill : LekoColors.onboardingTextSecondary.withOpacity(0.4),
                   width: 2,
                 ),
                 color: isSelected ? LekoColors.onboardingFill : Colors.transparent,
               ),
               child: isSelected
-                  ? const Icon(Icons.check, size: 16, color: LekoColors.onboardingBackground)
+                  ? const Icon(Icons.check, size: 14, color: LekoColors.onboardingBackground)
                   : null,
             ),
           ],
