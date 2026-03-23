@@ -228,16 +228,15 @@ class _GlassNavBar extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(36),
           boxShadow: [
-            // Soft light lift shadow matching inspiration
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: Colors.black.withValues(alpha: 0.28),
+              blurRadius: 28,
+              offset: const Offset(0, 14),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 40,
-              offset: const Offset(0, 20),
+              color: const Color(0xFF1D6A66).withValues(alpha: 0.10),
+              blurRadius: 30,
+              spreadRadius: -8,
             ),
           ],
         ),
@@ -249,12 +248,11 @@ class _GlassNavBar extends StatelessWidget {
               height: 72,
               padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
-                // Light glass background almost totally opaque but soft
-                color: const Color(0xFFFDFDFD).withValues(alpha: 0.88),
+                color: const Color(0xFF0C1719).withValues(alpha: 0.88),
                 borderRadius: BorderRadius.circular(36),
                 border: Border.all(
-                  color: const Color(0xFFE4E4E4).withValues(alpha: 0.5),
-                  width: 0.5,
+                  color: const Color(0xFF24514E).withValues(alpha: 0.65),
+                  width: 0.8,
                 ),
               ),
               child: Row(
@@ -323,10 +321,9 @@ class _NavBarItem extends StatelessWidget {
   final VoidCallback onTap;
   final bool isIconOnly;
 
-  // Modern Light Theme details based on inspiration
-  static const _activePillColor = Color(0xFFEEEEEE); // Light grey pill
-  static const _activeColor = Color(0xFF1E282A); // Pure, dark charcoal
-  static const _inactiveColor = Color(0xFFAAB4BA); // Dim grey
+  static const _activePillColor = Color(0xFF17353A);
+  static const _activeColor = Color(0xFFF5F1E8);
+  static const _inactiveColor = Color(0xFF79918F);
 
   @override
   Widget build(BuildContext context) {
