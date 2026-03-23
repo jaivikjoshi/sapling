@@ -29,6 +29,7 @@ Future<void> saveSettingsField(
   RolloverResetType? rolloverResetType,
   int? spendingBaselineDays,
   AllowanceMode? allowanceDefaultMode,
+  String? Function()? primaryGoalId,
   PaydayBehavior? defaultPaydayBehavior,
   String? Function()? paydayAnchorRecurringIncomeId,
   bool? paydayEnabled,
@@ -50,6 +51,9 @@ Future<void> saveSettingsField(
         : const Value.absent(),
     allowanceDefaultMode: allowanceDefaultMode != null
         ? Value(enumToDb(allowanceDefaultMode))
+        : const Value.absent(),
+    primaryGoalId: primaryGoalId != null
+        ? Value(primaryGoalId())
         : const Value.absent(),
     defaultPaydayBehavior: defaultPaydayBehavior != null
         ? Value(enumToDb(defaultPaydayBehavior))

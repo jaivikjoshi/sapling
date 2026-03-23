@@ -142,20 +142,9 @@ class _TopBar extends ConsumerWidget {
     final mode = ref.watch(effectiveAllowanceModeProvider);
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _StreakBadge(onTap: onStreakTap),
-        const Spacer(),
-        const Text(
-          'Leko',
-          style: TextStyle(
-            fontFamily: 'Georgia',
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: _HomePalette.textPrimary,
-            letterSpacing: -0.6,
-          ),
-        ),
-        const Spacer(),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -327,58 +327,23 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isIconOnly) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Container(
-          width: 52,
-          height: 52,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isSelected ? _activePillColor : Colors.transparent,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            isSelected ? activeIcon : inactiveIcon,
-            color: isSelected ? _activeColor : _inactiveColor,
-            size: 26,
-          ),
-        ),
-      );
-    }
-
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
         height: 52,
-        constraints: const BoxConstraints(minWidth: 54),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        width: isIconOnly ? 52 : 56,
         decoration: BoxDecoration(
           color: isSelected ? _activePillColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: isIconOnly ? null : BorderRadius.circular(20),
+          shape: isIconOnly ? BoxShape.circle : BoxShape.rectangle,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isSelected ? activeIcon : inactiveIcon,
-              color: isSelected ? _activeColor : _inactiveColor,
-              size: 22,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? _activeColor : _inactiveColor,
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                letterSpacing: 0.2,
-              ),
-              maxLines: 1,
-            ),
-          ],
+        child: Center(
+          child: Icon(
+            isSelected ? activeIcon : inactiveIcon,
+            color: isSelected ? _activeColor : _inactiveColor,
+            size: isIconOnly ? 26 : 22,
+          ),
         ),
       ),
     );

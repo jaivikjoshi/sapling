@@ -32,16 +32,36 @@ class CloseoutNotificationService {
     }
     final android = AndroidInitializationSettings('@mipmap/ic_launcher');
     final ios = DarwinInitializationSettings(
-      requestAlertPermission: true,
+      requestAlertPermission: false,
       requestBadgePermission: false,
+      requestSoundPermission: false,
     );
     await _plugin.initialize(
       InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: _onResponse,
     );
+  }
+
+  Future<bool> requestPermissions() async {
     if (Platform.isAndroid) {
-      await _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+      return await _plugin
+              .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin>()
+              ?.requestNotificationsPermission() ??
+          false;
     }
+    if (Platform.isIOS) {
+      return await _plugin
+              .resolvePlatformSpecificImplementation<
+                  IOSFlutterLocalNotificationsPlugin>()
+              ?.requestPermissions(
+                alert: true,
+                badge: false,
+                sound: true,
+              ) ??
+          false;
+    }
+    return true;
   }
 
   void _onResponse(NotificationResponse response) {
