@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,38 +28,603 @@ class SettingsScreen extends ConsumerWidget {
     final profileService = ref.watch(profileServiceProvider);
 
     return Scaffold(
-      backgroundColor: _SettingsPalette.background,
-      body: Stack(
-        children: [
-          const _SettingsBackdrop(),
-          SafeArea(
-            child: settingsAsync.when(
-              data: (settings) => _SettingsBody(
-                settings: settings,
-                user: user,
-                goals: goals,
-                recurringIncomes: incomes,
-                profileService: profileService,
+      backgroundColor: _SettingsReferencePalette.background,
+      body: SafeArea(
+        child: settingsAsync.when(
+          data: (settings) => _PrototypeSettingsBody(
+            settings: settings,
+            user: user,
+            goals: goals,
+            recurringIncomes: incomes,
+            profileService: profileService,
+          ),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: _SettingsReferencePalette.navy),
+          ),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Settings failed to load.\n$error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: _SettingsReferencePalette.textSecondary),
               ),
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: _SettingsPalette.teal),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrototypeSettingsBody extends ConsumerWidget {
+  const _PrototypeSettingsBody({
+    required this.settings,
+    required this.user,
+    required this.goals,
+    required this.recurringIncomes,
+    required this.profileService,
+  });
+
+  final UserSettings settings;
+  final User? user;
+  final List<dynamic> goals;
+  final List<dynamic> recurringIncomes;
+  final ProfileService profileService;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repo = ref.read(settingsRepositoryProvider);
+    final displayName = profileService.displayName(user);
+    final initials = profileService.initials(user);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 120),
+      children: [
+        _PrototypeSettingsHeader(),
+        const SizedBox(height: 18),
+        _PrototypeProfileCard(
+          initials: initials,
+          displayName: displayName.isEmpty ? 'Leko user' : displayName,
+          email: user?.email ?? 'Signed out',
+        ),
+        const SizedBox(height: 16),
+        _PrototypeSettingsGroup(
+          title: 'ACCOUNT',
+          children: [
+            _PrototypeSettingsRow(
+              icon: Icons.mail_outline_rounded,
+              title: 'Email and login',
+              subtitle: 'Password, sign-in, recovery',
+              onTap: () => _showComingSoon(context, 'Email and login'),
+            ),
+            _PrototypeSettingsRow(
+              icon: Icons.notifications_none_rounded,
+              title: 'Notifications',
+              subtitle: 'Bills, check-ins, reminders',
+              onTap: () => context.push('/settings'),
+            ),
+            _PrototypeSettingsRow(
+              icon: Icons.paid_outlined,
+              title: 'Budget preferences',
+              subtitle: 'Default budget and categories',
+              isLast: true,
+              onTap: () => _showChoiceSheet<AllowanceMode>(
+                context,
+                title: 'Default allowance mode',
+                value: settings.allowanceDefaultMode,
+                items: AllowanceMode.values,
+                labelOf: _allowanceModeLabel,
+                subtitleOf: (value) => switch (value) {
+                  AllowanceMode.paycheck => 'Plan to the next cycle or payday',
+                  AllowanceMode.goal => 'Plan around your primary goal',
+                },
+                onSelected: (value) =>
+                    saveSettingsField(repo, allowanceDefaultMode: value),
               ),
-              error: (error, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    'Settings failed to load.\n$error',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: _SettingsPalette.textSecondary),
-                  ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _PrototypeSettingsGroup(
+          title: 'APP',
+          children: [
+            _PrototypeSettingsRow(
+              icon: Icons.schedule_rounded,
+              title: 'Reminders',
+              subtitle: 'Timing and frequency',
+              onTap: () => _showTimePickerRow(
+                context,
+                initialValue: settings.nightlyCloseoutTime,
+                onSelected: (value) =>
+                    saveSettingsField(repo, nightlyCloseoutTime: value),
+              ),
+            ),
+            _PrototypeSettingsRow(
+              icon: Icons.shield_outlined,
+              title: 'Security and privacy',
+              subtitle: 'Data settings and protection',
+              onTap: () => _showComingSoon(context, 'Security and privacy'),
+            ),
+            _PrototypeSettingsRow(
+              icon: Icons.fullscreen_rounded,
+              title: 'Export data',
+              subtitle: 'CSV, summaries, and reports',
+              onTap: () => _showComingSoon(context, 'Export data'),
+            ),
+            _PrototypeSettingsRow(
+              icon: Icons.help_outline_rounded,
+              title: 'Help and support',
+              subtitle: 'Get help or send feedback',
+              isLast: true,
+              onTap: () => _showComingSoon(context, 'Help and support'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _PrototypeAppearanceGroup(
+          enabled: false,
+          onToggle: (_) {},
+        ),
+        const SizedBox(height: 16),
+        _PrototypeSignOutCard(
+          onTap: user == null ? null : () => _logout(context, ref),
+        ),
+      ],
+    );
+  }
+}
+
+class _PrototypeSettingsHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Settings',
+                style: TextStyle(
+                  color: _SettingsReferencePalette.textPrimary,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -1.1,
                 ),
               ),
+              SizedBox(height: 4),
+              Text(
+                'Make Leko work the way you want.',
+                style: TextStyle(
+                  color: _SettingsReferencePalette.textSecondary,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {},
+            borderRadius: BorderRadius.circular(999),
+            child: Ink(
+              width: 52,
+              height: 52,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x120F172A),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.person_outline_rounded,
+                color: _SettingsReferencePalette.textPrimary,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PrototypeProfileCard extends StatelessWidget {
+  const _PrototypeProfileCard({
+    required this.initials,
+    required this.displayName,
+    required this.email,
+  });
+
+  final String initials;
+  final String displayName;
+  final String email;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              color: _SettingsReferencePalette.navy,
+              borderRadius: BorderRadius.all(Radius.circular(24)),
+            ),
+            child: Center(
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  style: const TextStyle(
+                    color: _SettingsReferencePalette.textPrimary,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  email,
+                  style: const TextStyle(
+                    color: _SettingsReferencePalette.textSecondary,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _PrototypeSettingsGroup extends StatelessWidget {
+  const _PrototypeSettingsGroup({
+    required this.title,
+    required this.children,
+  });
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: _SettingsReferencePalette.label,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+class _PrototypeSettingsRow extends StatelessWidget {
+  const _PrototypeSettingsRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+    this.isLast = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 4,
+            right: 4,
+            top: 10,
+            bottom: isLast ? 10 : 16,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: _SettingsReferencePalette.iconCircle,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: _SettingsReferencePalette.iconAccent,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: _SettingsReferencePalette.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: _SettingsReferencePalette.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: _SettingsReferencePalette.chevron,
+                size: 22,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrototypeAppearanceGroup extends StatelessWidget {
+  const _PrototypeAppearanceGroup({
+    required this.enabled,
+    required this.onToggle,
+  });
+
+  final bool enabled;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              'APPEARANCE',
+              style: TextStyle(
+                color: _SettingsReferencePalette.label,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    color: _SettingsReferencePalette.iconCircle,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.dark_mode_outlined,
+                    color: _SettingsReferencePalette.iconAccent,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Dark mode',
+                        style: TextStyle(
+                          color: _SettingsReferencePalette.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Coming soon',
+                        style: TextStyle(
+                          color: _SettingsReferencePalette.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: enabled,
+                  onChanged: onToggle,
+                  activeColor: Colors.white,
+                  activeTrackColor: _SettingsReferencePalette.navy,
+                  inactiveThumbColor: Colors.white,
+                  inactiveTrackColor: const Color(0xFFDCE7F7),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrototypeSignOutCard extends StatelessWidget {
+  const _PrototypeSignOutCard({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(28),
+        child: Ink(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x120F172A),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF1F2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.logout_rounded,
+                  color: _SettingsReferencePalette.danger,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sign out',
+                      style: TextStyle(
+                        color: _SettingsReferencePalette.danger,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'You can sign back in anytime',
+                      style: TextStyle(
+                        color: _SettingsReferencePalette.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+abstract final class _SettingsReferencePalette {
+  static const background = Color(0xFFF5F7FB);
+  static const navy = Color(0xFF132440);
+  static const textPrimary = Color(0xFF0F172A);
+  static const textSecondary = Color(0xFF64748B);
+  static const label = Color(0xFF94A3B8);
+  static const iconCircle = Color(0xFFF1F5F9);
+  static const iconAccent = Color(0xFF475569);
+  static const chevron = Color(0xFF94A3B8);
+  static const danger = Color(0xFFE11D48);
 }
 
 class _SettingsBody extends ConsumerWidget {

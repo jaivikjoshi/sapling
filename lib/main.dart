@@ -5,6 +5,7 @@ import 'package:home_widget/home_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
+import 'core/config/supabase_dart_defines.dart';
 import 'core/notifications/closeout_notification_service.dart';
 
 /// Process auth deep link when app was launched from email verification or OAuth callback.
@@ -28,11 +29,21 @@ bool _isAuthCallback(Uri uri) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: 'https://ckunakmbxrpinnyzogez.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrdW5ha21ieHJwaW5ueXpvZ2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc2MzEsImV4cCI6MjA4ODE3MzYzMX0.XoYETYaE3Lw9-Oi3pc2F2pcXrD65qEnLmCfuTZqAjZg',
-  );
+  final url = SupabaseDartDefines.url;
+  final anonKey = SupabaseDartDefines.anonKey;
+  if (url.isEmpty || anonKey.isEmpty) {
+    throw StateError(
+      'Supabase is not configured. If your free project was paused, open '
+      'https://supabase.com/dashboard, restore it, then copy Project URL and '
+      'anon key from Settings → API.\n\n'
+      'Run with:\n'
+      '  flutter run --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co '
+      '--dart-define=SUPABASE_ANON_KEY=<anon-key>\n\n'
+      'Or edit sapling/run_dev.sh with those values and run ./run_dev.sh',
+    );
+  }
+
+  await Supabase.initialize(url: url, anonKey: anonKey);
   // Supabase redirect URLs (add in Dashboard → Auth → URL config):
   // com.jaivik.leko://auth-callback (email verification)
   // com.jaivik.leko://login-callback (OAuth)

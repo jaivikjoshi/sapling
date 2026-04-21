@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element, unnecessary_non_null_assertion, unnecessary_brace_in_string_interps
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -13,9 +15,7 @@ import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
-import '../../domain/models/settings_model.dart';
 import '../../domain/services/goal_feasibility_service.dart';
-import '../../domain/services/goals_service.dart';
 import '../../domain/services/projection_service.dart';
 import 'goal_form_sheet.dart';
 
@@ -126,106 +126,127 @@ final goalInsightsProvider = FutureProvider<Map<String, GoalInsight>>((ref) asyn
   return result;
 });
 
-class GoalsScreen extends ConsumerWidget {
+class GoalsScreen extends ConsumerStatefulWidget {
   const GoalsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GoalsScreen> createState() => _GoalsScreenState();
+}
+
+enum _GoalFilter { all, active, nearTarget, completed }
+
+class _GoalsScreenState extends ConsumerState<GoalsScreen> {
+  _GoalFilter _filter = _GoalFilter.active;
+
+  @override
+  Widget build(BuildContext context) {
     final goalsAsync = ref.watch(goalsStreamProvider);
-    final settings = ref.watch(settingsStreamProvider).valueOrNull;
     final insightsAsync = ref.watch(goalInsightsProvider);
 
     return Scaffold(
-      backgroundColor: _GoalsPalette.background,
-      body: Stack(
-        children: [
-          const _GoalsBackdrop(),
-          SafeArea(
-            bottom: false,
-            child: goalsAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: _GoalsPalette.teal),
-              ),
-              error: (e, _) => Center(
-                child: Text(
-                  'Unable to load goals.\n$e',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: _GoalsPalette.textSecondary),
-                ),
-              ),
-              data: (goals) {
-                if (goals.isEmpty) {
-                  return _EmptyGoalsState(onAdd: () => _showForm(context));
-                }
-
-                final primaryId = settings?.primaryGoalId;
-                Goal? primaryGoal;
-                if (primaryId != null) {
-                  for (final goal in goals) {
-                    if (goal.id == primaryId) {
-                      primaryGoal = goal;
-                      break;
-                    }
-                  }
-                }
-
-                final otherGoals = goals
-                    .where((goal) => goal.id != primaryGoal?.id)
-                    .toList();
-                final totalTarget = goals.fold<double>(
-                  0,
-                  (sum, goal) => sum + goal.targetAmount,
-                );
-
-                return ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 116),
-                  children: [
-                    _GoalsHeader(
-                      activeGoalCount: goals.length,
-                      totalTarget: totalTarget,
-                      onAdd: () => _showForm(context),
-                    ),
-                    const SizedBox(height: 22),
-                    if (primaryGoal != null) ...[
-                      _PrimaryGoalSection(
-                        goal: primaryGoal!,
-                        insight: insightsAsync.valueOrNull?[primaryGoal!.id],
-                        onOpen: () => _openDetail(context, primaryGoal!.id),
-                        onEdit: () => _showForm(context, existing: primaryGoal!),
-                      ),
-                      const SizedBox(height: 18),
-                    ] else ...[
-                      const _NoPrimaryGoalBanner(),
-                      const SizedBox(height: 18),
-                    ],
-                    if (otherGoals.isNotEmpty) ...[
-                      const _SectionLabel(
-                        title: 'Other goals',
-                        subtitle: 'Reorder them to keep your priorities clear.',
-                      ),
-                      const SizedBox(height: 12),
-                      _ReorderableGoalsSection(
-                        goals: otherGoals,
-                        primaryGoalId: primaryGoal?.id,
-                        insights: insightsAsync.valueOrNull ?? const {},
-                        onOpenGoal: (goalId) => _openDetail(context, goalId),
-                        onEditGoal: (goal) => _showForm(context, existing: goal),
-                      ),
-                    ],
-                    if (goals.length == 1) ...[
-                      const SizedBox(height: 18),
-                      _SingleGoalSupportCard(
-                        primaryExists: primaryGoal != null,
-                        onAddGoal: () => _showForm(context),
-                      ),
-                    ],
-                  ],
-                );
-              },
+      backgroundColor: _GoalsReferencePalette.background,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 78),
+        child: _AddGoalFab(
+          onTap: () => _showForm(context),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      body: SafeArea(
+        bottom: false,
+        child: goalsAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: _GoalsReferencePalette.accent),
+          ),
+          error: (e, _) => Center(
+            child: Text(
+              'Unable to load goals.\n$e',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: _GoalsReferencePalette.textSecondary),
             ),
           ),
-        ],
+          data: (goals) {
+            final insights = insightsAsync.valueOrNull ?? const <String, GoalInsight>{};
+            final sortedGoals = [...goals]..sort((a, b) {
+              final aDate = DateTime(a.targetDate.year, a.targetDate.month, a.targetDate.day);
+              final bDate = DateTime(b.targetDate.year, b.targetDate.month, b.targetDate.day);
+              return aDate.compareTo(bDate);
+            });
+            final filteredGoals = _applyGoalFilter(sortedGoals, insights);
+            final summary = _buildGoalsSummary(sortedGoals, insights);
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(24, 14, 24, 136),
+              children: [
+                _GoalsReferenceHeader(
+                  onSearch: () {},
+                ),
+                const SizedBox(height: 22),
+                _GoalsSummaryCard(summary: summary),
+                const SizedBox(height: 16),
+                _GoalsFilterPills(
+                  selected: _filter,
+                  onSelected: (next) => setState(() => _filter = next),
+                ),
+                const SizedBox(height: 18),
+                if (filteredGoals.isEmpty)
+                  const _GoalsEmptyStateCard()
+                else
+                  Column(
+                    children: [
+                      for (final goal in filteredGoals) ...[
+                        _GoalsReferenceCard(
+                          goal: goal,
+                          insight: insights[goal.id],
+                          onTap: () => _openDetail(context, goal.id),
+                        ),
+                        if (goal != filteredGoals.last) const SizedBox(height: 16),
+                      ],
+                    ],
+                  ),
+              ],
+            );
+          },
+        ),
       ),
+    );
+  }
+
+  List<Goal> _applyGoalFilter(
+    List<Goal> goals,
+    Map<String, GoalInsight> insights,
+  ) {
+    return goals.where((goal) {
+      final insight = insights[goal.id];
+      final progress = insight?.progress ?? 0.0;
+      return switch (_filter) {
+        _GoalFilter.all => true,
+        _GoalFilter.active => progress < 1.0,
+        _GoalFilter.nearTarget => progress >= 0.45 && progress < 1.0,
+        _GoalFilter.completed => progress >= 1.0,
+      };
+    }).toList(growable: false);
+  }
+
+  _GoalsSummaryData _buildGoalsSummary(
+    List<Goal> goals,
+    Map<String, GoalInsight> insights,
+  ) {
+    final savedAcrossGoals = goals.fold<double>(0, (sum, goal) {
+      final insight = insights[goal.id];
+      return sum + (insight?.currentTowardGoal ?? 0.0);
+    });
+    final activeCount = goals
+        .where((goal) => (insights[goal.id]?.progress ?? 0.0) < 1.0)
+        .length;
+    final halfwayCount = goals
+        .where((goal) => (insights[goal.id]?.progress ?? 0.0) >= 0.5)
+        .length;
+
+    return _GoalsSummaryData(
+      savedAcrossGoals: savedAcrossGoals,
+      activeCount: activeCount,
+      halfwayCount: halfwayCount,
     );
   }
 
@@ -233,7 +254,7 @@ class GoalsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: _GoalsPalette.background,
+      backgroundColor: _GoalsReferencePalette.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
@@ -247,6 +268,624 @@ class GoalsScreen extends ConsumerWidget {
       MaterialPageRoute(builder: (_) => GoalDetailScreen(goalId: goalId)),
     );
   }
+}
+
+class _GoalsReferenceHeader extends StatelessWidget {
+  const _GoalsReferenceHeader({required this.onSearch});
+
+  final VoidCallback onSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Goals',
+                style: TextStyle(
+                  color: _GoalsReferencePalette.textPrimary,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -1.1,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Build momentum toward the things you care about.',
+                style: TextStyle(
+                  color: _GoalsReferencePalette.textSecondary,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        _GoalsCircleButton(
+          icon: Icons.search_rounded,
+          onTap: onSearch,
+        ),
+      ],
+    );
+  }
+}
+
+class _GoalsSummaryData {
+  const _GoalsSummaryData({
+    required this.savedAcrossGoals,
+    required this.activeCount,
+    required this.halfwayCount,
+  });
+
+  final double savedAcrossGoals;
+  final int activeCount;
+  final int halfwayCount;
+}
+
+class _GoalsSummaryCard extends StatelessWidget {
+  const _GoalsSummaryCard({required this.summary});
+
+  final _GoalsSummaryData summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Expanded(
+                child: Text(
+                  'SAVED ACROSS GOALS',
+                  style: TextStyle(
+                    color: _GoalsReferencePalette.label,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.9,
+                  ),
+                ),
+              ),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: _GoalsReferencePalette.navy,
+                  borderRadius: BorderRadius.all(Radius.circular(18)),
+                ),
+                child: const Icon(
+                  Icons.gps_fixed_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            formatCurrency(summary.savedAcrossGoals),
+            style: const TextStyle(
+              color: _GoalsReferencePalette.textPrimary,
+              fontSize: 34,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '${summary.activeCount} active ${summary.activeCount == 1 ? 'goal' : 'goals'}. ${summary.halfwayCount} ${summary.halfwayCount == 1 ? 'is' : 'are'} more than halfway there.',
+            style: const TextStyle(
+              color: _GoalsReferencePalette.textSecondary,
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GoalsFilterPills extends StatelessWidget {
+  const _GoalsFilterPills({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final _GoalFilter selected;
+  final ValueChanged<_GoalFilter> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _FilterPill(
+            label: 'All',
+            selected: selected == _GoalFilter.all,
+            onTap: () => onSelected(_GoalFilter.all),
+          ),
+          const SizedBox(width: 10),
+          _FilterPill(
+            label: 'Active',
+            selected: selected == _GoalFilter.active,
+            onTap: () => onSelected(_GoalFilter.active),
+          ),
+          const SizedBox(width: 10),
+          _FilterPill(
+            label: 'Near target',
+            selected: selected == _GoalFilter.nearTarget,
+            onTap: () => onSelected(_GoalFilter.nearTarget),
+          ),
+          const SizedBox(width: 10),
+          _FilterPill(
+            label: 'Completed',
+            selected: selected == _GoalFilter.completed,
+            onTap: () => onSelected(_GoalFilter.completed),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? _GoalsReferencePalette.navy : Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x120F172A),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : _GoalsReferencePalette.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoalsReferenceCard extends StatelessWidget {
+  const _GoalsReferenceCard({
+    required this.goal,
+    required this.insight,
+    required this.onTap,
+  });
+
+  final Goal goal;
+  final GoalInsight? insight;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = (insight?.progress ?? 0.0).clamp(0.0, 1.0);
+    final saved = insight?.currentTowardGoal ?? 0.0;
+    final remaining = math.max(goal.targetAmount - saved, 0.0);
+    final weeklyPace = (insight?.dailyPaceNeeded ?? 0.0) * 7;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(28),
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x120F172A),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: _goalToneBackground(goal.name),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      _goalIcon(goal.name),
+                      color: _goalIconColor(goal.name),
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          goal.name,
+                          style: const TextStyle(
+                            color: _GoalsReferencePalette.textPrimary,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Target date ${DateFormat.MMMd().format(goal.targetDate)}',
+                          style: const TextStyle(
+                            color: _GoalsReferencePalette.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: _GoalsReferencePalette.iconCircle,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: _GoalsReferencePalette.textSecondary,
+                      size: 22,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: _AmountInsetCard(
+                      label: 'Saved',
+                      amount: formatCurrency(saved),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _AmountInsetCard(
+                      label: 'Target',
+                      amount: formatCurrency(goal.targetAmount),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Progress',
+                      style: TextStyle(
+                        color: _GoalsReferencePalette.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${(progress * 100).round()}%',
+                    style: const TextStyle(
+                      color: _GoalsReferencePalette.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 8,
+                  backgroundColor: _GoalsReferencePalette.progressTrack,
+                  valueColor: const AlwaysStoppedAnimation(
+                    _GoalsReferencePalette.accent,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _weeklyPaceLine(weeklyPace),
+                      style: const TextStyle(
+                        color: _GoalsReferencePalette.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _remainingLine(remaining),
+                    style: const TextStyle(
+                      color: _GoalsReferencePalette.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AmountInsetCard extends StatelessWidget {
+  const _AmountInsetCard({
+    required this.label,
+    required this.amount,
+  });
+
+  final String label;
+  final String amount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      decoration: BoxDecoration(
+        color: _GoalsReferencePalette.inset,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: _GoalsReferencePalette.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            amount,
+            style: const TextStyle(
+              color: _GoalsReferencePalette.textPrimary,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GoalsEmptyStateCard extends StatelessWidget {
+  const _GoalsEmptyStateCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x100F1932),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: const Text(
+        'No goals in this filter yet.',
+        style: TextStyle(
+          color: _GoalsReferencePalette.textSecondary,
+          fontSize: 15,
+        ),
+      ),
+    );
+  }
+}
+
+class _GoalsCircleButton extends StatelessWidget {
+  const _GoalsCircleButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          width: 52,
+          height: 52,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x100F1932),
+                blurRadius: 18,
+                offset: Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Icon(
+            icon,
+            color: _GoalsReferencePalette.textPrimary,
+            size: 22,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddGoalFab extends StatelessWidget {
+  const _AddGoalFab({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: const BoxDecoration(
+            color: _GoalsReferencePalette.navy,
+            borderRadius: BorderRadius.all(Radius.circular(999)),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x24132440),
+                blurRadius: 20,
+                offset: Offset(0, 10),
+              ),
+            ],
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, color: Colors.white, size: 22),
+              SizedBox(width: 10),
+              Text(
+                'Add goal',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _weeklyPaceLine(double weeklyPace) {
+  final rounded = weeklyPace.round();
+  final safeValue = rounded <= 0 ? 0 : rounded;
+  return 'About \$${safeValue}/week keeps this on track';
+}
+
+String _remainingLine(double remaining) {
+  final rounded = remaining.round();
+  return '${NumberFormat.decimalPattern().format(rounded)} left';
+}
+
+IconData _goalIcon(String name) {
+  final lower = name.toLowerCase();
+  if (lower.contains('trip') || lower.contains('travel')) {
+    return Icons.navigation_outlined;
+  }
+  if (lower.contains('fund') || lower.contains('emergency')) {
+    return Icons.shield_outlined;
+  }
+  if (lower.contains('laptop') || lower.contains('computer')) {
+    return Icons.laptop_mac_outlined;
+  }
+  return Icons.gps_fixed_rounded;
+}
+
+Color _goalIconColor(String name) {
+  final lower = name.toLowerCase();
+  if (lower.contains('trip') || lower.contains('travel')) {
+    return _GoalsReferencePalette.accent;
+  }
+  if (lower.contains('laptop') || lower.contains('computer')) {
+    return const Color(0xFFE07B97);
+  }
+  return _GoalsReferencePalette.textPrimary;
+}
+
+Color _goalToneBackground(String name) {
+  final lower = name.toLowerCase();
+  if (lower.contains('trip') || lower.contains('travel')) {
+    return const Color(0xFFF0FDFA);
+  }
+  if (lower.contains('laptop') || lower.contains('computer')) {
+    return const Color(0xFFFFF1F2);
+  }
+  return const Color(0xFFF8FAFC);
+}
+
+abstract final class _GoalsReferencePalette {
+  static const background = Color(0xFFF5F7FB);
+  static const navy = Color(0xFF132440);
+  static const textPrimary = Color(0xFF0F172A);
+  static const textSecondary = Color(0xFF64748B);
+  static const label = Color(0xFF94A3B8);
+  static const iconCircle = Color(0xFFF1F5F9);
+  static const inset = Color(0xFFF8FAFC);
+  static const progressTrack = Color(0xFFE2E8F0);
+  static const accent = Color(0xFF3B9797);
 }
 
 class _GoalsBackdrop extends StatelessWidget {

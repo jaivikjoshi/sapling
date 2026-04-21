@@ -1,3 +1,6 @@
+# Local dev script may contain Supabase keys — keep secrets out of git
+run_dev.sh
+
 # Miscellaneous
 *.class
 *.log

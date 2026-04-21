@@ -73,6 +73,13 @@ String responseForFreeText(LeafContext ctx, String raw) {
   if (q.isEmpty) {
     return 'Ask me about spending today, bills, your goal, or this cycle — I’ll use your live Leko data.';
   }
+  if (_isGreeting(q)) {
+    final name = ctx.greetingName.trim().isEmpty ? 'there' : ctx.greetingName.trim();
+    return 'Hey $name. I can help with spending today, upcoming bills, your goal, or record something like “Add my \$25 dinner.”';
+  }
+  if (_isThanks(q)) {
+    return 'Anytime. Ask about spending today, bills, your goal, or tell me something to record.';
+  }
 
   if (RegExp(r'\b(bill|bills|due|payment)\b').hasMatch(q)) {
     return _bills(ctx);
@@ -92,7 +99,15 @@ String responseForFreeText(LeafContext ctx, String raw) {
     return _overview(ctx);
   }
 
-  return _overview(ctx);
+  return 'I didn’t quite catch that. Ask about spending today, bills, your goal, or say something like “Add my \$25 dinner.”';
+}
+
+bool _isGreeting(String input) {
+  return RegExp(r"^(hi|hey|hello|yo|sup|what'?s up|whats up)\b").hasMatch(input);
+}
+
+bool _isThanks(String input) {
+  return RegExp(r'\b(thanks|thank you|thx|ty)\b').hasMatch(input);
 }
 
 String _spendingToday(LeafContext ctx) {

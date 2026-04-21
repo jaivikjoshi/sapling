@@ -1,3 +1,7 @@
+// ignore_for_file: unused_element, unused_element_parameter
+
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,101 +35,96 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     return Scaffold(
       backgroundColor: _ReportsPalette.background,
-      body: Stack(
-        children: [
-          const _ReportsBackdrop(),
-          SafeArea(
-            child: periodsAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: _ReportsPalette.teal),
+      body: SafeArea(
+        child: periodsAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: _ReportsPalette.teal),
+          ),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Unable to load report periods.\n$error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: _ReportsPalette.textSecondary),
               ),
-              error: (error, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    'Unable to load report periods.\n$error',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: _ReportsPalette.textSecondary),
-                  ),
-                ),
-              ),
-              data: (periods) {
-                if (periods.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No report periods available yet.',
-                      style: TextStyle(color: _ReportsPalette.textSecondary),
-                    ),
-                  );
-                }
-
-                final selectedPeriod = _selectedFrom(periods) ?? periods.first;
-                final request = ReportsRequest(
-                  period: selectedPeriod,
-                  comparisonMode: _comparisonMode,
-                  allowanceMode: allowanceMode,
-                );
-                final snapshotAsync = ref.watch(reportsSnapshotProvider(request));
-
-                return RefreshIndicator(
-                  color: _ReportsPalette.teal,
-                  backgroundColor: _ReportsPalette.surfaceRaised,
-                  onRefresh: () async {
-                    ref.invalidate(reportsSnapshotProvider(request));
-                    await ref.read(reportsSnapshotProvider(request).future);
-                  },
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-                    children: [
-                      _Header(
-                        timeframe: _timeframe,
-                        comparisonMode: _comparisonMode,
-                        period: selectedPeriod,
-                        onTimeframeChanged: (value) {
-                          setState(() {
-                            _timeframe = value;
-                            _selectedPeriodId = null;
-                          });
-                        },
-                        onComparisonChanged: (value) {
-                          setState(() => _comparisonMode = value);
-                        },
-                        onPeriodTap: () => _showPeriodPicker(periods, selectedPeriod),
-                      ),
-                      const SizedBox(height: 24),
-                      snapshotAsync.when(
-                        loading: () => const Padding(
-                          padding: EdgeInsets.only(top: 80),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: _ReportsPalette.teal,
-                            ),
-                          ),
-                        ),
-                        error: (error, _) => _InlineError(
-                          message: 'Reports failed to load.',
-                          details: error.toString(),
-                        ),
-                        data: (snapshot) => _ReportContent(
-                          snapshot: snapshot,
-                          chartMode: _chartMode,
-                          onChartModeChanged: (value) {
-                            setState(() => _chartMode = value);
-                          },
-                          onOpenTransactions: (query, title) {
-                            _showTransactionsSheet(title: title, query: query);
-                          },
-                          onOpenBills: () => _showBillsSheet(snapshot.period),
-                          onOpenGoalImpact: () => _showGoalImpactSheet(snapshot.goal),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
             ),
           ),
-        ],
+          data: (periods) {
+            if (periods.isEmpty) {
+              return const Center(
+                child: Text(
+                  'No report periods available yet.',
+                  style: TextStyle(color: _ReportsPalette.textSecondary),
+                ),
+              );
+            }
+
+            final selectedPeriod = _selectedFrom(periods) ?? periods.first;
+            final request = ReportsRequest(
+              period: selectedPeriod,
+              comparisonMode: _comparisonMode,
+              allowanceMode: allowanceMode,
+            );
+            final snapshotAsync = ref.watch(reportsSnapshotProvider(request));
+
+            return RefreshIndicator(
+              color: _ReportsPalette.teal,
+              backgroundColor: Colors.white,
+              onRefresh: () async {
+                ref.invalidate(reportsSnapshotProvider(request));
+                await ref.read(reportsSnapshotProvider(request).future);
+              },
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 14, 24, 120),
+                children: [
+                  _Header(
+                    timeframe: _timeframe,
+                    comparisonMode: _comparisonMode,
+                    period: selectedPeriod,
+                    onTimeframeChanged: (value) {
+                      setState(() {
+                        _timeframe = value;
+                        _selectedPeriodId = null;
+                      });
+                    },
+                    onComparisonChanged: (value) {
+                      setState(() => _comparisonMode = value);
+                    },
+                    onPeriodTap: () => _showPeriodPicker(periods, selectedPeriod),
+                  ),
+                  const SizedBox(height: 20),
+                  snapshotAsync.when(
+                    loading: () => const Padding(
+                      padding: EdgeInsets.only(top: 80),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: _ReportsPalette.teal,
+                        ),
+                      ),
+                    ),
+                    error: (error, _) => _InlineError(
+                      message: 'Reports failed to load.',
+                      details: error.toString(),
+                    ),
+                    data: (snapshot) => _ReportContent(
+                      snapshot: snapshot,
+                      chartMode: _chartMode,
+                      onChartModeChanged: (value) {
+                        setState(() => _chartMode = value);
+                      },
+                      onOpenTransactions: (query, title) {
+                        _showTransactionsSheet(title: title, query: query);
+                      },
+                      onOpenBills: () => _showBillsSheet(snapshot.period),
+                      onOpenGoalImpact: () => _showGoalImpactSheet(snapshot.goal),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -210,112 +209,30 @@ class _ReportContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _HeroCard(snapshot: snapshot),
+        _TopStatCards(snapshot: snapshot),
         const SizedBox(height: 16),
-        _ChartCard(
+        _PrototypeChartCard(snapshot: snapshot),
+        const SizedBox(height: 16),
+        _InsightCard(snapshot: snapshot),
+        const SizedBox(height: 16),
+        _TopCategoriesCard(
           snapshot: snapshot,
-          chartMode: chartMode,
-          onChartModeChanged: onChartModeChanged,
-        ),
-        const SizedBox(height: 16),
-        _StatsGrid(snapshot: snapshot),
-        const SizedBox(height: 20),
-        _SectionCard(
-          eyebrow: 'Spending breakdown',
-          title: 'What is driving your period',
-          trailing: _GhostButton(
-            label: 'Transactions',
-            onTap: () => onOpenTransactions(
+          onOpenCategory: (category) {
+            onOpenTransactions(
               ReportDrilldownQuery(
                 start: snapshot.period.start,
                 end: snapshot.period.end,
                 expensesOnly: true,
+                categoryId: category.categoryId,
               ),
-              'Spending this period',
-            ),
-          ),
-          child: _SpendingBreakdown(
-            snapshot: snapshot,
-            onOpenCategory: (category) {
-              onOpenTransactions(
-                ReportDrilldownQuery(
-                  start: snapshot.period.start,
-                  end: snapshot.period.end,
-                  expensesOnly: true,
-                  categoryId: category.categoryId,
-                ),
-                category.categoryName,
-              );
-            },
-          ),
+              category.categoryName,
+            );
+          },
         ),
         const SizedBox(height: 16),
-        _SectionCard(
-          eyebrow: 'Label mix',
-          title: 'How intentional the period felt',
-          child: _LabelBreakdown(
-            snapshot: snapshot,
-            onOpenLabel: (label) {
-              onOpenTransactions(
-                ReportDrilldownQuery(
-                  start: snapshot.period.start,
-                  end: snapshot.period.end,
-                  expensesOnly: true,
-                  spendLabel: label.label,
-                ),
-                '${_spendLabelName(label.label)} spend',
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          eyebrow: 'Income',
-          title: 'How money landed in the ledger',
-          trailing: _GhostButton(
-            label: 'Income details',
-            onTap: () => onOpenTransactions(
-              ReportDrilldownQuery(
-                start: snapshot.period.start,
-                end: snapshot.period.end,
-                incomeOnly: true,
-              ),
-              'Income this period',
-            ),
-          ),
-          child: _IncomeSection(snapshot: snapshot),
-        ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          eyebrow: 'Bills',
-          title: 'Only paid bills are counted here',
-          trailing: _GhostButton(
-            label: 'Bill details',
-            onTap: onOpenBills,
-          ),
-          child: _BillsSection(snapshot: snapshot),
-        ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          eyebrow: 'Primary goal',
-          title: 'How this period is affecting your plan',
-          trailing: _GhostButton(
-            label: 'Goal impact',
-            onTap: onOpenGoalImpact,
-          ),
-          child: _GoalSection(snapshot: snapshot),
-        ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          eyebrow: 'Allowance and pace',
-          title: 'The most Leko-specific readout',
-          child: _AllowanceSection(snapshot: snapshot),
-        ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          eyebrow: 'Habit and recovery',
-          title: 'Closeout, no-spend days, and overspend recovery',
-          child: _HabitsSection(snapshot: snapshot),
+        _BottomStatCards(
+          snapshot: snapshot,
+          onOpenBills: onOpenBills,
         ),
       ],
     );
@@ -355,52 +272,587 @@ class _Header extends StatelessWidget {
                     'Reports',
                     style: TextStyle(
                       color: _ReportsPalette.textPrimary,
-                      fontSize: 34,
+                      fontSize: 30,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -1.1,
                     ),
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Pace, pressure, and what is shaping it.',
+                    'A clearer picture of where your money is going.',
                     style: TextStyle(
                       color: _ReportsPalette.textSecondary,
                       fontSize: 14,
+                      height: 1.5,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 12),
-            _ChipButton(
-              label: period.label,
-              icon: Icons.keyboard_arrow_down_rounded,
+            _FilterCircleButton(
+              icon: Icons.tune_rounded,
               onTap: onPeriodTap,
             ),
           ],
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
         _ModeSwitcher(
           timeframe: timeframe,
           onChanged: onTimeframeChanged,
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            _ChipButton(
-              label: period.caption,
-              icon: Icons.calendar_today_rounded,
-              onTap: onPeriodTap,
-            ),
-            _ComparisonSwitcher(
-              comparisonMode: comparisonMode,
-              onChanged: onComparisonChanged,
-            ),
-          ],
+      ],
+    );
+  }
+}
+
+class _TopStatCards extends StatelessWidget {
+  const _TopStatCards({required this.snapshot});
+
+  final ReportsSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final savingsRate = snapshot.earnedThisPeriod <= 0
+        ? 0
+        : (((snapshot.earnedThisPeriod - snapshot.spentThisPeriod) /
+                        snapshot.earnedThisPeriod) *
+                    100)
+                .round();
+
+    return Row(
+      children: [
+        Expanded(
+          child: _SummaryStatCard(
+            label: _spentLabel(snapshot.period.timeframe),
+            value: formatCurrency(snapshot.spentThisPeriod),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _SummaryStatCard(
+            label: 'Savings rate',
+            value: '$savingsRate%',
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _SummaryStatCard extends StatelessWidget {
+  const _SummaryStatCard({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: _ReportsPalette.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: _ReportsPalette.textPrimary,
+              fontSize: 27,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrototypeChartCard extends StatelessWidget {
+  const _PrototypeChartCard({required this.snapshot});
+
+  final ReportsSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final bars = _prototypeBars(snapshot.chart.spend);
+    final comparison = snapshot.hero.comparison;
+    final trendColor =
+        comparison == null || comparison.expenseDelta <= 0
+            ? _ReportsPalette.teal
+            : _ReportsPalette.alert;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Spending overview',
+                      style: TextStyle(
+                        color: _ReportsPalette.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Compared with last month',
+                      style: TextStyle(
+                        color: _ReportsPalette.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    comparison == null || comparison.expenseDelta <= 0
+                        ? Icons.trending_down_rounded
+                        : Icons.trending_up_rounded,
+                    size: 14,
+                    color: trendColor,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _prototypeComparisonText(comparison),
+                    style: TextStyle(
+                      color: trendColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            height: 180,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (var i = 0; i < bars.length; i++) ...[
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        width: 38,
+                        height: bars[i],
+                        decoration: BoxDecoration(
+                          color: i == bars.length - 2
+                              ? _ReportsPalette.navy
+                              : _ReportsPalette.teal,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: List.generate(
+              bars.length,
+              (index) => Expanded(
+                child: Text(
+                  'Week ${index + 1}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: _ReportsPalette.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightCard extends StatelessWidget {
+  const _InsightCard({required this.snapshot});
+
+  final ReportsSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final comparison = snapshot.hero.comparison;
+    final headline = comparison == null
+        ? _heroInsight(snapshot.hero.status)
+        : _insightHeadline(comparison, snapshot.period.timeframe);
+    final detail = snapshot.goalFundingRoom > 0
+        ? 'That alone kept about ${formatCurrency(snapshot.goalFundingRoom)} available for your goal without changing your overall routine much.'
+        : 'A calmer pace here makes more room for bills, recovery, and goal progress.';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      decoration: BoxDecoration(
+        color: _ReportsPalette.navy,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x22132440),
+            blurRadius: 24,
+            offset: Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(
+                Icons.auto_awesome_rounded,
+                size: 15,
+                color: Color(0xB3FFFFFF),
+              ),
+              SizedBox(width: 8),
+              Text(
+                'INSIGHT',
+                style: TextStyle(
+                  color: Color(0xB3FFFFFF),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 1.8,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            headline,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.4,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            detail,
+            style: const TextStyle(
+              color: Color(0xB3FFFFFF),
+              fontSize: 14,
+              height: 1.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopCategoriesCard extends StatelessWidget {
+  const _TopCategoriesCard({
+    required this.snapshot,
+    required this.onOpenCategory,
+  });
+
+  final ReportsSnapshot snapshot;
+  final ValueChanged<ReportCategoryBreakdown> onOpenCategory;
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = snapshot.spending.topCategories;
+    if (categories.isEmpty) {
+      return const _PrototypeCard(
+        child: Text(
+          'No category activity yet for this period.',
+          style: TextStyle(
+            color: _ReportsPalette.textSecondary,
+            fontSize: 14,
+          ),
+        ),
+      );
+    }
+
+    return _PrototypeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Top categories',
+            style: TextStyle(
+              color: _ReportsPalette.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 18),
+          for (final category in categories.take(4)) ...[
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => onOpenCategory(category),
+                borderRadius: BorderRadius.circular(18),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              category.categoryName,
+                              style: const TextStyle(
+                                color: _ReportsPalette.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            formatCurrency(category.total),
+                            style: const TextStyle(
+                              color: _ReportsPalette.textSecondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: category.share,
+                          minHeight: 8,
+                          backgroundColor: _ReportsPalette.line,
+                          valueColor: const AlwaysStoppedAnimation(
+                            _ReportsPalette.teal,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (category != categories.take(4).last) const SizedBox(height: 16),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomStatCards extends StatelessWidget {
+  const _BottomStatCards({
+    required this.snapshot,
+    required this.onOpenBills,
+  });
+
+  final ReportsSnapshot snapshot;
+  final VoidCallback onOpenBills;
+
+  @override
+  Widget build(BuildContext context) {
+    final avgWeeklySpend = snapshot.spending.averageDailySpend * 7;
+    return Row(
+      children: [
+        Expanded(
+          child: _MiniStatCard(
+            icon: Icons.calendar_today_rounded,
+            label: 'Bills this ${_periodWord(snapshot.period.timeframe)}',
+            value: formatCurrency(snapshot.bills.paidBillsTotal),
+            onTap: onOpenBills,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _MiniStatCard(
+            icon: Icons.schedule_rounded,
+            label: 'Avg weekly spend',
+            value: formatCurrency(avgWeeklySpend),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniStatCard extends StatelessWidget {
+  const _MiniStatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: _ReportsPalette.textSecondary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: _ReportsPalette.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              color: _ReportsPalette.textPrimary,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.7,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (onTap == null) return content;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: content,
+      ),
+    );
+  }
+}
+
+class _PrototypeCard extends StatelessWidget {
+  const _PrototypeCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _FilterCircleButton extends StatelessWidget {
+  const _FilterCircleButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          width: 52,
+          height: 52,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x120F172A),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: _ReportsPalette.textPrimary, size: 20),
+        ),
+      ),
     );
   }
 }
@@ -1576,43 +2028,46 @@ class _ModeSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: _ReportsPalette.backgroundSoft,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _ReportsPalette.outline),
-      ),
-      child: Row(
-        children: ReportTimeframe.values
-            .map(
-              (value) => Expanded(
-                child: GestureDetector(
+    return Row(
+      children: ReportTimeframe.values
+          .map(
+            (value) => Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
                   onTap: () => onChanged(value),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Ink(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                     decoration: BoxDecoration(
-                      color: value == timeframe
-                          ? _ReportsPalette.surfaceRaised
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(14),
+                      color: value == timeframe ? _ReportsPalette.navy : Colors.white,
+                      borderRadius: BorderRadius.circular(999),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x120F172A),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Text(
-                      _timeframeLabel(value),
+                      _timeframeChipLabel(value),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: value == timeframe
-                            ? _ReportsPalette.textPrimary
+                            ? Colors.white
                             : _ReportsPalette.textSecondary,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                 ),
               ),
-            )
-            .toList(),
-      ),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -2394,6 +2849,58 @@ String _comparisonLine(ReportComparisonSummary comparison) {
   return '${formatCurrency(comparison.expenseDelta.abs())} $direction spent than ${comparison.previousLabel}$percent';
 }
 
+List<double> _prototypeBars(List<ReportChartPoint> points) {
+  if (points.isEmpty) return const [42, 56, 64, 52];
+  final bucketCount = math.min(4, math.max(1, points.length));
+  final buckets = List<double>.filled(bucketCount, 0);
+  final counts = List<int>.filled(bucketCount, 0);
+  for (var i = 0; i < points.length; i++) {
+    final bucket = (i * bucketCount / points.length).floor().clamp(0, bucketCount - 1);
+    buckets[bucket] += points[i].y;
+    counts[bucket] += 1;
+  }
+  for (var i = 0; i < bucketCount; i++) {
+    if (counts[i] > 0) buckets[i] = buckets[i] / counts[i];
+  }
+  final maxValue = buckets.fold<double>(0, math.max);
+  if (maxValue <= 0) return List<double>.filled(bucketCount, 44);
+  return buckets
+      .map((value) => 44 + ((value / maxValue) * 92))
+      .toList(growable: false);
+}
+
+String _prototypeComparisonText(ReportComparisonSummary? comparison) {
+  if (comparison?.expenseChangePercent == null) return 'No comparison';
+  final pct = comparison!.expenseChangePercent!.abs().round();
+  final word = comparison.expenseDelta <= 0 ? 'lower' : 'higher';
+  return '$pct% $word';
+}
+
+String _insightHeadline(
+  ReportComparisonSummary comparison,
+  ReportTimeframe timeframe,
+) {
+  final percent = comparison.expenseChangePercent?.abs().round();
+  final direction = comparison.expenseDelta <= 0 ? 'less' : 'more';
+  final periodWord = _periodWord(timeframe);
+  if (percent == null) {
+    return 'You spent ${formatCurrency(comparison.expenseDelta.abs())} $direction this $periodWord.';
+  }
+  return 'You spent $percent% $direction this $periodWord.';
+}
+
+String _spentLabel(ReportTimeframe timeframe) => switch (timeframe) {
+      ReportTimeframe.cycle => 'Spent this cycle',
+      ReportTimeframe.month => 'Spent this month',
+      ReportTimeframe.year => 'Spent this year',
+    };
+
+String _periodWord(ReportTimeframe timeframe) => switch (timeframe) {
+      ReportTimeframe.cycle => 'cycle',
+      ReportTimeframe.month => 'month',
+      ReportTimeframe.year => 'year',
+    };
+
 String _trendLabel(ReportCategoryBreakdown category) {
   if (category.trendAmount == 0) return 'Flat vs prior period';
   final direction = category.trendAmount > 0 ? 'more' : 'less';
@@ -2402,6 +2909,12 @@ String _trendLabel(ReportCategoryBreakdown category) {
 
 String _timeframeLabel(ReportTimeframe timeframe) => switch (timeframe) {
       ReportTimeframe.cycle => 'Cycle',
+      ReportTimeframe.month => 'Month',
+      ReportTimeframe.year => 'Year',
+    };
+
+String _timeframeChipLabel(ReportTimeframe timeframe) => switch (timeframe) {
+      ReportTimeframe.cycle => 'Week',
       ReportTimeframe.month => 'Month',
       ReportTimeframe.year => 'Year',
     };
@@ -2451,20 +2964,22 @@ Color _spendLabelColor(SpendLabel label) => switch (label) {
     };
 
 abstract final class _ReportsPalette {
-  static const background = Color(0xFF061113);
-  static const backgroundSoft = Color(0xFF0C191B);
-  static const surface = Color(0xFF0E1B1E);
-  static const surfaceRaised = Color(0xFF14262A);
-  static const outline = Color(0x2238A59E);
-  static const outlineStrong = Color(0x444BB8AE);
-  static const teal = Color(0xFF1B746D);
-  static const tealBright = Color(0xFF62C8B0);
+  static const background = Color(0xFFF5F7FB);
+  static const backgroundSoft = Color(0xFFF8FAFC);
+  static const surface = Color(0xFFFFFFFF);
+  static const surfaceRaised = Color(0xFFF1F5F9);
+  static const outline = Color(0xFFE7ECF4);
+  static const outlineStrong = Color(0xFFDDE5F0);
+  static const navy = Color(0xFF132440);
+  static const teal = Color(0xFF3B9797);
+  static const tealBright = Color(0xFF3B9797);
   static const goldSoft = Color(0xFFE2BE86);
   static const alert = Color(0xFFD78377);
   static const alertSoft = Color(0xFFF0A998);
   static const green = Color(0xFF76B791);
-  static const textPrimary = Color(0xFFF7F2E8);
-  static const textSoft = Color(0xFFD9E5E0);
-  static const textSecondary = Color(0xFF99ACA8);
-  static const textMuted = Color(0xFF758986);
+  static const textPrimary = Color(0xFF0F172A);
+  static const textSoft = Color(0xFF334155);
+  static const textSecondary = Color(0xFF64748B);
+  static const textMuted = Color(0xFF94A3B8);
+  static const line = Color(0xFFE7ECF4);
 }

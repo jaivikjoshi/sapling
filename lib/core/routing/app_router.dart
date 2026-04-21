@@ -213,6 +213,20 @@ class _GlassNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final isLightStyle =
+        currentIndex == 0 || currentIndex == 1 || currentIndex == 3 || currentIndex == 4;
+    final shadowColor = isLightStyle
+        ? const Color(0x160E1830)
+        : Colors.black.withValues(alpha: 0.28);
+    final glowColor = isLightStyle
+        ? Colors.transparent
+        : const Color(0xFF1D6A66).withValues(alpha: 0.10);
+    final backgroundColor = isLightStyle
+        ? const Color(0xFFFCFCFD)
+        : const Color(0xFF0C1719).withValues(alpha: 0.88);
+    final borderColor = isLightStyle
+        ? const Color(0xFFE9EDF4)
+        : const Color(0xFF24514E).withValues(alpha: 0.65);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -229,12 +243,12 @@ class _GlassNavBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(36),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.28),
-              blurRadius: 28,
-              offset: const Offset(0, 14),
+              color: shadowColor,
+              blurRadius: isLightStyle ? 18 : 28,
+              offset: Offset(0, isLightStyle ? 10 : 14),
             ),
             BoxShadow(
-              color: const Color(0xFF1D6A66).withValues(alpha: 0.10),
+              color: glowColor,
               blurRadius: 30,
               spreadRadius: -8,
             ),
@@ -248,10 +262,10 @@ class _GlassNavBar extends StatelessWidget {
               height: 72,
               padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFF0C1719).withValues(alpha: 0.88),
+                color: backgroundColor,
                 borderRadius: BorderRadius.circular(36),
                 border: Border.all(
-                  color: const Color(0xFF24514E).withValues(alpha: 0.65),
+                  color: borderColor,
                   width: 0.8,
                 ),
               ),
@@ -263,6 +277,7 @@ class _GlassNavBar extends StatelessWidget {
                     inactiveIcon: Icons.home_outlined,
                     label: 'Home',
                     isSelected: currentIndex == 0,
+                    isLightStyle: isLightStyle,
                     onTap: () => onTap(0),
                   ),
                   _NavBarItem(
@@ -270,6 +285,7 @@ class _GlassNavBar extends StatelessWidget {
                     inactiveIcon: Icons.flag_outlined,
                     label: 'Goals',
                     isSelected: currentIndex == 1,
+                    isLightStyle: isLightStyle,
                     onTap: () => onTap(1),
                   ),
                   _NavBarItem(
@@ -277,6 +293,7 @@ class _GlassNavBar extends StatelessWidget {
                     inactiveIcon: Icons.energy_savings_leaf_outlined,
                     label: 'Leaf',
                     isSelected: currentIndex == 2,
+                    isLightStyle: isLightStyle,
                     isIconOnly: true, // Specific treatment for the center tab
                     onTap: () => onTap(2),
                   ),
@@ -285,6 +302,7 @@ class _GlassNavBar extends StatelessWidget {
                     inactiveIcon: Icons.bar_chart_outlined,
                     label: 'Reports',
                     isSelected: currentIndex == 3,
+                    isLightStyle: isLightStyle,
                     onTap: () => onTap(3),
                   ),
                   _NavBarItem(
@@ -292,6 +310,7 @@ class _GlassNavBar extends StatelessWidget {
                     inactiveIcon: Icons.settings_outlined,
                     label: 'Settings',
                     isSelected: currentIndex == 4,
+                    isLightStyle: isLightStyle,
                     onTap: () => onTap(4),
                   ),
                 ],
@@ -310,6 +329,7 @@ class _NavBarItem extends StatelessWidget {
     required this.inactiveIcon,
     required this.label,
     required this.isSelected,
+    required this.isLightStyle,
     required this.onTap,
     this.isIconOnly = false,
   });
@@ -318,15 +338,19 @@ class _NavBarItem extends StatelessWidget {
   final IconData inactiveIcon;
   final String label;
   final bool isSelected;
+  final bool isLightStyle;
   final VoidCallback onTap;
   final bool isIconOnly;
 
-  static const _activePillColor = Color(0xFF17353A);
-  static const _activeColor = Color(0xFFF5F1E8);
-  static const _inactiveColor = Color(0xFF79918F);
-
   @override
   Widget build(BuildContext context) {
+    final activePillColor =
+        isLightStyle ? const Color(0xFFF1F4F8) : const Color(0xFF17353A);
+    final activeColor =
+        isLightStyle ? const Color(0xFF11182C) : const Color(0xFFF5F1E8);
+    final inactiveColor =
+        isLightStyle ? const Color(0xFF8B96A8) : const Color(0xFF79918F);
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -334,14 +358,14 @@ class _NavBarItem extends StatelessWidget {
         height: 52,
         width: isIconOnly ? 52 : 56,
         decoration: BoxDecoration(
-          color: isSelected ? _activePillColor : Colors.transparent,
+          color: isSelected ? activePillColor : Colors.transparent,
           borderRadius: isIconOnly ? null : BorderRadius.circular(20),
           shape: isIconOnly ? BoxShape.circle : BoxShape.rectangle,
         ),
         child: Center(
           child: Icon(
             isSelected ? activeIcon : inactiveIcon,
-            color: isSelected ? _activeColor : _inactiveColor,
+            color: isSelected ? activeColor : inactiveColor,
             size: isIconOnly ? 26 : 22,
           ),
         ),
