@@ -11,9 +11,12 @@ import '../../core/providers/goals_providers.dart';
 import '../../core/providers/profile_providers.dart';
 import '../../core/providers/recurring_income_providers.dart';
 import '../../core/providers/settings_providers.dart';
+import '../../core/utils/enum_serialization.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/models/settings_model.dart';
 import '../../domain/services/profile_service.dart';
+import '../recurring_income/recurring_income_form_sheet.dart';
 import '../transactions/reconcile_sheet.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -126,6 +129,27 @@ class _PrototypeSettingsBody extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 16),
+        _PaychecksGroup(
+          autoDepositEnabled:
+              settings.defaultPaydayBehavior == PaydayBehavior.autoPostExpected,
+          incomes: recurringIncomes.cast<RecurringIncome>(),
+          onToggleAutoDeposit: (enabled) {
+            saveSettingsField(
+              repo,
+              defaultPaydayBehavior: enabled
+                  ? PaydayBehavior.autoPostExpected
+                  : PaydayBehavior.confirmActualOnPayday,
+            );
+            _applyAutoDepositToAllIncomes(
+              ref,
+              recurringIncomes.cast<RecurringIncome>(),
+              enabled,
+            );
+          },
+          onEditIncome: (income) => _showIncomeFormSheet(context, income),
+          onAddIncome: () => _showIncomeFormSheet(context, null),
+        ),
+        const SizedBox(height: 16),
         _PrototypeSettingsGroup(
           title: 'APP',
           children: [
@@ -171,6 +195,261 @@ class _PrototypeSettingsBody extends ConsumerWidget {
           onTap: user == null ? null : () => _logout(context, ref),
         ),
       ],
+    );
+  }
+}
+
+void _showIncomeFormSheet(BuildContext context, RecurringIncome? existing) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (_) => RecurringIncomeFormSheet(existing: existing),
+  );
+}
+
+Future<void> _applyAutoDepositToAllIncomes(
+  WidgetRef ref,
+  List<RecurringIncome> incomes,
+  bool enabled,
+) async {
+  if (incomes.isEmpty) return;
+  final service = ref.read(recurringIncomeServiceProvider);
+  final newBehavior = enabled
+      ? PaydayBehavior.autoPostExpected
+      : PaydayBehavior.confirmActualOnPayday;
+  for (final income in incomes) {
+    final current =
+        enumFromDb<PaydayBehavior>(income.paydayBehavior, PaydayBehavior.values);
+    if (current == newBehavior) continue;
+    if (enabled &&
+        (income.expectedAmount == null || income.expectedAmount! <= 0)) {
+      // Auto-deposit needs an expected amount; leave this one alone.
+      continue;
+    }
+    await service.update(
+      id: income.id,
+      name: income.name,
+      frequency:
+          enumFromDb<IncomeFrequency>(income.frequency, IncomeFrequency.values),
+      nextPaydayDate: income.nextPaydayDate,
+      expectedAmount: income.expectedAmount,
+      paydayBehavior: newBehavior,
+    );
+  }
+}
+
+class _PaychecksGroup extends StatelessWidget {
+  const _PaychecksGroup({
+    required this.autoDepositEnabled,
+    required this.incomes,
+    required this.onToggleAutoDeposit,
+    required this.onEditIncome,
+    required this.onAddIncome,
+  });
+
+  final bool autoDepositEnabled;
+  final List<RecurringIncome> incomes;
+  final ValueChanged<bool> onToggleAutoDeposit;
+  final ValueChanged<RecurringIncome> onEditIncome;
+  final VoidCallback onAddIncome;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'PAYCHECKS',
+                    style: TextStyle(
+                      color: _SettingsReferencePalette.label,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 3,
+                    ),
+                  ),
+                ),
+                if (incomes.isNotEmpty)
+                  Text(
+                    '${incomes.length} active',
+                    style: const TextStyle(
+                      color: _SettingsReferencePalette.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          _PrototypeToggleRow(
+            icon: Icons.savings_outlined,
+            title: 'Auto-deposit on payday',
+            subtitle: autoDepositEnabled
+                ? 'Leko will deposit each paycheck on its payday.'
+                : 'Leko will wait for you to confirm each paycheck.',
+            value: autoDepositEnabled,
+            onChanged: onToggleAutoDeposit,
+            isLast: incomes.isEmpty,
+          ),
+          if (incomes.isNotEmpty) ...[
+            for (var i = 0; i < incomes.length; i++)
+              _PaycheckTile(
+                income: incomes[i],
+                onTap: () => onEditIncome(incomes[i]),
+              ),
+          ],
+          _PrototypeSettingsRow(
+            icon: Icons.add_rounded,
+            title: incomes.isEmpty ? 'Add a paycheck' : 'Add another paycheck',
+            subtitle: incomes.isEmpty
+                ? 'Set the amount and the days you get paid'
+                : 'Track another recurring deposit',
+            isLast: true,
+            onTap: onAddIncome,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaycheckTile extends StatelessWidget {
+  const _PaycheckTile({required this.income, required this.onTap});
+
+  final RecurringIncome income;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final amount = income.expectedAmount;
+    final amountLabel = amount == null
+        ? 'Amount not set'
+        : '\$${amount.toStringAsFixed(2)}';
+    final freq = enumFromDb<IncomeFrequency>(
+      income.frequency,
+      IncomeFrequency.values,
+    );
+    final cadence = switch (freq) {
+      IncomeFrequency.weekly => 'every week',
+      IncomeFrequency.biweekly => 'every 2 weeks',
+      IncomeFrequency.monthly => 'every month',
+    };
+    final nextLabel = DateFormat.MMMd().format(income.nextPaydayDate);
+    final behavior = enumFromDb<PaydayBehavior>(
+      income.paydayBehavior,
+      PaydayBehavior.values,
+    );
+    final autoOn = behavior == PaydayBehavior.autoPostExpected;
+    final subtitle =
+        '$amountLabel · $cadence · next $nextLabel${autoOn ? ' · Auto' : ''}';
+    return _PrototypeSettingsRow(
+      icon: Icons.payments_outlined,
+      title: income.name,
+      subtitle: subtitle,
+      onTap: onTap,
+    );
+  }
+}
+
+class _PrototypeToggleRow extends StatelessWidget {
+  const _PrototypeToggleRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+    this.isLast = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 4,
+        right: 4,
+        top: 10,
+        bottom: isLast ? 10 : 16,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              color: _SettingsReferencePalette.iconCircle,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: _SettingsReferencePalette.iconAccent,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: _SettingsReferencePalette.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: _SettingsReferencePalette.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeColor: Colors.white,
+            activeTrackColor: _SettingsReferencePalette.navy,
+            inactiveThumbColor: Colors.white,
+            inactiveTrackColor: const Color(0xFFDCE7F7),
+          ),
+        ],
+      ),
     );
   }
 }

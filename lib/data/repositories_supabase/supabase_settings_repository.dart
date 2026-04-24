@@ -26,7 +26,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
       allowanceDefaultMode: 'paycheck',
       primaryGoalId: null,
       paydayAnchorRecurringIncomeId: null,
-      defaultPaydayBehavior: 'confirm_actual_on_payday',
+      defaultPaydayBehavior: 'auto_post_expected',
       paydayEnabled: true,
       billsEnabled: true,
       overspendEnabled: true,

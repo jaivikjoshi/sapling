@@ -1,6 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/providers/leaf_providers.dart';
 import '../../core/utils/currency_formatter.dart';
@@ -44,13 +50,98 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
     });
   }
 
+  /// Opens a bottom sheet for attaching receipts/statements. Handles
+  /// compression lightly (image_picker's imageQuality) so payloads stay
+  /// reasonable when they get forwarded to Gemini as base64 inline_data.
+  Future<void> _pickAttachments({required int currentCount}) async {
+    if (currentCount >= 3) {
+      _showAttachmentLimitToast();
+      return;
+    }
+
+    final source = await showModalBottomSheet<_AttachmentSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _AttachmentSourceSheet(),
+    );
+    if (source == null || !mounted) return;
+
+    try {
+      final attachment = await _loadAttachmentFromSource(source);
+      if (attachment == null || !mounted) return;
+      if (attachment.sizeBytes != null && attachment.sizeBytes! > 6 * 1024 * 1024) {
+        _showSnack('File is too large. Pick something under 6 MB.');
+        return;
+      }
+      ref
+          .read(leafConversationProvider.notifier)
+          .addStagedAttachment(attachment);
+    } catch (_) {
+      if (mounted) _showSnack('Could not read that file.');
+    }
+  }
+
+  Future<LeafAttachment?> _loadAttachmentFromSource(
+    _AttachmentSource source,
+  ) async {
+    switch (source) {
+      case _AttachmentSource.camera:
+      case _AttachmentSource.photo:
+        final picker = ImagePicker();
+        final picked = await picker.pickImage(
+          source: source == _AttachmentSource.camera
+              ? ImageSource.camera
+              : ImageSource.gallery,
+          imageQuality: 82,
+          maxWidth: 2048,
+        );
+        if (picked == null) return null;
+        final bytes = await picked.readAsBytes();
+        return LeafAttachment(
+          name: picked.name,
+          mime: _mimeForImageName(picked.name),
+          dataBase64: base64Encode(bytes),
+          sizeBytes: bytes.length,
+        );
+      case _AttachmentSource.pdf:
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['pdf'],
+          withData: true,
+        );
+        final file = result?.files.first;
+        if (file == null) return null;
+        final bytes = file.bytes ??
+            (file.path != null
+                ? await File(file.path!).readAsBytes()
+                : null);
+        if (bytes == null) return null;
+        return LeafAttachment(
+          name: file.name,
+          mime: 'application/pdf',
+          dataBase64: base64Encode(bytes),
+          sizeBytes: bytes.length,
+        );
+    }
+  }
+
+  void _showAttachmentLimitToast() {
+    _showSnack('You can attach up to 3 files per message.');
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    // Limit bottom padding to keep it smoothly above the glassy nav bar
+    // Keep the composer resting just above the glass nav bar
     final navPad = bottomInset > 72.0 ? bottomInset : 106.0;
     final ctx = ref.watch(leafContextProvider);
-    final heroBrief = ref.watch(leafHeroBriefingProvider);
     final convo = ref.watch(leafConversationProvider);
 
     ref.listen<LeafConversationState>(leafConversationProvider, (prev, next) {
@@ -78,36 +169,39 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
                   ),
                   slivers: [
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                      padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
                           _LeafHeader(
                             name: ctx.greetingName,
-                            mode: ctx.allowanceMode,
-                            balance: ctx.balance,
+                            onNewChat: () {
+                              ref
+                                  .read(leafConversationProvider.notifier)
+                                  .clearConversation();
+                            },
                           ),
                           const SizedBox(height: 22),
-                          _HeroBriefingCard(text: heroBrief),
+                          _SafeToSpendCard(contextData: ctx),
                           const SizedBox(height: 18),
-                          _InsightGrid(contextData: ctx),
+                          _ContextChipRow(contextData: ctx),
                           const SizedBox(height: 20),
-                          _QuickAskChips(
+                          _SuggestedPrompts(
                             prompts: convo.suggestedPrompts,
-                            onChip: (prompt) {
+                            onTap: (prompt) {
                               ref
                                   .read(leafConversationProvider.notifier)
                                   .submitFreeText(prompt);
                               _scrollToEnd();
                             },
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 26),
                           const _SectionLabel('Conversation'),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
                         ]),
                       ),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, i) {
@@ -118,6 +212,15 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
                                 convo.pendingAction,
                                 m.action,
                               ),
+                              onSelectOption: (option) {
+                                ref
+                                    .read(leafConversationProvider.notifier)
+                                    .selectClarificationOption(
+                                      source: m,
+                                      option: option,
+                                    );
+                                _scrollToEnd();
+                              },
                             );
                           },
                           childCount: convo.messages.length,
@@ -126,7 +229,7 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
                     ),
                     if (convo.isLoading)
                       const SliverPadding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(horizontal: 24),
                         sliver: SliverToBoxAdapter(
                           child: _LoadingBubble(),
                         ),
@@ -155,9 +258,20 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
                 controller: _composer,
                 bottomPadding: navPad,
                 isLoading: convo.isLoading,
+                attachments: convo.stagedAttachments,
+                onRemoveAttachment: (index) {
+                  ref
+                      .read(leafConversationProvider.notifier)
+                      .removeStagedAttachmentAt(index);
+                },
+                onAttach: () => _pickAttachments(
+                  currentCount: convo.stagedAttachments.length,
+                ),
                 onSend: () {
                   final t = _composer.text;
-                  if (t.trim().isEmpty || convo.isLoading) return;
+                  final hasText = t.trim().isNotEmpty;
+                  final hasAttachments = convo.stagedAttachments.isNotEmpty;
+                  if ((!hasText && !hasAttachments) || convo.isLoading) return;
                   _composer.clear();
                   ref.read(leafConversationProvider.notifier).submitFreeText(t);
                   _scrollToEnd();
@@ -171,33 +285,39 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
   }
 }
 
+/// Palette aligned with the Home / Goals / Reports / Settings surfaces so the
+/// Leaf tab feels like the same product instead of a branded landing page.
 abstract final class _LeafPalette {
-  static const background = Color(0xFFFBF9F6); // Warm Cream matches the rest of app
+  static const background = Color(0xFFF5F7FB); // Cool light gray (matches Home)
   static const surface = Colors.white;
-  static const surfaceLift = Color(0xFFF8FAFC);
-  static const outline = Color(0xFFE9EDF4);
-  static const navy = Color(0xFF0F172A); // App's primary dark color
-  static const mint = Color(0xFF3B9797); // Leko's deep seafoam
-  static const mintDim = Color(0xFF45A5A5);
-  static const ember = Color(0xFFC75D53); // Muted red for errors/bills
-  static const textPrimary = Color(0xFF0E1830);
-  static const textSecondary = Color(0xFF7D8C94);
+  static const outline = Color(0xFFE7ECF4);
+  static const navy = Color(0xFF0F172A); // Bold title / user bubble
+  static const navyDeep = Color(0xFF132440); // Hero card (same as Home)
+  static const mint = Color(0xFF3B9797); // Leko jade
+  static const mintSoft = Color(0xFFF0FDFA);
+  static const ember = Color(0xFFC75D53); // Error / overspend only
+  static const textPrimary = Color(0xFF0F172A);
+  static const textSecondary = Color(0xFF64748B);
   static const textMuted = Color(0xFF8B96A8);
+  static const summaryMuted = Color(0x8CFFFFFF);
+  static const chipSurface = Colors.white;
+  static const chipBorder = Color(0xFFE7ECF4);
 }
 
 class _LeafHeader extends StatelessWidget {
   const _LeafHeader({
     required this.name,
-    required this.mode,
-    this.balance,
+    required this.onNewChat,
   });
 
   final String name;
-  final AllowanceMode mode;
-  final double? balance;
+  final VoidCallback onNewChat;
 
   @override
   Widget build(BuildContext context) {
+    final trimmed = name.trim();
+    final greetingName = trimmed.isEmpty ? 'there' : trimmed;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -205,8 +325,17 @@ class _LeafHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                '${_greetingPrefix()}, $greetingName',
+                style: const TextStyle(
+                  color: _LeafPalette.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
               const Text(
-                'Leaf AI',
+                'Ask Leko',
                 style: TextStyle(
                   color: _LeafPalette.textPrimary,
                   fontSize: 30,
@@ -214,31 +343,46 @@ class _LeafHeader extends StatelessWidget {
                   letterSpacing: -1.1,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Your dynamic financial assistant.',
-                style: const TextStyle(
-                  color: _LeafPalette.textSecondary,
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-              ),
-              if (balance != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Balance ${formatCurrency(balance!)}',
-                  style: const TextStyle(
-                    color: _LeafPalette.textMuted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
             ],
           ),
         ),
         const SizedBox(width: 12),
-        Container(
+        _CircleIconButton(
+          icon: Icons.edit_note_rounded,
+          tooltip: 'New chat',
+          onTap: onNewChat,
+        ),
+      ],
+    );
+  }
+}
+
+String _greetingPrefix() {
+  final hour = DateTime.now().hour;
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+class _CircleIconButton extends StatelessWidget {
+  const _CircleIconButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
           width: 52,
           height: 52,
           decoration: const BoxDecoration(
@@ -246,41 +390,53 @@ class _LeafHeader extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Color(0x100F1932),
-                blurRadius: 18,
-                offset: Offset(0, 10),
+                color: Color(0x120F172A),
+                blurRadius: 10,
+                offset: Offset(0, 4),
               ),
             ],
           ),
-          child: const Icon(
-            Icons.spa_rounded,
-            color: _LeafPalette.mint,
-            size: 22,
-          ),
+          child: Icon(icon, color: _LeafPalette.textPrimary, size: 22),
         ),
-      ],
+      ),
     );
+    if (tooltip == null) return button;
+    return Tooltip(message: tooltip!, child: button);
   }
 }
 
-class _HeroBriefingCard extends StatelessWidget {
-  const _HeroBriefingCard({required this.text});
+/// Hero card answers the one question the AI page exists for: what's safe to
+/// spend right now. Styled to match Home's weekly summary card so the page
+/// feels native to the rest of the app.
+class _SafeToSpendCard extends StatelessWidget {
+  const _SafeToSpendCard({required this.contextData});
 
-  final String text;
+  final LeafContext contextData;
 
   @override
   Widget build(BuildContext context) {
+    final remaining = contextData.remainingToday;
+    final daily = contextData.dailyAllowance;
+    final over = remaining != null && remaining < 0;
+    final primaryValue = remaining != null
+        ? formatCurrency(remaining.abs())
+        : '—';
+
+    final subtitle = _safeToSpendSubtitle(contextData);
+    final bill = contextData.nextBill;
+    final goalName = _goalFocusLabel(contextData);
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _LeafPalette.navyDeep,
         borderRadius: BorderRadius.circular(28),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x120F172A),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: Color(0x42132440),
+            blurRadius: 30,
+            offset: Offset(0, 16),
           ),
         ],
       ),
@@ -289,31 +445,210 @@ class _HeroBriefingCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.auto_awesome_rounded,
-                color: _LeafPalette.mint,
-                size: 16,
+              Expanded(
+                child: Text(
+                  over ? 'OVER TODAY' : 'SAFE TO SPEND TODAY',
+                  style: const TextStyle(
+                    color: _LeafPalette.summaryMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.9,
+                  ),
+                ),
               ),
-              const SizedBox(width: 6),
-              const Text(
-                'TODAY’S BRIEFING',
-                style: TextStyle(
-                  color: _LeafPalette.mint,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Colors.white,
+                  size: 18,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (over)
+                const Padding(
+                  padding: EdgeInsets.only(right: 4, bottom: 6),
+                  child: Text(
+                    '−',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              Flexible(
+                child: Text(
+                  primaryValue,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -1.8,
+                  ),
+                ),
+              ),
+              if (daily != null) ...[
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'of ${formatCurrency(daily)}',
+                    style: const TextStyle(
+                      color: _LeafPalette.summaryMuted,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Icon(
+                over
+                    ? Icons.trending_up_rounded
+                    : Icons.trending_flat_rounded,
+                size: 18,
+                color: over ? _LeafPalette.ember : _LeafPalette.mint,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: over
+                        ? _LeafPalette.ember
+                        : const Color(0xFF7FE4C7),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _HeroMiniPanel(
+                  label: 'Next bill',
+                  value: bill == null
+                      ? 'You\'re clear'
+                      : '${bill.name} · ${formatCurrency(bill.amount)}',
+                  hint: bill == null
+                      ? 'No upcoming bill'
+                      : DateFormat.MMMd().format(bill.nextDueDate),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _HeroMiniPanel(
+                  label: 'Goal focus',
+                  value: goalName,
+                  hint: _goalHint(contextData),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _safeToSpendSubtitle(LeafContext ctx) {
+  final left = ctx.remainingToday;
+  final daily = ctx.dailyAllowance;
+  if (left == null || daily == null) return 'Syncing today\'s allowance…';
+  if (left >= 0) {
+    final pct = daily > 0 ? (left / daily * 100).round() : 0;
+    return '$pct% of today\'s allowance still available';
+  }
+  return 'Pace slightly ahead — ease off to rebalance';
+}
+
+String _goalFocusLabel(LeafContext ctx) {
+  if (ctx.allowanceMode == AllowanceMode.goal && ctx.goal != null) {
+    return ctx.goal!.goal.name;
+  }
+  if (ctx.primaryGoal != null) return ctx.primaryGoal!.name;
+  return 'No primary focus';
+}
+
+String _goalHint(LeafContext ctx) {
+  if (ctx.allowanceMode == AllowanceMode.goal && ctx.goal != null) {
+    return 'Goal-led cycle';
+  }
+  if (ctx.primaryGoal != null) return 'Starred goal';
+  return 'Pick one in Goals';
+}
+
+class _HeroMiniPanel extends StatelessWidget {
+  const _HeroMiniPanel({
+    required this.label,
+    required this.value,
+    required this.hint,
+  });
+
+  final String label;
+  final String value;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
-            text,
+            label,
             style: const TextStyle(
-              color: _LeafPalette.textPrimary,
-              fontSize: 16,
-              height: 1.45,
-              fontWeight: FontWeight.w500,
+              color: _LeafPalette.summaryMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            hint,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _LeafPalette.summaryMuted,
+              fontSize: 12,
             ),
           ),
         ],
@@ -322,102 +657,99 @@ class _HeroBriefingCard extends StatelessWidget {
   }
 }
 
-class _InsightGrid extends StatelessWidget {
-  const _InsightGrid({required this.contextData});
+/// A compact row that shows contextual references ("latest move", "bills
+/// ahead") as quiet chips — replaces the old 4-box dashboard grid.
+class _ContextChipRow extends StatelessWidget {
+  const _ContextChipRow({required this.contextData});
 
   final LeafContext contextData;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 1.22,
+    final latestMove = leafInsightActivitySubtitle(contextData);
+    final billsAhead = leafInsightBillsSubtitle(contextData);
+
+    return Row(
       children: [
-        _InsightTile(
-          icon: Icons.wb_sunny_rounded,
-          title: 'Allowance',
-          subtitle: leafInsightAllowanceSubtitle(contextData),
-          accent: _LeafPalette.mint,
+        Expanded(
+          child: _ReferenceChip(
+            icon: Icons.swap_horiz_rounded,
+            label: 'Latest move',
+            value: latestMove,
+          ),
         ),
-        _InsightTile(
-          icon: Icons.receipt_long_rounded,
-          title: 'Bills ahead',
-          subtitle: leafInsightBillsSubtitle(contextData),
-          accent: const Color(0xFFD98A5B),
-        ),
-        _InsightTile(
-          icon: Icons.flag_rounded,
-          title: 'Goal focus',
-          subtitle: leafInsightGoalSubtitle(contextData),
-          accent: const Color(0xFF5C8CB3),
-        ),
-        _InsightTile(
-          icon: Icons.show_chart_rounded,
-          title: 'Latest move',
-          subtitle: leafInsightActivitySubtitle(contextData),
-          accent: _LeafPalette.navy,
+        const SizedBox(width: 10),
+        Expanded(
+          child: _ReferenceChip(
+            icon: Icons.receipt_long_outlined,
+            label: 'Bills ahead',
+            value: billsAhead,
+          ),
         ),
       ],
     );
   }
 }
 
-class _InsightTile extends StatelessWidget {
-  const _InsightTile({
+class _ReferenceChip extends StatelessWidget {
+  const _ReferenceChip({
     required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.accent,
+    required this.label,
+    required this.value,
   });
 
   final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color accent;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0C0F172A),
-            blurRadius: 8,
-            offset: Offset(0, 3),
-          ),
-        ],
+        color: _LeafPalette.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _LeafPalette.outline),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Icon(icon, color: accent, size: 22),
-          const Spacer(),
-          Text(
-            title.toUpperCase(),
-            style: const TextStyle(
-              color: _LeafPalette.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.7,
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: _LeafPalette.mintSoft,
+              shape: BoxShape.circle,
             ),
+            child: Icon(icon, size: 16, color: _LeafPalette.mint),
           ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _LeafPalette.textPrimary,
-              fontSize: 13,
-              height: 1.3,
-              fontWeight: FontWeight.w600,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: _LeafPalette.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _LeafPalette.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -436,19 +768,20 @@ class _SectionLabel extends StatelessWidget {
     return Row(
       children: [
         Text(
-          label.toUpperCase(),
+          label,
           style: const TextStyle(
             color: _LeafPalette.textMuted,
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.9,
+            letterSpacing: 1.4,
           ),
         ),
         const SizedBox(width: 10),
-        Expanded(
-          child: Container(
-            height: 1,
+        const Expanded(
+          child: Divider(
             color: _LeafPalette.outline,
+            thickness: 1,
+            height: 1,
           ),
         ),
       ],
@@ -456,25 +789,30 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-class _QuickAskChips extends StatelessWidget {
-  const _QuickAskChips({
+class _SuggestedPrompts extends StatelessWidget {
+  const _SuggestedPrompts({
     required this.prompts,
-    required this.onChip,
+    required this.onTap,
   });
 
   final List<String> prompts;
-  final void Function(String) onChip;
+  final void Function(String) onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        spacing: 8,
-        children: prompts
-            .map((prompt) => _AskChip(label: prompt, onTap: () => onChip(prompt)))
-            .toList(),
+    if (prompts.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: prompts.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final prompt = prompts[i];
+          return _AskChip(label: prompt, onTap: () => onTap(prompt));
+        },
       ),
     );
   }
@@ -494,25 +832,30 @@ class _AskChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: _LeafPalette.chipSurface,
             borderRadius: BorderRadius.circular(999),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x120F172A),
-                blurRadius: 10,
-                offset: Offset(0, 4),
+            border: Border.all(color: _LeafPalette.chipBorder),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.auto_awesome_rounded,
+                size: 14,
+                color: _LeafPalette.mint,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: _LeafPalette.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: _LeafPalette.textSecondary,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
           ),
         ),
       ),
@@ -524,71 +867,216 @@ class _ChatBubble extends StatelessWidget {
   const _ChatBubble({
     required this.message,
     required this.isPendingAction,
+    required this.onSelectOption,
   });
 
   final LeafChatMessage message;
   final bool isPendingAction;
+  final void Function(LeafClarificationOption option) onSelectOption;
 
   @override
   Widget build(BuildContext context) {
     final user = message.isUser;
+    final hasOptions = message.clarificationOptions.isNotEmpty;
+
+    // Assistant messages that come with a pending/confirmed action render the
+    // preview card; attach clarification options below it when present.
     if (!user && message.action != null) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Align(
           alignment: Alignment.centerLeft,
-          child: _ActionPreviewCard(
-            text: message.text,
-            action: message.action!,
-            isPending: isPendingAction,
-            success: message.success,
-            isError: message.kind == LeafMessageKind.error,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ActionPreviewCard(
+                text: message.text,
+                action: message.action!,
+                isPending: isPendingAction,
+                success: message.success,
+                isError: message.kind == LeafMessageKind.error,
+              ),
+              if (hasOptions) ...[
+                const SizedBox(height: 10),
+                _ClarificationOptions(
+                  options: message.clarificationOptions,
+                  onTap: onSelectOption,
+                ),
+              ],
+            ],
           ),
         ),
       );
     }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Align(
         alignment: user ? Alignment.centerRight : Alignment.centerLeft,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.sizeOf(context).width * 0.86,
+            maxWidth: MediaQuery.sizeOf(context).width * 0.84,
           ),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: user ? _LeafPalette.navy : Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(20),
-                topRight: const Radius.circular(20),
-                bottomLeft: Radius.circular(user ? 20 : 6),
-                bottomRight: Radius.circular(user ? 6 : 20),
-              ),
-              boxShadow: user
-                  ? null
-                  : const [
-                      BoxShadow(
-                        color: Color(0x0C0F172A),
-                        blurRadius: 8,
-                        offset: Offset(0, 3),
+          child: Column(
+            crossAxisAlignment:
+                user ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              if (user && message.attachments.isNotEmpty) ...[
+                _InlineAttachmentRow(attachments: message.attachments),
+                if (message.text.trim().isNotEmpty) const SizedBox(height: 8),
+              ],
+              if (message.text.trim().isNotEmpty)
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: user ? _LeafPalette.navy : _LeafPalette.surface,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(20),
+                      topRight: const Radius.circular(20),
+                      bottomLeft: Radius.circular(user ? 20 : 6),
+                      bottomRight: Radius.circular(user ? 6 : 20),
+                    ),
+                    border: user
+                        ? null
+                        : Border.all(color: _LeafPalette.outline),
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Text(
+                      message.text,
+                      style: TextStyle(
+                        color: user ? Colors.white : _LeafPalette.textPrimary,
+                        fontSize: 14,
+                        height: 1.45,
+                        fontWeight: FontWeight.w500,
                       ),
-                    ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Text(
-                message.text,
-                style: TextStyle(
-                  color: user ? Colors.white : _LeafPalette.textPrimary,
-                  fontSize: 14,
-                  height: 1.4,
-                  fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              if (!user && hasOptions) ...[
+                const SizedBox(height: 10),
+                _ClarificationOptions(
+                  options: message.clarificationOptions,
+                  onTap: onSelectOption,
+                ),
+              ],
+            ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Renders tappable clarification options. Tapping one calls back with the
+/// option so the conversation controller can merge the `patch` into the
+/// pending action and move forward without a server round-trip.
+class _ClarificationOptions extends StatelessWidget {
+  const _ClarificationOptions({
+    required this.options,
+    required this.onTap,
+  });
+
+  final List<LeafClarificationOption> options;
+  final void Function(LeafClarificationOption) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final option in options)
+          _OptionCard(option: option, onTap: () => onTap(option)),
+      ],
+    );
+  }
+}
+
+class _OptionCard extends StatelessWidget {
+  const _OptionCard({required this.option, required this.onTap});
+
+  final LeafClarificationOption option;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: _LeafPalette.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _LeafPalette.outline),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.check_circle_outline_rounded,
+                size: 16,
+                color: _LeafPalette.mint,
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    option.label,
+                    style: const TextStyle(
+                      color: _LeafPalette.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (option.subtitle != null && option.subtitle!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        option.subtitle!,
+                        style: const TextStyle(
+                          color: _LeafPalette.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineAttachmentRow extends StatelessWidget {
+  const _InlineAttachmentRow({required this.attachments});
+
+  final List<LeafAttachmentPreview> attachments;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.end,
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        for (final attachment in attachments)
+          _AttachmentPill(
+            icon: attachment.isImage
+                ? Icons.image_outlined
+                : Icons.picture_as_pdf_rounded,
+            label: attachment.name,
+            tone: _AttachmentPillTone.onNavy,
+          ),
+      ],
     );
   }
 }
@@ -599,12 +1087,18 @@ class _ComposerBar extends StatelessWidget {
     required this.bottomPadding,
     required this.isLoading,
     required this.onSend,
+    required this.attachments,
+    required this.onAttach,
+    required this.onRemoveAttachment,
   });
 
   final TextEditingController controller;
   final double bottomPadding;
   final bool isLoading;
   final VoidCallback onSend;
+  final List<LeafAttachment> attachments;
+  final VoidCallback onAttach;
+  final void Function(int index) onRemoveAttachment;
 
   @override
   Widget build(BuildContext context) {
@@ -612,88 +1106,384 @@ class _ComposerBar extends StatelessWidget {
       color: Colors.transparent,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.fromLTRB(16, 14, 16, bottomPadding),
+        padding: EdgeInsets.fromLTRB(20, 14, 20, bottomPadding),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
               _LeafPalette.background.withValues(alpha: 0.0),
-              _LeafPalette.background.withValues(alpha: 0.94),
+              _LeafPalette.background.withValues(alpha: 0.92),
               _LeafPalette.background,
             ],
           ),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x100F172A),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: controller,
-                  minLines: 1,
-                  maxLines: 4,
-                  style: const TextStyle(
-                    color: _LeafPalette.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  cursorColor: _LeafPalette.mint,
-                  decoration: const InputDecoration(
-                    hintText: 'Ask Leaf about your budget…',
-                    hintStyle: TextStyle(
-                      color: _LeafPalette.textMuted,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 14,
-                    ),
-                  ),
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => onSend(),
-                ),
+            if (attachments.isNotEmpty) ...[
+              _StagedAttachmentRow(
+                attachments: attachments,
+                onRemove: onRemoveAttachment,
               ),
-            ),
-            const SizedBox(width: 10),
-            Material(
-              color: _LeafPalette.navy,
-              borderRadius: BorderRadius.circular(22),
-              child: InkWell(
-                onTap: isLoading ? null : onSend,
-                borderRadius: BorderRadius.circular(22),
-                child: SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: isLoading
-                      ? const Padding(
-                          padding: EdgeInsets.all(13),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Icon(
-                          Icons.arrow_upward_rounded,
-                          color: Colors.white,
-                          size: 22,
+              const SizedBox(height: 8),
+            ],
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: _LeafPalette.outline),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x120F172A),
+                    blurRadius: 14,
+                    offset: Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _AttachButton(
+                      enabled: attachments.length < 3 && !isLoading,
+                      onTap: onAttach,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        minLines: 1,
+                        maxLines: 4,
+                        style: const TextStyle(
+                          color: _LeafPalette.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                         ),
+                        cursorColor: _LeafPalette.navy,
+                        decoration: const InputDecoration(
+                          hintText: 'Ask Leko anything…',
+                          hintStyle: TextStyle(
+                            color: _LeafPalette.textMuted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => onSend(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _SendButton(isLoading: isLoading, onTap: onSend),
+                  ],
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachButton extends StatelessWidget {
+  const _AttachButton({required this.enabled, required this.onTap});
+
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(999),
+          child: Ink(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: enabled ? _LeafPalette.mintSoft : const Color(0xFFF1F4FA),
+              shape: BoxShape.circle,
+              border: Border.all(color: _LeafPalette.outline),
+            ),
+            child: Icon(
+              Icons.attach_file_rounded,
+              size: 18,
+              color: enabled ? _LeafPalette.mint : _LeafPalette.textMuted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StagedAttachmentRow extends StatelessWidget {
+  const _StagedAttachmentRow({
+    required this.attachments,
+    required this.onRemove,
+  });
+
+  final List<LeafAttachment> attachments;
+  final void Function(int index) onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: attachments.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final attachment = attachments[i];
+          return _AttachmentPill(
+            icon: attachment.isImage
+                ? Icons.image_outlined
+                : Icons.picture_as_pdf_rounded,
+            label: attachment.name,
+            tone: _AttachmentPillTone.surface,
+            onRemove: () => onRemove(i),
+          );
+        },
+      ),
+    );
+  }
+}
+
+enum _AttachmentPillTone { surface, onNavy }
+
+class _AttachmentPill extends StatelessWidget {
+  const _AttachmentPill({
+    required this.icon,
+    required this.label,
+    this.tone = _AttachmentPillTone.surface,
+    this.onRemove,
+  });
+
+  final IconData icon;
+  final String label;
+  final _AttachmentPillTone tone;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final onNavy = tone == _AttachmentPillTone.onNavy;
+    final background = onNavy ? Colors.white.withValues(alpha: 0.14) : Colors.white;
+    final border = onNavy
+        ? Colors.white.withValues(alpha: 0.22)
+        : _LeafPalette.outline;
+    final textColor = onNavy ? Colors.white : _LeafPalette.textPrimary;
+    final iconColor = onNavy ? Colors.white : _LeafPalette.mint;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 220),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: iconColor),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (onRemove != null) ...[
+              const SizedBox(width: 6),
+              InkWell(
+                onTap: onRemove,
+                borderRadius: BorderRadius.circular(999),
+                child: Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 14,
+                    color: onNavy ? Colors.white : _LeafPalette.textMuted,
+                  ),
+                ),
+              ),
+            ] else
+              const SizedBox(width: 6),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _AttachmentSource { camera, photo, pdf }
+
+class _AttachmentSourceSheet extends StatelessWidget {
+  const _AttachmentSourceSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _LeafPalette.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: _LeafPalette.outline),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 18, 20, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Attach a receipt or statement',
+                  style: TextStyle(
+                    color: _LeafPalette.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            _AttachmentSourceTile(
+              icon: Icons.photo_library_outlined,
+              label: 'Choose photo',
+              onTap: () => Navigator.of(context).pop(_AttachmentSource.photo),
+            ),
+            _AttachmentSourceTile(
+              icon: Icons.photo_camera_outlined,
+              label: 'Take a photo',
+              onTap: () => Navigator.of(context).pop(_AttachmentSource.camera),
+            ),
+            _AttachmentSourceTile(
+              icon: Icons.picture_as_pdf_outlined,
+              label: 'Attach a PDF',
+              onTap: () => Navigator.of(context).pop(_AttachmentSource.pdf),
+              isLast: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachmentSourceTile extends StatelessWidget {
+  const _AttachmentSourceTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isLast = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          border: isLast
+              ? null
+              : const Border(
+                  bottom: BorderSide(color: _LeafPalette.outline, width: 1),
+                ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: _LeafPalette.mintSoft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 18, color: _LeafPalette.mint),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: const TextStyle(
+                color: _LeafPalette.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _mimeForImageName(String name) {
+  final lower = name.toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.heic') || lower.endsWith('.heif')) return 'image/heic';
+  return 'image/jpeg';
+}
+
+class _SendButton extends StatelessWidget {
+  const _SendButton({required this.isLoading, required this.onTap});
+
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Material(
+        color: _LeafPalette.navy,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          onTap: isLoading ? null : onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: isLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(11),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(
+                    Icons.arrow_upward_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+          ),
         ),
       ),
     );
@@ -714,14 +1504,15 @@ class _PendingActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 10),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _LeafPalette.outline),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x120F172A),
+            color: Color(0x0C0F172A),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -743,7 +1534,7 @@ class _PendingActionBar extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Review and confirm before Leaf changes anything.',
+                  'Review and confirm before Leko changes anything.',
                   style: TextStyle(
                     color: _LeafPalette.textSecondary,
                     fontSize: 12,
@@ -756,15 +1547,19 @@ class _PendingActionBar extends StatelessWidget {
           const SizedBox(width: 12),
           TextButton(
             onPressed: onCancel,
-            style: TextButton.styleFrom(foregroundColor: _LeafPalette.textSecondary),
+            style:
+                TextButton.styleFrom(foregroundColor: _LeafPalette.textSecondary),
             child: const Text('Cancel'),
           ),
           const SizedBox(width: 8),
           FilledButton(
             onPressed: onConfirm,
             style: FilledButton.styleFrom(
-              backgroundColor: _LeafPalette.mint,
+              backgroundColor: _LeafPalette.navy,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
             child: const Text('Confirm'),
           ),
@@ -788,13 +1583,7 @@ class _LoadingBubble extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0C0F172A),
-                blurRadius: 8,
-                offset: Offset(0, 3),
-              ),
-            ],
+            border: Border.all(color: _LeafPalette.outline),
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
@@ -804,12 +1593,13 @@ class _LoadingBubble extends StatelessWidget {
                 height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(_LeafPalette.mint),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(_LeafPalette.mint),
                 ),
               ),
               SizedBox(width: 10),
               Text(
-                'Leaf is thinking…',
+                'Leko is thinking…',
                 style: TextStyle(
                   color: _LeafPalette.textSecondary,
                   fontSize: 14,
@@ -845,17 +1635,17 @@ class _ActionPreviewCard extends StatelessWidget {
         ? _LeafPalette.ember
         : success == true
             ? _LeafPalette.mint
-            : const Color(0xFF5C8CB3);
+            : _LeafPalette.navy;
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxWidth: MediaQuery.sizeOf(context).width * 0.9,
+        maxWidth: MediaQuery.sizeOf(context).width * 0.88,
       ),
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: accent.withValues(alpha: 0.32)),
+          border: Border.all(color: _LeafPalette.outline),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0C0F172A),
@@ -870,10 +1660,11 @@ class _ActionPreviewCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
+                    color: accent.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     isError

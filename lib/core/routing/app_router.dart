@@ -213,20 +213,11 @@ class _GlassNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
-    final isLightStyle =
-        currentIndex == 0 || currentIndex == 1 || currentIndex == 3 || currentIndex == 4;
-    final shadowColor = isLightStyle
-        ? const Color(0x160E1830)
-        : Colors.black.withValues(alpha: 0.28);
-    final glowColor = isLightStyle
-        ? Colors.transparent
-        : const Color(0xFF1D6A66).withValues(alpha: 0.10);
-    final backgroundColor = isLightStyle
-        ? const Color(0xFFFCFCFD)
-        : const Color(0xFF0C1719).withValues(alpha: 0.88);
-    final borderColor = isLightStyle
-        ? const Color(0xFFE9EDF4)
-        : const Color(0xFF24514E).withValues(alpha: 0.65);
+    // One light, floating nav for every tab — including Leaf/Leko — so the
+    // bottom treatment stays consistent across the app.
+    const shadowColor = Color(0x160E1830);
+    const backgroundColor = Color(0xFFFCFCFD);
+    const borderColor = Color(0xFFE9EDF4);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -239,18 +230,13 @@ class _GlassNavBar extends StatelessWidget {
                 : 10.0,
       ),
       child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(36),
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(36)),
           boxShadow: [
             BoxShadow(
               color: shadowColor,
-              blurRadius: isLightStyle ? 18 : 28,
-              offset: Offset(0, isLightStyle ? 10 : 14),
-            ),
-            BoxShadow(
-              color: glowColor,
-              blurRadius: 30,
-              spreadRadius: -8,
+              blurRadius: 18,
+              offset: Offset(0, 10),
             ),
           ],
         ),
@@ -275,42 +261,31 @@ class _GlassNavBar extends StatelessWidget {
                   _NavBarItem(
                     activeIcon: Icons.home_rounded,
                     inactiveIcon: Icons.home_outlined,
-                    label: 'Home',
                     isSelected: currentIndex == 0,
-                    isLightStyle: isLightStyle,
                     onTap: () => onTap(0),
                   ),
                   _NavBarItem(
                     activeIcon: Icons.flag_rounded,
                     inactiveIcon: Icons.flag_outlined,
-                    label: 'Goals',
                     isSelected: currentIndex == 1,
-                    isLightStyle: isLightStyle,
                     onTap: () => onTap(1),
                   ),
                   _NavBarItem(
                     activeIcon: Icons.energy_savings_leaf_rounded,
                     inactiveIcon: Icons.energy_savings_leaf_outlined,
-                    label: 'Leaf',
                     isSelected: currentIndex == 2,
-                    isLightStyle: isLightStyle,
-                    isIconOnly: true, // Specific treatment for the center tab
                     onTap: () => onTap(2),
                   ),
                   _NavBarItem(
                     activeIcon: Icons.bar_chart_rounded,
                     inactiveIcon: Icons.bar_chart_outlined,
-                    label: 'Reports',
                     isSelected: currentIndex == 3,
-                    isLightStyle: isLightStyle,
                     onTap: () => onTap(3),
                   ),
                   _NavBarItem(
                     activeIcon: Icons.settings_rounded,
                     inactiveIcon: Icons.settings_outlined,
-                    label: 'Settings',
                     isSelected: currentIndex == 4,
-                    isLightStyle: isLightStyle,
                     onTap: () => onTap(4),
                   ),
                 ],
@@ -327,46 +302,36 @@ class _NavBarItem extends StatelessWidget {
   const _NavBarItem({
     required this.activeIcon,
     required this.inactiveIcon,
-    required this.label,
     required this.isSelected,
-    required this.isLightStyle,
     required this.onTap,
-    this.isIconOnly = false,
   });
 
   final IconData activeIcon;
   final IconData inactiveIcon;
-  final String label;
   final bool isSelected;
-  final bool isLightStyle;
   final VoidCallback onTap;
-  final bool isIconOnly;
 
   @override
   Widget build(BuildContext context) {
-    final activePillColor =
-        isLightStyle ? const Color(0xFFF1F4F8) : const Color(0xFF17353A);
-    final activeColor =
-        isLightStyle ? const Color(0xFF11182C) : const Color(0xFFF5F1E8);
-    final inactiveColor =
-        isLightStyle ? const Color(0xFF8B96A8) : const Color(0xFF79918F);
+    const activePillColor = Color(0xFFF1F4F8);
+    const activeColor = Color(0xFF11182C);
+    const inactiveColor = Color(0xFF8B96A8);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
         height: 52,
-        width: isIconOnly ? 52 : 56,
+        width: 56,
         decoration: BoxDecoration(
           color: isSelected ? activePillColor : Colors.transparent,
-          borderRadius: isIconOnly ? null : BorderRadius.circular(20),
-          shape: isIconOnly ? BoxShape.circle : BoxShape.rectangle,
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Center(
           child: Icon(
             isSelected ? activeIcon : inactiveIcon,
             color: isSelected ? activeColor : inactiveColor,
-            size: isIconOnly ? 26 : 22,
+            size: 22,
           ),
         ),
       ),

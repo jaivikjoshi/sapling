@@ -28,6 +28,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Leko uses the camera so you can snap a receipt and have Leko extract the expense details for you.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Leko attaches photos from your library so Leko can read receipts or statements you share.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Leko does not record audio. This permission is only requested by the camera picker on some devices.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

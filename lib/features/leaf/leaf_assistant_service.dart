@@ -15,6 +15,8 @@ abstract class LeafAssistantService {
     required List<Category> categories,
     required List<Bill> bills,
     required List<Goal> goals,
+    List<LeafHistoryTurn> history = const [],
+    List<LeafAttachment> attachments = const [],
   });
 
   Future<String> buildExecutionResponse({
@@ -45,13 +47,26 @@ class LeafHttpAssistantService implements LeafAssistantService {
     required List<Category> categories,
     required List<Bill> bills,
     required List<Goal> goals,
+    List<LeafHistoryTurn> history = const [],
+    List<LeafAttachment> attachments = const [],
   }) async {
     try {
+      final backendContext = LeafBackendContext.fromLeafContext(
+        context,
+        categories: _categoriesToRefs(categories),
+        upcomingBills: _billsToRefs(bills),
+        goals: _goalsToRefs(goals),
+      );
       final response = await _post(
         '/assistant/message',
         body: {
           'message': message,
-          'context': LeafBackendContext.fromLeafContext(context).toJson(),
+          'context': backendContext.toJson(),
+          if (history.isNotEmpty)
+            'history': history.map((turn) => turn.toJson()).toList(),
+          if (attachments.isNotEmpty)
+            'attachments':
+                attachments.map((attachment) => attachment.toJson()).toList(),
         },
       );
       return LeafAssistantEnvelope.fromJson(response);
@@ -124,11 +139,20 @@ class MockLeafAssistantService implements LeafAssistantService {
     required List<Category> categories,
     required List<Bill> bills,
     required List<Goal> goals,
+    List<LeafHistoryTurn> history = const [],
+    List<LeafAttachment> attachments = const [],
   }) async {
     final trimmed = message.trim();
     if (trimmed.isEmpty) {
       return LeafAssistantEnvelope.assistant(
-        'Ask about your budget or tell me something to record.',
+        'Ask about your budget, ask for advice, or tell me something to record.',
+        suggestedPrompts: _defaultPrompts,
+      );
+    }
+
+    if (attachments.isNotEmpty) {
+      return LeafAssistantEnvelope.assistant(
+        'I got your attachment. In dev mode I can\'t parse images or PDFs, but the live assistant will read receipts and statements for you.',
         suggestedPrompts: _defaultPrompts,
       );
     }
@@ -168,10 +192,44 @@ class MockLeafAssistantService implements LeafAssistantService {
   }
 }
 
+List<LeafEntityRef> _categoriesToRefs(List<Category> categories) {
+  // Cap list so the payload stays small; categories the user actually uses
+  // matter more than every preset, so we forward the whole list up to 40.
+  return categories
+      .take(40)
+      .map((category) => LeafEntityRef(id: category.id, name: category.name))
+      .toList();
+}
+
+List<LeafEntityRef> _billsToRefs(List<Bill> bills) {
+  final sorted = [...bills]
+    ..sort((a, b) => a.nextDueDate.compareTo(b.nextDueDate));
+  return sorted
+      .take(12)
+      .map((bill) => LeafEntityRef(
+            id: bill.id,
+            name: bill.name,
+            amount: bill.amount,
+            dueDate: bill.nextDueDate.toIso8601String().split('T').first,
+          ))
+      .toList();
+}
+
+List<LeafEntityRef> _goalsToRefs(List<Goal> goals) {
+  return goals
+      .take(12)
+      .map((goal) => LeafEntityRef(
+            id: goal.id,
+            name: goal.name,
+            amount: goal.targetAmount,
+          ))
+      .toList();
+}
+
 const List<String> _defaultPrompts = <String>[
   'How much can I spend today?',
   'What bills are coming up?',
-  'How is my goal doing?',
+  'Give me a budgeting tip',
   r'Add my $25 dinner',
 ];
 
@@ -185,11 +243,11 @@ LeafAssistantEnvelope? _tryBuildWritePreview({
   if (_looksLikeExpense(normalized)) {
     final amount = _extractAmount(message);
     final date = _extractDate(message) ?? DateTime.now();
-    final categoryName = _extractCategoryName(message, categories);
+    final matched = _extractCategory(message, categories);
     final merchant = _extractMerchant(message);
     final missing = <String>[
       if (amount == null) 'amount',
-      if (categoryName == null) 'category_name',
+      if (matched == null) 'category_name',
     ];
     final action = LeafPendingAction(
       intent: LeafIntent.addExpense,
@@ -201,22 +259,40 @@ LeafAssistantEnvelope? _tryBuildWritePreview({
       data: {
         'amount': amount,
         'date': _isoDay(date),
-        'category_name': categoryName,
+        'category_id': matched?.id,
+        'category_name': matched?.name,
         'merchant': merchant,
       },
     );
-    if (missing.isNotEmpty) {
+
+    if (amount == null) {
       return LeafAssistantEnvelope.clarification(
-        categoryName == null
-            ? 'I can log that, but I need a category first. Which category should I use?'
-            : 'I can log that, but I need the amount first.',
+        'I can log that — how much was it?',
         action: action,
-        suggestedPrompts: const ['Dining Out', 'Groceries', 'Transportation'],
+        clarificationField: 'amount',
+      );
+    }
+    if (matched == null) {
+      final shortlist = _shortlistCategories(normalized, categories);
+      return LeafAssistantEnvelope.clarification(
+        'Which category fits that one?',
+        action: action,
+        clarificationField: 'category_id',
+        clarificationOptions: shortlist
+            .map((category) => LeafClarificationOption(
+                  id: category.id,
+                  label: category.name,
+                  patch: {
+                    'category_id': category.id,
+                    'category_name': category.name,
+                  },
+                ))
+            .toList(),
       );
     }
     return LeafAssistantEnvelope.preview(
       message:
-          'I can log ${formatCurrency(amount!)} to $categoryName for ${_friendlyDay(date)}. Want me to add it?',
+          'I can log ${formatCurrency(amount)} to ${matched.name} for ${_friendlyDay(date)}. Want me to add it?',
       action: action,
       suggestedPrompts: _defaultPrompts,
     );
@@ -242,8 +318,9 @@ LeafAssistantEnvelope? _tryBuildWritePreview({
     );
     if (amount == null) {
       return LeafAssistantEnvelope.clarification(
-        'I can log the income, but I need the amount first.',
+        'I can log the income — how much was it?',
         action: action,
+        clarificationField: 'amount',
       );
     }
     return LeafAssistantEnvelope.preview(
@@ -273,9 +350,23 @@ LeafAssistantEnvelope? _tryBuildWritePreview({
       },
     );
     if (bill == null) {
+      final shortlist = bills.take(6).toList();
       return LeafAssistantEnvelope.clarification(
-        'I can mark a bill paid, but I couldn’t tell which bill you meant.',
+        'Which bill do you mean?',
         action: action,
+        clarificationField: 'bill_id',
+        clarificationOptions: shortlist
+            .map((candidate) => LeafClarificationOption(
+                  id: candidate.id,
+                  label: candidate.name,
+                  subtitle: formatCurrency(candidate.amount),
+                  patch: {
+                    'bill_id': candidate.id,
+                    'bill_name': candidate.name,
+                    'amount': candidate.amount,
+                  },
+                ))
+            .toList(),
       );
     }
     return LeafAssistantEnvelope.preview(
@@ -313,7 +404,7 @@ LeafAssistantEnvelope? _tryBuildWritePreview({
     );
     if (action.missingFields.isNotEmpty) {
       return LeafAssistantEnvelope.clarification(
-        'I can set up that goal, but I still need ${action.missingFields.join(', ')}.',
+        'I can set up that goal — I still need ${action.missingFields.join(', ')}.',
         action: action,
       );
     }
@@ -402,43 +493,77 @@ int? _monthNumber(String raw) {
   };
 }
 
-String? _extractCategoryName(String raw, List<Category> categories) {
+Category? _extractCategory(String raw, List<Category> categories) {
   final lower = raw.toLowerCase();
   for (final category in categories) {
     final name = category.name.toLowerCase();
-    if (lower.contains(name)) return category.name;
+    if (lower.contains(name)) return category;
     final words = name.split(RegExp(r'[/& ]+'));
     if (words.any((word) => word.length > 4 && lower.contains(word))) {
-      return category.name;
+      return category;
     }
   }
   if (lower.contains('dinner') ||
       lower.contains('lunch') ||
       lower.contains('coffee') ||
       lower.contains('restaurant')) {
-    return _matchCategoryName(categories, 'Dining');
+    return _matchCategoryByHint(categories, 'Dining');
   }
   if (lower.contains('uber') ||
       lower.contains('train') ||
       lower.contains('bus') ||
       lower.contains('gas')) {
-    return _matchCategoryName(categories, 'Transport');
+    return _matchCategoryByHint(categories, 'Transport');
   }
   if (lower.contains('grocery') || lower.contains('whole foods')) {
-    return _matchCategoryName(categories, 'Groceries');
+    return _matchCategoryByHint(categories, 'Groceries');
   }
   if (lower.contains('spotify') || lower.contains('netflix')) {
-    return _matchCategoryName(categories, 'Subscriptions');
+    return _matchCategoryByHint(categories, 'Subscriptions');
   }
   return null;
 }
 
-String? _matchCategoryName(List<Category> categories, String query) {
+Category? _matchCategoryByHint(List<Category> categories, String query) {
   final lowered = query.toLowerCase();
   for (final category in categories) {
-    if (category.name.toLowerCase().contains(lowered)) return category.name;
+    if (category.name.toLowerCase().contains(lowered)) return category;
   }
   return null;
+}
+
+/// Pick the 6 most relevant categories to show as clarification options.
+/// Heuristic-matched categories bubble to the top, then a stable alphabetical
+/// order fills the rest so the user gets a predictable shortlist.
+List<Category> _shortlistCategories(
+  String normalized,
+  List<Category> categories,
+) {
+  if (categories.isEmpty) return const [];
+  final preferredHints = <String>[
+    if (RegExp(r'dinner|lunch|coffee|restaurant|brunch').hasMatch(normalized))
+      'dining',
+    if (RegExp(r'grocer|whole foods|market').hasMatch(normalized)) 'grocer',
+    if (RegExp(r'uber|lyft|train|bus|gas|fuel|transit').hasMatch(normalized))
+      'transport',
+    if (RegExp(r'spotify|netflix|subscription').hasMatch(normalized)) 'subscription',
+    if (RegExp(r'amazon|shopping|store').hasMatch(normalized)) 'shop',
+  ];
+
+  final seen = <String>{};
+  final ranked = <Category>[];
+  for (final hint in preferredHints) {
+    for (final category in categories) {
+      if (category.name.toLowerCase().contains(hint) && seen.add(category.id)) {
+        ranked.add(category);
+      }
+    }
+  }
+  for (final category in categories) {
+    if (seen.add(category.id)) ranked.add(category);
+    if (ranked.length >= 6) break;
+  }
+  return ranked.take(6).toList();
 }
 
 Bill? _extractBill(String raw, List<Bill> bills) {

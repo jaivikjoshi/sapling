@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/providers/bills_providers.dart';
 import '../../core/providers/ledger_providers.dart';
+import '../../core/theme/leko_colors.dart';
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
@@ -81,6 +82,8 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
               _buildFrequencyPicker(),
               const SizedBox(height: 12),
               _buildDatePicker(),
+              const SizedBox(height: 8),
+              _buildRecurrenceHint(),
               const SizedBox(height: 12),
               _buildCategoryPicker(catsAsync),
               const SizedBox(height: 20),
@@ -145,6 +148,32 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
     );
   }
 
+  Widget _buildRecurrenceHint() {
+    final freqLabel = switch (_frequency) {
+      BillFrequency.weekly => 'every week on this day',
+      BillFrequency.biweekly => 'every two weeks on this day',
+      BillFrequency.monthly => 'every month on this day',
+      BillFrequency.quarterly => 'every quarter on this day',
+      BillFrequency.yearly => 'every year on this day',
+    };
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.autorenew_rounded, size: 16, color: LekoColors.textSecondary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            'Leko will auto-post this bill $freqLabel.',
+            style: const TextStyle(
+              fontSize: 12,
+              color: LekoColors.textSecondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildCategoryPicker(AsyncValue<List<Category>> catsAsync) {
     return catsAsync.when(
       loading: () => const LinearProgressIndicator(),
@@ -184,6 +213,7 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
         nextDueDate: _nextDueDate,
         categoryId: _categoryId!,
         defaultLabel: SpendLabel.green,
+        autopay: true,
       );
     } else {
       await service.create(
@@ -193,6 +223,7 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
         nextDueDate: _nextDueDate,
         categoryId: _categoryId!,
         defaultLabel: SpendLabel.green,
+        autopay: true,
       );
     }
 

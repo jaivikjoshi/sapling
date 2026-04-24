@@ -47,7 +47,7 @@ class OnboardingRecurringIncomeDraft {
     this.frequency = IncomeFrequency.biweekly,
     this.nextPaydayDate,
     this.expectedAmount,
-    this.paydayBehavior = PaydayBehavior.confirmActualOnPayday,
+    this.paydayBehavior = PaydayBehavior.autoPostExpected,
     this.reminderEnabled = true,
   });
 
@@ -645,6 +645,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
             frequency: Value(enumToDb(bill.frequency)),
             nextDueDate: bill.nextDueDate,
             categoryId: 'cat_other',
+            autopay: const Value(true),
             reminderEnabled: Value(
               state.notificationPreference == NotificationPreference.enable,
             ),

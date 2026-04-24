@@ -63,8 +63,11 @@ class _LekoAppState extends ConsumerState<LekoApp> {
     try {
       final boundary = ref.read(cycleBoundaryWatcherProvider);
       await boundary.checkAndUpdate(DateTime.now());
+      final now = DateTime.now();
       final poster = ref.read(paydayAutoPosterProvider);
-      await poster.runForDate(DateTime.now());
+      await poster.runForDate(now);
+      final billPoster = ref.read(billAutoPosterProvider);
+      await billPoster.runForDate(now);
       final scheduler = ref.read(notificationSchedulerProvider);
       await scheduler.rescheduleAll();
       await ref.read(snapshotWriterProvider).writeSnapshot();

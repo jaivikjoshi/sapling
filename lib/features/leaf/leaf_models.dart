@@ -181,6 +181,43 @@ class LeafPendingAction {
   }
 }
 
+/// A single tappable answer presented alongside a clarification request.
+///
+/// When the user taps an option, the client merges [patch] into the
+/// pending action's `data` map and clears the matching field from
+/// `missing_fields`, avoiding a backend round-trip for the common case.
+class LeafClarificationOption {
+  const LeafClarificationOption({
+    required this.id,
+    required this.label,
+    this.subtitle,
+    this.patch = const {},
+  });
+
+  final String id;
+  final String label;
+  final String? subtitle;
+  final Map<String, dynamic> patch;
+
+  factory LeafClarificationOption.fromJson(Map<String, dynamic> json) {
+    return LeafClarificationOption(
+      id: (json['id'] as String?) ?? '',
+      label: (json['label'] as String?) ?? '',
+      subtitle: json['subtitle'] as String?,
+      patch: Map<String, dynamic>.from(
+        (json['patch'] as Map?) ?? const <String, dynamic>{},
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'label': label,
+        if (subtitle != null) 'subtitle': subtitle,
+        'patch': patch,
+      };
+}
+
 class LeafAssistantEnvelope {
   const LeafAssistantEnvelope({
     required this.type,
@@ -191,6 +228,8 @@ class LeafAssistantEnvelope {
     this.result,
     this.errorCode,
     this.suggestedPrompts = const [],
+    this.clarificationField,
+    this.clarificationOptions = const [],
   });
 
   final LeafEnvelopeType type;
@@ -201,6 +240,8 @@ class LeafAssistantEnvelope {
   final Map<String, dynamic>? result;
   final String? errorCode;
   final List<String> suggestedPrompts;
+  final String? clarificationField;
+  final List<LeafClarificationOption> clarificationOptions;
 
   factory LeafAssistantEnvelope.assistant(
     String message, {
@@ -217,6 +258,8 @@ class LeafAssistantEnvelope {
     String message, {
     LeafPendingAction? action,
     List<String> suggestedPrompts = const [],
+    String? clarificationField,
+    List<LeafClarificationOption> clarificationOptions = const [],
   }) {
     return LeafAssistantEnvelope(
       type: LeafEnvelopeType.clarificationRequest,
@@ -224,6 +267,8 @@ class LeafAssistantEnvelope {
       action: action,
       intent: action?.intent,
       suggestedPrompts: suggestedPrompts,
+      clarificationField: clarificationField,
+      clarificationOptions: clarificationOptions,
     );
   }
 
@@ -277,6 +322,13 @@ class LeafAssistantEnvelope {
     final action = actionJson is Map<String, dynamic>
         ? LeafPendingAction.fromJson(actionJson)
         : null;
+    final options = ((json['clarification_options'] as List?) ?? const [])
+        .whereType<Map>()
+        .map((raw) => LeafClarificationOption.fromJson(
+              Map<String, dynamic>.from(raw),
+            ))
+        .where((option) => option.id.isNotEmpty && option.label.isNotEmpty)
+        .toList();
     return LeafAssistantEnvelope(
       type: type,
       assistantMessage: (json['assistant_message'] as String?) ?? '',
@@ -292,6 +344,34 @@ class LeafAssistantEnvelope {
       suggestedPrompts: ((json['suggested_prompts'] as List?) ?? const [])
           .whereType<String>()
           .toList(),
+      clarificationField: json['clarification_field'] as String?,
+      clarificationOptions: options,
+    );
+  }
+
+  LeafAssistantEnvelope copyWith({
+    LeafEnvelopeType? type,
+    String? assistantMessage,
+    LeafIntent? intent,
+    LeafPendingAction? action,
+    bool? success,
+    Map<String, dynamic>? result,
+    String? errorCode,
+    List<String>? suggestedPrompts,
+    String? clarificationField,
+    List<LeafClarificationOption>? clarificationOptions,
+  }) {
+    return LeafAssistantEnvelope(
+      type: type ?? this.type,
+      assistantMessage: assistantMessage ?? this.assistantMessage,
+      intent: intent ?? this.intent,
+      action: action ?? this.action,
+      success: success ?? this.success,
+      result: result ?? this.result,
+      errorCode: errorCode ?? this.errorCode,
+      suggestedPrompts: suggestedPrompts ?? this.suggestedPrompts,
+      clarificationField: clarificationField ?? this.clarificationField,
+      clarificationOptions: clarificationOptions ?? this.clarificationOptions,
     );
   }
 
@@ -305,8 +385,69 @@ class LeafAssistantEnvelope {
       if (result != null) 'result': result,
       if (errorCode != null) 'error_code': errorCode,
       if (suggestedPrompts.isNotEmpty) 'suggested_prompts': suggestedPrompts,
+      if (clarificationField != null) 'clarification_field': clarificationField,
+      if (clarificationOptions.isNotEmpty)
+        'clarification_options':
+            clarificationOptions.map((option) => option.toJson()).toList(),
     };
   }
+}
+
+/// Minimal attachment payload the app sends to the Leaf backend.
+///
+/// [dataBase64] is the raw file bytes base64-encoded so the worker can pass
+/// them through to Gemini as inline_data without needing an object store.
+class LeafAttachment {
+  const LeafAttachment({
+    required this.name,
+    required this.mime,
+    required this.dataBase64,
+    this.sizeBytes,
+  });
+
+  final String name;
+  final String mime;
+  final String dataBase64;
+  final int? sizeBytes;
+
+  bool get isPdf => mime == 'application/pdf';
+  bool get isImage => mime.startsWith('image/');
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'mime': mime,
+        'data': dataBase64,
+      };
+}
+
+class LeafHistoryTurn {
+  const LeafHistoryTurn({required this.role, required this.text});
+
+  final String role; // 'user' | 'assistant'
+  final String text;
+
+  Map<String, dynamic> toJson() => {'role': role, 'text': text};
+}
+
+class LeafEntityRef {
+  const LeafEntityRef({
+    required this.id,
+    required this.name,
+    this.amount,
+    this.dueDate,
+  });
+
+  final String id;
+  final String name;
+  final double? amount;
+  final String? dueDate;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        if (amount != null) 'amount': amount,
+        if (dueDate != null) 'due_date': dueDate,
+      };
 }
 
 class LeafBackendContext {
@@ -319,6 +460,9 @@ class LeafBackendContext {
     this.todaySpend,
     this.primaryGoalName,
     this.nextBillName,
+    this.categories = const [],
+    this.upcomingBills = const [],
+    this.goals = const [],
   });
 
   final String greetingName;
@@ -329,8 +473,16 @@ class LeafBackendContext {
   final double? todaySpend;
   final String? primaryGoalName;
   final String? nextBillName;
+  final List<LeafEntityRef> categories;
+  final List<LeafEntityRef> upcomingBills;
+  final List<LeafEntityRef> goals;
 
-  factory LeafBackendContext.fromLeafContext(LeafContext context) {
+  factory LeafBackendContext.fromLeafContext(
+    LeafContext context, {
+    List<LeafEntityRef> categories = const [],
+    List<LeafEntityRef> upcomingBills = const [],
+    List<LeafEntityRef> goals = const [],
+  }) {
     return LeafBackendContext(
       greetingName: context.greetingName,
       allowanceMode: context.allowanceMode,
@@ -340,6 +492,9 @@ class LeafBackendContext {
       todaySpend: context.todaySpend,
       primaryGoalName: context.primaryGoal?.name,
       nextBillName: context.nextBill?.name,
+      categories: categories,
+      upcomingBills: upcomingBills,
+      goals: goals,
     );
   }
 
@@ -353,6 +508,11 @@ class LeafBackendContext {
       'today_spend': todaySpend,
       'primary_goal_name': primaryGoalName,
       'next_bill_name': nextBillName,
+      if (categories.isNotEmpty)
+        'categories': categories.map((e) => e.toJson()).toList(),
+      if (upcomingBills.isNotEmpty)
+        'upcoming_bills': upcomingBills.map((e) => e.toJson()).toList(),
+      if (goals.isNotEmpty) 'goals': goals.map((e) => e.toJson()).toList(),
     };
   }
 }

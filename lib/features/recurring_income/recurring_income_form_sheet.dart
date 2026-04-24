@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/recurring_income_providers.dart';
+import '../../core/providers/settings_providers.dart';
 import '../../core/theme/leko_colors.dart';
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
+import '../../domain/models/settings_model.dart';
 import '../../domain/services/recurring_income_service.dart';
 
 class RecurringIncomeFormSheet extends ConsumerStatefulWidget {
@@ -43,9 +45,14 @@ class _RecurringIncomeFormSheetState
     _frequency = e != null
         ? enumFromDb<IncomeFrequency>(e.frequency, IncomeFrequency.values)
         : IncomeFrequency.monthly;
+    final settingsAsync = ref.read(settingsStreamProvider);
+    final settingsDefault = settingsAsync.maybeWhen<PaydayBehavior>(
+      data: (s) => s.defaultPaydayBehavior,
+      orElse: () => UserSettings.defaults.defaultPaydayBehavior,
+    );
     _behavior = e != null
         ? enumFromDb<PaydayBehavior>(e.paydayBehavior, PaydayBehavior.values)
-        : PaydayBehavior.confirmActualOnPayday;
+        : settingsDefault;
     _nextPaydayDate = e?.nextPaydayDate ?? DateTime.now();
     _isAnchor = e?.isPaydayAnchor ?? false;
   }

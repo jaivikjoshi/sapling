@@ -9,6 +9,7 @@ import 'db_provider.dart';
 import 'ledger_providers.dart';
 import 'recurring_income_providers.dart';
 import 'settings_providers.dart';
+import '../../domain/schedulers/bill_auto_poster.dart';
 import '../../domain/schedulers/cycle_boundary_watcher.dart';
 import '../../domain/schedulers/notification_scheduler_impl.dart';
 import '../../domain/schedulers/payday_auto_poster.dart';
@@ -34,6 +35,13 @@ final cycleBoundaryWatcherProvider = Provider<CycleBoundaryWatcher>((ref) {
 final paydayAutoPosterProvider = Provider<PaydayAutoPoster>((ref) {
   return PaydayAutoPoster(
     ref.watch(recurringIncomeRepositoryProvider),
+    ref.watch(transactionsRepositoryProvider),
+  );
+});
+
+final billAutoPosterProvider = Provider<BillAutoPoster>((ref) {
+  return BillAutoPoster(
+    ref.watch(billsRepositoryProvider),
     ref.watch(transactionsRepositoryProvider),
   );
 });

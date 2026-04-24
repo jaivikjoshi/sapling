@@ -62,7 +62,7 @@ class UserSettings {
     rolloverResetType: RolloverResetType.monthly,
     spendingBaselineDays: 30,
     allowanceDefaultMode: AllowanceMode.paycheck,
-    defaultPaydayBehavior: PaydayBehavior.confirmActualOnPayday,
+    defaultPaydayBehavior: PaydayBehavior.autoPostExpected,
     paydayEnabled: true,
     billsEnabled: true,
     overspendEnabled: true,
