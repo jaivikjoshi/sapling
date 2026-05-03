@@ -80,7 +80,7 @@ class LeafActionExecutor {
       label: label,
       note: note,
       linkedBillId: action.data['linked_bill_id'] as String?,
-      linkedSplitEntryId: action.data['split_person_id'] as String?,
+      linkedSplitEntryId: linkedSplitEntryIdFromLeafActionData(action.data),
     );
 
     return {
@@ -265,6 +265,24 @@ class LeafActionExecutor {
     }
     return null;
   }
+}
+
+/// Split expenses store a [Transaction.linkedSplitEntryId] pointing at
+/// `split_entries.id`. The assistant payload has used several key names;
+/// accept them in priority order so we never drop a valid link.
+String? linkedSplitEntryIdFromLeafActionData(Map<String, dynamic> data) {
+  for (final key in const [
+    'linked_split_entry_id',
+    'split_entry_id',
+    'split_person_id', // legacy / misnamed — often held the split entry id
+  ]) {
+    final raw = data[key];
+    if (raw is String) {
+      final trimmed = raw.trim();
+      if (trimmed.isNotEmpty) return trimmed;
+    }
+  }
+  return null;
 }
 
 double _requirePositiveDouble(Object? raw, String fieldName) {
