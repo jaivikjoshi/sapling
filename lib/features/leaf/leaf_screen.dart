@@ -241,6 +241,7 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
               if (convo.pendingAction != null)
                 _PendingActionBar(
                   action: convo.pendingAction!,
+                  confirmEnabled: !convo.isLoading,
                   onConfirm: () {
                     ref
                         .read(leafConversationProvider.notifier)
@@ -1493,11 +1494,13 @@ class _SendButton extends StatelessWidget {
 class _PendingActionBar extends StatelessWidget {
   const _PendingActionBar({
     required this.action,
+    required this.confirmEnabled,
     required this.onConfirm,
     required this.onCancel,
   });
 
   final LeafPendingAction action;
+  final bool confirmEnabled;
   final VoidCallback onConfirm;
   final VoidCallback onCancel;
 
@@ -1553,7 +1556,7 @@ class _PendingActionBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           FilledButton(
-            onPressed: onConfirm,
+            onPressed: confirmEnabled ? onConfirm : null,
             style: FilledButton.styleFrom(
               backgroundColor: _LeafPalette.navy,
               foregroundColor: Colors.white,
