@@ -105,8 +105,6 @@ class BillsService {
   }) async {
     final bill = await _billsRepo.getById(billId);
     final effectiveDate = paidDate ?? DateTime.now();
-    final effectiveAmount = amountOverride ?? bill.amount;
-    final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
     final now = DateTime.now();
 
     final paidDayStart = DateTime(
@@ -159,6 +157,9 @@ class BillsService {
         paidAmount: existingLinked.amount,
       );
     }
+
+    final effectiveAmount = amountOverride ?? bill.amount;
+    final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
     final txnId = _uuid.v4();
     await _txnRepo.insert(Transaction(
