@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:leko/core/utils/enum_serialization.dart';
 import 'package:leko/data/db/leko_database.dart';
 import 'package:leko/data/repositories/bills_repository.dart';
 import 'package:leko/data/repositories/transactions_repository.dart';
@@ -293,6 +294,82 @@ void main() {
 
       final result = await service.markPaid(billId: billId);
       expect(result.updatedBill.nextDueDate, DateTime(2026, 7, 1));
+    });
+
+    test(
+        'mark paid is idempotent when a linked expense already exists and '
+        'next due is past the payment day (auto-post then mark paid)', () async {
+      final billId = await service.create(
+        name: 'Streaming',
+        amount: 15.99,
+        frequency: BillFrequency.monthly,
+        nextDueDate: DateTime(2025, 2, 1),
+        categoryId: 'cat-1',
+        defaultLabel: SpendLabel.red,
+      );
+
+      const autoTxnId = 'auto-post-txn';
+      await txnRepo.insert(Transaction(
+        id: autoTxnId,
+        type: enumToDb(TransactionType.expense),
+        amount: 15.99,
+        date: DateTime(2025, 1, 1),
+        categoryId: 'cat-1',
+        label: enumToDb(SpendLabel.red),
+        note: 'Bill auto-posted: Streaming',
+        linkedBillId: billId,
+        createdAt: DateTime(2025, 1, 1),
+        updatedAt: DateTime(2025, 1, 1),
+      ));
+
+      final result = await service.markPaid(
+        billId: billId,
+        paidDate: DateTime(2025, 1, 1),
+      );
+
+      expect(result.transactionId, autoTxnId);
+      expect(result.updatedBill.nextDueDate, DateTime(2025, 2, 1));
+
+      final all = await txnRepo.getAll();
+      expect(all.where((t) => t.linkedBillId == billId).length, 1);
+    });
+
+    test(
+        'mark paid advances schedule when linked expense exists but next due '
+        'is still on the payment day', () async {
+      final billId = await service.create(
+        name: 'Utilities',
+        amount: 90,
+        frequency: BillFrequency.monthly,
+        nextDueDate: DateTime(2025, 3, 10),
+        categoryId: 'cat-1',
+        defaultLabel: SpendLabel.green,
+      );
+
+      const manualTxnId = 'manual-linked';
+      await txnRepo.insert(Transaction(
+        id: manualTxnId,
+        type: enumToDb(TransactionType.expense),
+        amount: 90,
+        date: DateTime(2025, 3, 10),
+        categoryId: 'cat-1',
+        label: enumToDb(SpendLabel.green),
+        note: 'Paid early',
+        linkedBillId: billId,
+        createdAt: DateTime(2025, 3, 10),
+        updatedAt: DateTime(2025, 3, 10),
+      ));
+
+      final result = await service.markPaid(
+        billId: billId,
+        paidDate: DateTime(2025, 3, 10),
+      );
+
+      expect(result.transactionId, manualTxnId);
+      expect(result.updatedBill.nextDueDate, DateTime(2025, 4, 10));
+
+      final all = await txnRepo.getAll();
+      expect(all.where((t) => t.linkedBillId == billId).length, 1);
     });
   });
 }

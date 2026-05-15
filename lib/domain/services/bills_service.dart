@@ -107,9 +107,60 @@ class BillsService {
     final effectiveDate = paidDate ?? DateTime.now();
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
+    final now = DateTime.now();
+
+    final paidDayStart = DateTime(
+      effectiveDate.year,
+      effectiveDate.month,
+      effectiveDate.day,
+    );
+    final paidDayEnd = paidDayStart.add(const Duration(days: 1));
+    final txnsOnPaidDay =
+        await _txnRepo.getByDateRange(paidDayStart, paidDayEnd);
+    Transaction? existingLinked;
+    for (final t in txnsOnPaidDay) {
+      if (t.type == enumToDb(TransactionType.expense) &&
+          t.linkedBillId == billId) {
+        existingLinked = t;
+        break;
+      }
+    }
+
+    if (existingLinked != null) {
+      final dueDayStart = DateTime(
+        bill.nextDueDate.year,
+        bill.nextDueDate.month,
+        bill.nextDueDate.day,
+      );
+      if (dueDayStart.isAfter(paidDayStart)) {
+        // e.g. bill auto-post already logged this cycle and advanced the schedule
+        return MarkPaidResult(
+          transactionId: existingLinked.id,
+          updatedBill: bill,
+          paidAmount: existingLinked.amount,
+        );
+      }
+      // Expense for this day exists but the schedule has not moved on yet
+      // (e.g. user logged a linked expense manually) — advance without a 2nd txn.
+      final freq =
+          enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
+      final nextDue = advanceByBillFrequency(bill.nextDueDate, freq);
+      await _billsRepo.updateById(
+        billId,
+        BillsCompanion(
+          nextDueDate: Value(nextDue),
+          updatedAt: Value(now),
+        ),
+      );
+      final updated = await _billsRepo.getById(billId);
+      return MarkPaidResult(
+        transactionId: existingLinked.id,
+        updatedBill: updated,
+        paidAmount: existingLinked.amount,
+      );
+    }
 
     final txnId = _uuid.v4();
-    final now = DateTime.now();
     await _txnRepo.insert(Transaction(
       id: txnId,
       type: enumToDb(TransactionType.expense),
