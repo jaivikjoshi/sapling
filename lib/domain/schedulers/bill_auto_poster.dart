@@ -25,8 +25,8 @@ class BillAutoPoster {
 
   BillAutoPoster(this._billsRepo, this._txnRepo);
 
-  /// Posts and advances every recurring bill up to and including [today].
-  /// Returns the number of expense transactions created across all bills.
+  /// Posts and advances every autopay bill up to and including [today].
+  /// Returns the number of expense transactions created across those bills.
   Future<int> runForDate(DateTime today) async {
     final bills = await _billsRepo.getAll();
     final todayStart = DateTime(today.year, today.month, today.day);
