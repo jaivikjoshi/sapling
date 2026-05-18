@@ -98,6 +98,11 @@ class BillsService {
   Future<void> delete(String id) => _billsRepo.deleteById(id);
 
   /// Canonical Mark Paid: creates expense transaction, advances nextDueDate.
+  ///
+  /// If an expense for this bill already exists on the paid day (for example
+  /// from [BillAutoPoster]), this call is a no-op for the ledger and schedule:
+  /// it returns that transaction without inserting a duplicate or advancing
+  /// [nextDueDate] again.
   Future<MarkPaidResult> markPaid({
     required String billId,
     DateTime? paidDate,
@@ -107,6 +112,24 @@ class BillsService {
     final effectiveDate = paidDate ?? DateTime.now();
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
+
+    final paidDayStart = DateTime(
+      effectiveDate.year,
+      effectiveDate.month,
+      effectiveDate.day,
+    );
+    final paidDayEnd = paidDayStart.add(const Duration(days: 1));
+    final sameDayTxns = await _txnRepo.getByDateRange(paidDayStart, paidDayEnd);
+    for (final t in sameDayTxns) {
+      if (t.type == enumToDb(TransactionType.expense) &&
+          t.linkedBillId == billId) {
+        return MarkPaidResult(
+          transactionId: t.id,
+          updatedBill: bill,
+          paidAmount: t.amount,
+        );
+      }
+    }
 
     final txnId = _uuid.v4();
     final now = DateTime.now();
