@@ -358,19 +358,29 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
         goals: _goals,
         bills: _bills,
       );
-      final assistantText = await _assistant.buildExecutionResponse(
-        action: action,
-        success: true,
-        result: result,
-        context: _ctx,
-      );
+      // The ledger write already succeeded. Clear the pending action before
+      // any follow-up network call so a failure there cannot surface as a
+      // false "failure" with the same action still confirmable (double-write).
+      state = state.copyWith(pendingAction: null);
+
+      String assistantText;
+      try {
+        assistantText = await _assistant.buildExecutionResponse(
+          action: action,
+          success: true,
+          result: result,
+          context: _ctx,
+        );
+      } catch (_) {
+        assistantText = 'Done.';
+      }
+
       _appendAssistant(
         text: assistantText,
         kind: LeafMessageKind.executionResult,
         success: true,
       );
       state = state.copyWith(
-        pendingAction: null,
         isLoading: false,
         error: null,
       );
