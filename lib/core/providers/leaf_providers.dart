@@ -189,6 +189,10 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
 
   final Ref ref;
 
+  /// Prevents overlapping [confirmPendingAction] runs (e.g. double-tap on
+  /// Confirm) from inserting duplicate ledger rows before the first await.
+  bool _confirmPendingInFlight = false;
+
   LeafContext get _ctx => ref.read(leafContextProvider);
   List<Category> get _categories =>
       ref.read(categoriesProvider).valueOrNull ?? const <Category>[];
@@ -201,6 +205,7 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
   LeafActionExecutor get _executor => ref.read(leafActionExecutorProvider);
 
   void clearConversation() {
+    _confirmPendingInFlight = false;
     state = LeafConversationState(
       messages: [
         LeafChatMessage(
@@ -349,7 +354,8 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
 
   Future<void> confirmPendingAction() async {
     final action = state.pendingAction;
-    if (action == null) return;
+    if (action == null || _confirmPendingInFlight) return;
+    _confirmPendingInFlight = true;
     state = state.copyWith(isLoading: true, error: null);
     try {
       final result = await _executor.execute(
@@ -388,6 +394,8 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
       await _appendExecutionFailure(action, error.message);
     } catch (error) {
       await _appendExecutionFailure(action, error.toString());
+    } finally {
+      _confirmPendingInFlight = false;
     }
   }
 
