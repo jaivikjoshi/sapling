@@ -80,7 +80,7 @@ class LeafActionExecutor {
       label: label,
       note: note,
       linkedBillId: action.data['linked_bill_id'] as String?,
-      linkedSplitEntryId: action.data['split_person_id'] as String?,
+      linkedSplitEntryId: linkedSplitEntryIdFromLeafActionData(action.data),
     );
 
     return {
@@ -265,6 +265,29 @@ class LeafActionExecutor {
     }
     return null;
   }
+}
+
+/// Reads a split **entry** id from Leaf assistant `action.data`.
+///
+/// Transactions store `linked_split_entry_id`, which must reference
+/// `split_entries.id`, not a person id. Canonical payloads use snake_case keys
+/// from the assistant API; legacy `split_person_id` is ignored because it
+/// often carries the wrong entity type and corrupts balances.
+String? linkedSplitEntryIdFromLeafActionData(Map<String, dynamic> data) {
+  const keys = <String>[
+    'linked_split_entry_id',
+    'linkedSplitEntryId',
+    'split_entry_id',
+    'splitEntryId',
+  ];
+  for (final key in keys) {
+    final raw = data[key];
+    if (raw is String) {
+      final v = raw.trim();
+      if (v.isNotEmpty) return v;
+    }
+  }
+  return null;
 }
 
 double _requirePositiveDouble(Object? raw, String fieldName) {
