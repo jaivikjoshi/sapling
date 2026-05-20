@@ -8,11 +8,11 @@ import '../../data/repositories/bills_repository.dart';
 import '../../data/repositories/transactions_repository.dart';
 import '../models/enums.dart';
 
-/// Automatically posts an expense transaction for each recurring bill on its
+/// Automatically posts an expense transaction for each **autopay** bill on its
 /// due date and rolls the due date forward to the next cycle.
 ///
-/// Runs on every app open (see `LekoApp._runSchedulers`). For each bill whose
-/// `nextDueDate` is on or before today, we:
+/// Runs on every app open (see `LekoApp._runSchedulers`). For each bill with
+/// [Bill.autopay] enabled whose `nextDueDate` is on or before today, we:
 ///   1. Insert an expense transaction dated at the due date (idempotent by
 ///      `linked_bill_id` + date).
 ///   2. Advance `nextDueDate` by the bill's frequency.
@@ -39,6 +39,9 @@ class BillAutoPoster {
   }
 
   Future<int> _runForBill(Bill bill, DateTime todayStart) async {
+    if (!bill.autopay) {
+      return 0;
+    }
     final freq =
         enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
