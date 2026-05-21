@@ -42,6 +42,11 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// Prevents concurrent scheduler runs if build fires multiple times quickly.
   bool _schedulerRunning = false;
 
+  /// A forced run (e.g. user just signed in) that arrived while [_schedulerRunning]
+  /// was true would otherwise be dropped. We re-run once after the in-flight
+  /// pass completes so schedulers hit Supabase-backed repos for the new user.
+  bool _schedulerForcedRerunPending = false;
+
   StreamSubscription<Uri>? _deepLinkSubscription;
 
   static String _dateKey(DateTime d) =>
@@ -91,7 +96,12 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// Pass [forceUser] = true to bypass the date check when the signed-in
   /// user changed (e.g. session restored, sign-in completed).
   void _maybeRunSchedulers({bool forceUser = false}) {
-    if (_schedulerRunning) return;
+    if (_schedulerRunning) {
+      if (forceUser) {
+        _schedulerForcedRerunPending = true;
+      }
+      return;
+    }
     final today = _dateKey(DateTime.now());
     final userId = ref.read(currentUserProvider)?.id;
     final sameDay = _lastSchedulerRunDate == today;
@@ -115,6 +125,10 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
       debugPrint('[Scheduler] error: $e\n$st');
     } finally {
       _schedulerRunning = false;
+      if (_schedulerForcedRerunPending) {
+        _schedulerForcedRerunPending = false;
+        _maybeRunSchedulers(forceUser: true);
+      }
     }
   }
 
