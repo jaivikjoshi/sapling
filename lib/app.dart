@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/notifications/closeout_notification_service.dart';
+import 'core/providers/auth_providers.dart';
 import 'core/providers/bills_providers.dart';
 import 'core/providers/recurring_income_providers.dart';
 import 'core/providers/scheduler_providers.dart';
@@ -26,14 +27,30 @@ class LekoApp extends ConsumerStatefulWidget {
   ConsumerState<LekoApp> createState() => _LekoAppState();
 }
 
-class _LekoAppState extends ConsumerState<LekoApp> {
+class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   bool _closeoutCallbackSet = false;
-  bool _schedulersRunOnce = false;
+
+  /// ISO date (yyyy-MM-dd) of the last scheduler run, used to skip same-day
+  /// re-runs caused by widget rebuilds.
+  String? _lastSchedulerRunDate;
+
+  /// User ID we last ran schedulers for. When the signed-in user changes
+  /// (session restore or explicit login) we force a re-run even if the date
+  /// is the same.
+  String? _lastSchedulerUserId;
+
+  /// Prevents concurrent scheduler runs if build fires multiple times quickly.
+  bool _schedulerRunning = false;
+
   StreamSubscription<Uri>? _deepLinkSubscription;
+
+  static String _dateKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _deepLinkSubscription = AppLinks().uriLinkStream.listen((uri) {
       if (_isAuthCallback(uri)) {
         Supabase.instance.client.auth.getSessionFromUrl(uri).ignore();
@@ -43,8 +60,19 @@ class _LekoAppState extends ConsumerState<LekoApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _deepLinkSubscription?.cancel();
     super.dispose();
+  }
+
+  /// Re-run schedulers when the app returns to the foreground. The
+  /// date-deduplication inside [_maybeRunSchedulers] means this is a no-op
+  /// if the app is brought forward multiple times on the same calendar day.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _maybeRunSchedulers();
+    }
   }
 
   @override
@@ -59,27 +87,51 @@ class _LekoAppState extends ConsumerState<LekoApp> {
     }
   }
 
+  /// Runs schedulers unless they already ran today for the current user.
+  /// Pass [forceUser] = true to bypass the date check when the signed-in
+  /// user changed (e.g. session restored, sign-in completed).
+  void _maybeRunSchedulers({bool forceUser = false}) {
+    if (_schedulerRunning) return;
+    final today = _dateKey(DateTime.now());
+    final userId = ref.read(currentUserProvider)?.id;
+    final sameDay = _lastSchedulerRunDate == today;
+    final sameUser = _lastSchedulerUserId == userId;
+    if (!forceUser && sameDay && sameUser) return;
+    _lastSchedulerRunDate = today;
+    _lastSchedulerUserId = userId;
+    Future.microtask(() => _runSchedulers(ref));
+  }
+
   Future<void> _runSchedulers(WidgetRef ref) async {
+    _schedulerRunning = true;
     try {
-      final boundary = ref.read(cycleBoundaryWatcherProvider);
-      await boundary.checkAndUpdate(DateTime.now());
+      await ref.read(cycleBoundaryWatcherProvider).checkAndUpdate(DateTime.now());
       final now = DateTime.now();
-      final poster = ref.read(paydayAutoPosterProvider);
-      await poster.runForDate(now);
-      final billPoster = ref.read(billAutoPosterProvider);
-      await billPoster.runForDate(now);
-      final scheduler = ref.read(notificationSchedulerProvider);
-      await scheduler.rescheduleAll();
+      await ref.read(paydayAutoPosterProvider).runForDate(now);
+      await ref.read(billAutoPosterProvider).runForDate(now);
+      await ref.read(notificationSchedulerProvider).rescheduleAll();
       await ref.read(snapshotWriterProvider).writeSnapshot();
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[Scheduler] error: $e\n$st');
+    } finally {
+      _schedulerRunning = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_schedulersRunOnce) {
-      _schedulersRunOnce = true;
-      Future.microtask(() => _runSchedulers(ref));
-    }
+    // Re-run schedulers when the signed-in user changes. This covers two
+    // cases: (1) Supabase session being restored after the first build fires,
+    // and (2) the user explicitly signing in from the auth screen.
+    ref.listen(currentUserProvider, (previous, current) {
+      if (current?.id != _lastSchedulerUserId) {
+        _maybeRunSchedulers(forceUser: true);
+      }
+    });
+
+    // Run on every build; no-op if already ran today for the same user.
+    _maybeRunSchedulers();
+
     ref.listen(settingsStreamProvider, (prev, next) {
       next.whenData((_) async {
         final scheduler = ref.read(notificationSchedulerProvider);

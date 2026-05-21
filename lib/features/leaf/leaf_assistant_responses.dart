@@ -99,7 +99,51 @@ String responseForFreeText(LeafContext ctx, String raw) {
     return _overview(ctx);
   }
 
-  return 'I didn’t quite catch that. Ask about spending today, bills, your goal, or say something like “Add my \$25 dinner.”';
+  // General advice / analysis / recommendations — handle broadly so the mock
+  // never dead-ends on a legitimate financial question.
+  if (RegExp(
+    r'\b(advice|tip|tips|recommend|suggestion|too much|too little|cut back|where should|should i|am i|how do i|help me|analyze|analysis|improve|overspend|underspend|dining|groceries|entertainment|shopping)\b',
+  ).hasMatch(q)) {
+    return _advice(ctx, q);
+  }
+
+  return 'I can help with budgeting advice, your allowance, bills, goals, or record something you spent. What would you like to dig into?';
+}
+
+String _advice(LeafContext ctx, String query) {
+  final daily = ctx.dailyAllowance;
+  final left = ctx.remainingToday;
+  final spent = ctx.todaySpend;
+
+  if (daily == null || left == null || spent == null) {
+    return 'Once your settings are loaded I can give you tailored advice. Open Settings to finish setup.';
+  }
+
+  final pct = daily > 0 ? (spent / daily * 100).round() : 0;
+  final leftAbs = _money(ctx, left.abs());
+  final dailyStr = _money(ctx, daily);
+  final spentStr = _money(ctx, spent);
+
+  if (RegExp(r'\b(dining|restaurant|food|lunch|dinner|coffee)\b').hasMatch(query)) {
+    return "You've used $spentStr of your $dailyStr daily budget today ($pct%). "
+        'For a category-level view of dining vs other spending, check the Reports tab.';
+  }
+
+  if (RegExp(r'\b(too much|cut back|overspend|reduce)\b').hasMatch(query)) {
+    if (left >= 0) {
+      return "You're $leftAbs under today's $dailyStr allowance — you're actually pacing well. "
+          'Keep an eye on the bigger categories in Reports to spot patterns.';
+    }
+    return "You're $leftAbs over today's $dailyStr target. "
+        'Consider shifting any non-essential spending to tomorrow to even things out.';
+  }
+
+  if (left >= 0) {
+    return "Good pace today: $spentStr spent of your $dailyStr daily allowance ($pct% used), "
+        'leaving you $leftAbs. Check Reports for category trends.';
+  }
+  return "You're $leftAbs past today's $dailyStr allowance ($pct% used, target was 100%). "
+      'Easing off for the rest of the day helps keep the cycle on track.';
 }
 
 bool _isGreeting(String input) {
