@@ -14,6 +14,7 @@ import 'core/providers/settings_providers.dart';
 import 'core/providers/widget_snapshot_providers.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/leko_theme.dart';
+import 'core/utils/daily_scheduler_skip.dart';
 
 bool _isAuthCallback(Uri uri) {
   return uri.scheme == 'com.jaivik.leko' &&
@@ -91,14 +92,21 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// Pass [forceUser] = true to bypass the date check when the signed-in
   /// user changed (e.g. session restored, sign-in completed).
   void _maybeRunSchedulers({bool forceUser = false}) {
-    if (_schedulerRunning) return;
     final today = _dateKey(DateTime.now());
     final userId = ref.read(currentUserProvider)?.id;
-    final sameDay = _lastSchedulerRunDate == today;
-    final sameUser = _lastSchedulerUserId == userId;
-    if (!forceUser && sameDay && sameUser) return;
+    if (shouldSkipEnqueueDailySchedulers(
+      schedulerRunning: _schedulerRunning,
+      currentUserId: userId,
+      todayDateKey: today,
+      lastRunDateKey: _lastSchedulerRunDate,
+      lastRunUserId: _lastSchedulerUserId,
+      forceUserChange: forceUser,
+    )) {
+      return;
+    }
+    final uid = userId!;
     _lastSchedulerRunDate = today;
-    _lastSchedulerUserId = userId;
+    _lastSchedulerUserId = uid;
     Future.microtask(() => _runSchedulers(ref));
   }
 
@@ -124,7 +132,15 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     // cases: (1) Supabase session being restored after the first build fires,
     // and (2) the user explicitly signing in from the auth screen.
     ref.listen(currentUserProvider, (previous, current) {
-      if (current?.id != _lastSchedulerUserId) {
+      final id = current?.id;
+      if (id == null) {
+        // Signed out: clear dedup state so the next sign-in can run schedulers
+        // the same calendar day, and never call [_maybeRunSchedulers] with a
+        // null user (that would hit Drift while logged out).
+        _lastSchedulerUserId = null;
+        return;
+      }
+      if (id != _lastSchedulerUserId) {
         _maybeRunSchedulers(forceUser: true);
       }
     });
