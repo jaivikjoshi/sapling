@@ -91,9 +91,16 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// Pass [forceUser] = true to bypass the date check when the signed-in
   /// user changed (e.g. session restored, sign-in completed).
   void _maybeRunSchedulers({bool forceUser = false}) {
+    final userId = ref.read(currentUserProvider)?.id;
+    if (userId == null) {
+      // Signed out: never run schedulers against the offline Drift stack.
+      // Clear last user so signing back in (even the same account, same day)
+      // still re-runs after logout.
+      _lastSchedulerUserId = null;
+      return;
+    }
     if (_schedulerRunning) return;
     final today = _dateKey(DateTime.now());
-    final userId = ref.read(currentUserProvider)?.id;
     final sameDay = _lastSchedulerRunDate == today;
     final sameUser = _lastSchedulerUserId == userId;
     if (!forceUser && sameDay && sameUser) return;
@@ -105,6 +112,11 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   Future<void> _runSchedulers(WidgetRef ref) async {
     _schedulerRunning = true;
     try {
+      if (ref.read(currentUserProvider)?.id == null) {
+        // Session ended before this microtask ran; avoid touching Drift as
+        // "signed-out" guest data or mixing repos mid-flight.
+        return;
+      }
       await ref.read(cycleBoundaryWatcherProvider).checkAndUpdate(DateTime.now());
       final now = DateTime.now();
       await ref.read(paydayAutoPosterProvider).runForDate(now);
