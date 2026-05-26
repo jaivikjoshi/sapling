@@ -39,7 +39,9 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// is the same.
   String? _lastSchedulerUserId;
 
-  /// Prevents concurrent scheduler runs if build fires multiple times quickly.
+  /// True while a scheduler pass is queued or actively running. Set
+  /// synchronously before [Future.microtask] so rapid rebuilds cannot enqueue
+  /// duplicate runs; cleared when the pass finishes (success or failure).
   bool _schedulerRunning = false;
 
   StreamSubscription<Uri>? _deepLinkSubscription;
@@ -97,13 +99,21 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     final sameDay = _lastSchedulerRunDate == today;
     final sameUser = _lastSchedulerUserId == userId;
     if (!forceUser && sameDay && sameUser) return;
-    _lastSchedulerRunDate = today;
-    _lastSchedulerUserId = userId;
-    Future.microtask(() => _runSchedulers(ref));
+    // Claim the slot before microtask: if we only flipped this inside the async
+    // body, two back-to-back synchronous calls could both queue a run.
+    _schedulerRunning = true;
+    Future.microtask(() => _runSchedulers(ref, today, userId));
   }
 
-  Future<void> _runSchedulers(WidgetRef ref) async {
-    _schedulerRunning = true;
+  /// [dedupeDay] / [dedupeUserId] capture who this pass was scheduled for so we
+  /// only update dedupe state after everything succeeds. If any step throws,
+  /// we leave [_lastSchedulerRunDate] unchanged so the same-day retry path
+  /// stays open (otherwise missed bill/income auto-posts until tomorrow).
+  Future<void> _runSchedulers(
+    WidgetRef ref,
+    String dedupeDay,
+    String? dedupeUserId,
+  ) async {
     try {
       await ref.read(cycleBoundaryWatcherProvider).checkAndUpdate(DateTime.now());
       final now = DateTime.now();
@@ -111,6 +121,8 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
       await ref.read(billAutoPosterProvider).runForDate(now);
       await ref.read(notificationSchedulerProvider).rescheduleAll();
       await ref.read(snapshotWriterProvider).writeSnapshot();
+      _lastSchedulerRunDate = dedupeDay;
+      _lastSchedulerUserId = dedupeUserId;
     } catch (e, st) {
       debugPrint('[Scheduler] error: $e\n$st');
     } finally {
