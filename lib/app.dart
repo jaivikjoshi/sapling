@@ -115,6 +115,14 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
       debugPrint('[Scheduler] error: $e\n$st');
     } finally {
       _schedulerRunning = false;
+      // If auth changed while this run was in flight, earlier
+      // [_maybeRunSchedulers] calls bailed out because [_schedulerRunning] was
+      // true. Re-queue so the newly signed-in user still gets payday/bill
+      // auto-post and notifications for today.
+      final userNow = ref.read(currentUserProvider)?.id;
+      if (userNow != _lastSchedulerUserId) {
+        _maybeRunSchedulers(forceUser: true);
+      }
     }
   }
 
