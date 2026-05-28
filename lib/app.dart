@@ -42,6 +42,10 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// Prevents concurrent scheduler runs if build fires multiple times quickly.
   bool _schedulerRunning = false;
 
+  /// Set when auth changes while a scheduler run is in flight; triggers one
+  /// follow-up run after the current one finishes.
+  bool _pendingSchedulerRerun = false;
+
   StreamSubscription<Uri>? _deepLinkSubscription;
 
   static String _dateKey(DateTime d) =>
@@ -91,14 +95,15 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// Pass [forceUser] = true to bypass the date check when the signed-in
   /// user changed (e.g. session restored, sign-in completed).
   void _maybeRunSchedulers({bool forceUser = false}) {
-    if (_schedulerRunning) return;
+    if (_schedulerRunning) {
+      if (forceUser) _pendingSchedulerRerun = true;
+      return;
+    }
     final today = _dateKey(DateTime.now());
     final userId = ref.read(currentUserProvider)?.id;
     final sameDay = _lastSchedulerRunDate == today;
     final sameUser = _lastSchedulerUserId == userId;
     if (!forceUser && sameDay && sameUser) return;
-    _lastSchedulerRunDate = today;
-    _lastSchedulerUserId = userId;
     Future.microtask(() => _runSchedulers(ref));
   }
 
@@ -111,10 +116,16 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
       await ref.read(billAutoPosterProvider).runForDate(now);
       await ref.read(notificationSchedulerProvider).rescheduleAll();
       await ref.read(snapshotWriterProvider).writeSnapshot();
+      _lastSchedulerRunDate = _dateKey(now);
+      _lastSchedulerUserId = ref.read(currentUserProvider)?.id;
     } catch (e, st) {
       debugPrint('[Scheduler] error: $e\n$st');
     } finally {
       _schedulerRunning = false;
+      if (_pendingSchedulerRerun) {
+        _pendingSchedulerRerun = false;
+        _maybeRunSchedulers(forceUser: true);
+      }
     }
   }
 
