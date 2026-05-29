@@ -298,6 +298,55 @@ void main() {
     });
 
     test(
+      'markPaid is idempotent when autopay posted on due date but user marks '
+      'paid on a later day',
+      () async {
+        final billId = await service.create(
+          name: 'Rent',
+          amount: 1000,
+          frequency: BillFrequency.monthly,
+          nextDueDate: DateTime(2025, 4, 1),
+          categoryId: 'cat-1',
+          defaultLabel: SpendLabel.green,
+          autopay: true,
+        );
+
+        const autoTxnId = 'auto-posted-txn';
+        await txnRepo.insert(Transaction(
+          id: autoTxnId,
+          type: enumToDb(TransactionType.expense),
+          amount: 1000,
+          date: DateTime(2025, 4, 1),
+          categoryId: 'cat-1',
+          label: enumToDb(SpendLabel.green),
+          note: 'Bill auto-posted: Rent',
+          linkedBillId: billId,
+          createdAt: DateTime(2025, 4, 1),
+          updatedAt: DateTime(2025, 4, 1),
+        ));
+
+        await billsRepo.updateById(
+          billId,
+          BillsCompanion(
+            nextDueDate: const Value(DateTime(2025, 5, 1)),
+            updatedAt: Value(DateTime(2025, 4, 1)),
+          ),
+        );
+
+        final countBefore = (await txnRepo.getAll()).length;
+
+        final result = await service.markPaid(
+          billId: billId,
+          paidDate: DateTime(2025, 4, 5),
+        );
+
+        expect(result.transactionId, autoTxnId);
+        expect(result.updatedBill.nextDueDate, DateTime(2025, 5, 1));
+        expect((await txnRepo.getAll()).length, countBefore);
+      },
+    );
+
+    test(
       'markPaid is idempotent when an expense already exists for that bill on '
       'the paid day (e.g. after BillAutoPoster)',
       () async {

@@ -113,14 +113,24 @@ class BillsService {
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final paidDayStart = DateTime(
-      effectiveDate.year,
-      effectiveDate.month,
-      effectiveDate.day,
+    final freq =
+        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
+    final cycleEndExclusive = DateTime(
+      bill.nextDueDate.year,
+      bill.nextDueDate.month,
+      bill.nextDueDate.day,
+    ).add(const Duration(days: 1));
+    final cycleStart = retreatByBillFrequency(
+      DateTime(
+        bill.nextDueDate.year,
+        bill.nextDueDate.month,
+        bill.nextDueDate.day,
+      ),
+      freq,
     );
-    final paidDayEnd = paidDayStart.add(const Duration(days: 1));
-    final sameDayTxns = await _txnRepo.getByDateRange(paidDayStart, paidDayEnd);
-    for (final t in sameDayTxns) {
+    final cycleTxns =
+        await _txnRepo.getByDateRange(cycleStart, cycleEndExclusive);
+    for (final t in cycleTxns) {
       if (t.type == enumToDb(TransactionType.expense) &&
           t.linkedBillId == billId) {
         return MarkPaidResult(
@@ -146,8 +156,6 @@ class BillsService {
       updatedAt: now,
     ));
 
-    final freq =
-        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
     final nextDue = advanceByBillFrequency(bill.nextDueDate, freq);
     await _billsRepo.updateById(
       billId,
