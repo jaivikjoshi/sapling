@@ -92,17 +92,26 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// user changed (e.g. session restored, sign-in completed).
   void _maybeRunSchedulers({bool forceUser = false}) {
     if (_schedulerRunning) return;
-    final today = _dateKey(DateTime.now());
     final userId = ref.read(currentUserProvider)?.id;
+    // Repositories switch to Supabase only when signed in; running against
+    // the local Drift DB before session restore can miss cloud autopay posts.
+    if (userId == null) return;
+
+    final today = _dateKey(DateTime.now());
     final sameDay = _lastSchedulerRunDate == today;
     final sameUser = _lastSchedulerUserId == userId;
     if (!forceUser && sameDay && sameUser) return;
-    _lastSchedulerRunDate = today;
-    _lastSchedulerUserId = userId;
-    Future.microtask(() => _runSchedulers(ref));
+
+    Future.microtask(() async {
+      final ok = await _runSchedulers(ref);
+      if (!ok) return;
+      _lastSchedulerRunDate = today;
+      _lastSchedulerUserId = userId;
+    });
   }
 
-  Future<void> _runSchedulers(WidgetRef ref) async {
+  /// Returns true when every scheduler step completed without error.
+  Future<bool> _runSchedulers(WidgetRef ref) async {
     _schedulerRunning = true;
     try {
       await ref.read(cycleBoundaryWatcherProvider).checkAndUpdate(DateTime.now());
@@ -111,8 +120,10 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
       await ref.read(billAutoPosterProvider).runForDate(now);
       await ref.read(notificationSchedulerProvider).rescheduleAll();
       await ref.read(snapshotWriterProvider).writeSnapshot();
+      return true;
     } catch (e, st) {
       debugPrint('[Scheduler] error: $e\n$st');
+      return false;
     } finally {
       _schedulerRunning = false;
     }
