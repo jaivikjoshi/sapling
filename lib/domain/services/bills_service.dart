@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../core/utils/date_helpers.dart';
+import '../../core/utils/date_helpers.dart' show advanceByBillFrequency, retractByBillFrequency;
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/leko_database.dart';
 import '../../data/repositories/bills_repository.dart';
@@ -113,14 +113,20 @@ class BillsService {
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final paidDayStart = DateTime(
-      effectiveDate.year,
-      effectiveDate.month,
-      effectiveDate.day,
+    final freq =
+        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
+    final nextDueDay = DateTime(
+      bill.nextDueDate.year,
+      bill.nextDueDate.month,
+      bill.nextDueDate.day,
     );
-    final paidDayEnd = paidDayStart.add(const Duration(days: 1));
-    final sameDayTxns = await _txnRepo.getByDateRange(paidDayStart, paidDayEnd);
-    for (final t in sameDayTxns) {
+    // Billing period for the installment due on [nextDueDay]: any linked
+    // expense in this window means the cycle is already satisfied (e.g. autopay
+    // posted on the due date while the user marks paid later in the month).
+    final cycleStart = retractByBillFrequency(nextDueDay, freq);
+    final cycleEnd = nextDueDay.add(const Duration(days: 1));
+    final cycleTxns = await _txnRepo.getByDateRange(cycleStart, cycleEnd);
+    for (final t in cycleTxns) {
       if (t.type == enumToDb(TransactionType.expense) &&
           t.linkedBillId == billId) {
         return MarkPaidResult(
@@ -146,8 +152,6 @@ class BillsService {
       updatedAt: now,
     ));
 
-    final freq =
-        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
     final nextDue = advanceByBillFrequency(bill.nextDueDate, freq);
     await _billsRepo.updateById(
       billId,

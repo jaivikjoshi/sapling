@@ -94,15 +94,20 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     if (_schedulerRunning) return;
     final today = _dateKey(DateTime.now());
     final userId = ref.read(currentUserProvider)?.id;
+    // Wait for auth before running user-scoped schedulers.
+    if (userId == null) return;
     final sameDay = _lastSchedulerRunDate == today;
     final sameUser = _lastSchedulerUserId == userId;
     if (!forceUser && sameDay && sameUser) return;
-    _lastSchedulerRunDate = today;
-    _lastSchedulerUserId = userId;
-    Future.microtask(() => _runSchedulers(ref));
+    Future.microtask(() => _runSchedulers(ref, today, userId));
   }
 
-  Future<void> _runSchedulers(WidgetRef ref) async {
+  Future<void> _runSchedulers(
+    WidgetRef ref,
+    String today,
+    String userId,
+  ) async {
+    if (_schedulerRunning) return;
     _schedulerRunning = true;
     try {
       await ref.read(cycleBoundaryWatcherProvider).checkAndUpdate(DateTime.now());
@@ -111,6 +116,9 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
       await ref.read(billAutoPosterProvider).runForDate(now);
       await ref.read(notificationSchedulerProvider).rescheduleAll();
       await ref.read(snapshotWriterProvider).writeSnapshot();
+      // Only mark success after a full run so transient failures retry later.
+      _lastSchedulerRunDate = today;
+      _lastSchedulerUserId = userId;
     } catch (e, st) {
       debugPrint('[Scheduler] error: $e\n$st');
     } finally {
