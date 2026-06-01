@@ -65,9 +65,9 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// Re-run schedulers when the app returns to the foreground. The
-  /// date-deduplication inside [_maybeRunSchedulers] means this is a no-op
-  /// if the app is brought forward multiple times on the same calendar day.
+  /// Re-run schedulers when the app returns to the foreground. Skips if a
+  /// successful run already completed today for the signed-in user; retries if
+  /// the last attempt failed before recording success.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -92,25 +92,38 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// user changed (e.g. session restored, sign-in completed).
   void _maybeRunSchedulers({bool forceUser = false}) {
     if (_schedulerRunning) return;
-    final today = _dateKey(DateTime.now());
     final userId = ref.read(currentUserProvider)?.id;
+    // Repositories fall back to local Drift when there is no session. Running
+    // autopay/cycle jobs against that cache can miss real bills or touch stale
+    // data, so wait until Supabase auth is ready.
+    if (userId == null) return;
+
+    final today = _dateKey(DateTime.now());
     final sameDay = _lastSchedulerRunDate == today;
     final sameUser = _lastSchedulerUserId == userId;
     if (!forceUser && sameDay && sameUser) return;
-    _lastSchedulerRunDate = today;
-    _lastSchedulerUserId = userId;
+
+    // Claim before the microtask so rapid rebuilds cannot queue duplicate runs.
+    _schedulerRunning = true;
     Future.microtask(() => _runSchedulers(ref));
   }
 
   Future<void> _runSchedulers(WidgetRef ref) async {
-    _schedulerRunning = true;
     try {
+      final userId = ref.read(currentUserProvider)?.id;
+      if (userId == null) return;
+
       await ref.read(cycleBoundaryWatcherProvider).checkAndUpdate(DateTime.now());
       final now = DateTime.now();
       await ref.read(paydayAutoPosterProvider).runForDate(now);
       await ref.read(billAutoPosterProvider).runForDate(now);
       await ref.read(notificationSchedulerProvider).rescheduleAll();
       await ref.read(snapshotWriterProvider).writeSnapshot();
+
+      // Record success only after all steps finish so a failed run can retry
+      // later the same day (e.g. after the app returns to the foreground).
+      _lastSchedulerRunDate = _dateKey(now);
+      _lastSchedulerUserId = userId;
     } catch (e, st) {
       debugPrint('[Scheduler] error: $e\n$st');
     } finally {
