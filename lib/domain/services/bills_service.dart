@@ -100,8 +100,10 @@ class BillsService {
   /// Canonical Mark Paid: creates expense transaction, advances nextDueDate.
   ///
   /// If an expense for this bill already exists on the paid day (for example
-  /// from [BillAutoPoster]), this call is a no-op for the ledger and schedule:
-  /// it returns that transaction without inserting a duplicate or advancing
+  /// from [BillAutoPoster]), or a prior payment already advanced the schedule
+  /// to the bill's current [nextDueDate] while the user re-confirms before that
+  /// due day, this call is a no-op for the ledger and schedule: it returns the
+  /// existing transaction without inserting a duplicate or advancing
   /// [nextDueDate] again.
   Future<MarkPaidResult> markPaid({
     required String billId,
@@ -112,6 +114,8 @@ class BillsService {
     final effectiveDate = paidDate ?? DateTime.now();
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
+    final freq =
+        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
 
     final paidDayStart = DateTime(
       effectiveDate.year,
@@ -131,6 +135,37 @@ class BillsService {
       }
     }
 
+    final nextDueDay = DateTime(
+      bill.nextDueDate.year,
+      bill.nextDueDate.month,
+      bill.nextDueDate.day,
+    );
+    if (paidDayStart.isBefore(nextDueDay)) {
+      final lookbackStart = reverseAdvanceByBillFrequency(
+        reverseAdvanceByBillFrequency(nextDueDay, freq),
+        freq,
+      );
+      final recentTxns = await _txnRepo.getByDateRange(
+        lookbackStart,
+        nextDueDay.add(const Duration(days: 1)),
+      );
+      for (final t in recentTxns) {
+        if (t.type != enumToDb(TransactionType.expense) ||
+            t.linkedBillId != billId) {
+          continue;
+        }
+        final txnDay = DateTime(t.date.year, t.date.month, t.date.day);
+        final advancedDue = advanceByBillFrequency(txnDay, freq);
+        if (_isSameCalendarDay(advancedDue, nextDueDay)) {
+          return MarkPaidResult(
+            transactionId: t.id,
+            updatedBill: bill,
+            paidAmount: t.amount,
+          );
+        }
+      }
+    }
+
     final txnId = _uuid.v4();
     final now = DateTime.now();
     await _txnRepo.insert(Transaction(
@@ -146,8 +181,6 @@ class BillsService {
       updatedAt: now,
     ));
 
-    final freq =
-        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
     final nextDue = advanceByBillFrequency(bill.nextDueDate, freq);
     await _billsRepo.updateById(
       billId,
@@ -170,6 +203,10 @@ class BillsService {
     BillFrequency frequency,
   ) {
     return advanceByBillFrequency(current, frequency);
+  }
+
+  static bool _isSameCalendarDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }
 
