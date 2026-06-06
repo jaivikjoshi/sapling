@@ -1,7 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../core/utils/date_helpers.dart';
+import '../../core/utils/date_helpers.dart'
+    show advanceByBillFrequency, reverseAdvanceByBillFrequency;
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/leko_database.dart';
 import '../../data/repositories/bills_repository.dart';
@@ -113,22 +114,13 @@ class BillsService {
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final paidDayStart = DateTime(
-      effectiveDate.year,
-      effectiveDate.month,
-      effectiveDate.day,
-    );
-    final paidDayEnd = paidDayStart.add(const Duration(days: 1));
-    final sameDayTxns = await _txnRepo.getByDateRange(paidDayStart, paidDayEnd);
-    for (final t in sameDayTxns) {
-      if (t.type == enumToDb(TransactionType.expense) &&
-          t.linkedBillId == billId) {
-        return MarkPaidResult(
-          transactionId: t.id,
-          updatedBill: bill,
-          paidAmount: t.amount,
-        );
-      }
+    final existing = await _existingExpenseForCurrentBillingCycle(bill);
+    if (existing != null) {
+      return MarkPaidResult(
+        transactionId: existing.id,
+        updatedBill: bill,
+        paidAmount: existing.amount,
+      );
     }
 
     final txnId = _uuid.v4();
@@ -170,6 +162,34 @@ class BillsService {
     BillFrequency frequency,
   ) {
     return advanceByBillFrequency(current, frequency);
+  }
+
+  /// Returns a linked expense for the current billing cycle if one was already
+  /// recorded (e.g. [BillAutoPoster] on the due date while the user marks paid
+  /// later on a different day, or an early manual payment in the same cycle).
+  Future<Transaction?> _existingExpenseForCurrentBillingCycle(Bill bill) async {
+    final freq =
+        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
+    final periodEnd = DateTime(
+      bill.nextDueDate.year,
+      bill.nextDueDate.month,
+      bill.nextDueDate.day,
+    );
+    // Two periods back so an early payment in the cycle still blocks a second
+    // mark-paid after nextDueDate has been advanced.
+    final periodStart = reverseAdvanceByBillFrequency(
+      reverseAdvanceByBillFrequency(periodEnd, freq),
+      freq,
+    );
+    final periodEndExclusive = periodEnd.add(const Duration(days: 1));
+    final txns = await _txnRepo.getByDateRange(periodStart, periodEndExclusive);
+    for (final t in txns) {
+      if (t.type == enumToDb(TransactionType.expense) &&
+          t.linkedBillId == bill.id) {
+        return t;
+      }
+    }
+    return null;
   }
 }
 
