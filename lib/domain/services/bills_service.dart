@@ -113,22 +113,17 @@ class BillsService {
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final paidDayStart = DateTime(
-      effectiveDate.year,
-      effectiveDate.month,
-      effectiveDate.day,
+    final existing = await _findExistingBillPayment(
+      billId: billId,
+      bill: bill,
+      paidDate: effectiveDate,
     );
-    final paidDayEnd = paidDayStart.add(const Duration(days: 1));
-    final sameDayTxns = await _txnRepo.getByDateRange(paidDayStart, paidDayEnd);
-    for (final t in sameDayTxns) {
-      if (t.type == enumToDb(TransactionType.expense) &&
-          t.linkedBillId == billId) {
-        return MarkPaidResult(
-          transactionId: t.id,
-          updatedBill: bill,
-          paidAmount: t.amount,
-        );
-      }
+    if (existing != null) {
+      return MarkPaidResult(
+        transactionId: existing.id,
+        updatedBill: bill,
+        paidAmount: existing.amount,
+      );
     }
 
     final txnId = _uuid.v4();
@@ -170,6 +165,48 @@ class BillsService {
     BillFrequency frequency,
   ) {
     return advanceByBillFrequency(current, frequency);
+  }
+
+  /// Returns an existing linked expense when this [markPaid] call would
+  /// duplicate a payment already recorded for the current billing cycle.
+  Future<Transaction?> _findExistingBillPayment({
+    required String billId,
+    required Bill bill,
+    required DateTime paidDate,
+  }) async {
+    final freq =
+        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
+    final paidDay = dateOnly(paidDate);
+    final nextDueDay = dateOnly(bill.nextDueDate);
+
+    // Same calendar day (e.g. BillAutoPoster on due date, then mark paid).
+    final paidDayEnd = paidDay.add(const Duration(days: 1));
+    final sameDayTxns = await _txnRepo.getByDateRange(paidDay, paidDayEnd);
+    for (final t in sameDayTxns) {
+      if (t.type == enumToDb(TransactionType.expense) &&
+          t.linkedBillId == billId) {
+        return t;
+      }
+    }
+
+    // Schedule already advanced past [paidDate] — typical after autopay on the
+    // due date and a later manual mark paid (Leaf defaults to DateTime.now()).
+    if (nextDueDay.isAfter(paidDay)) {
+      final priorDue = dateOnly(
+        reverseAdvanceByBillFrequency(bill.nextDueDate, freq),
+      );
+      final priorDueEnd = priorDue.add(const Duration(days: 1));
+      final priorDueTxns =
+          await _txnRepo.getByDateRange(priorDue, priorDueEnd);
+      for (final t in priorDueTxns) {
+        if (t.type == enumToDb(TransactionType.expense) &&
+            t.linkedBillId == billId) {
+          return t;
+        }
+      }
+    }
+
+    return null;
   }
 }
 
