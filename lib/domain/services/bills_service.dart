@@ -99,10 +99,10 @@ class BillsService {
 
   /// Canonical Mark Paid: creates expense transaction, advances nextDueDate.
   ///
-  /// If an expense for this bill already exists on the paid day (for example
-  /// from [BillAutoPoster]), this call is a no-op for the ledger and schedule:
-  /// it returns that transaction without inserting a duplicate or advancing
-  /// [nextDueDate] again.
+  /// Idempotent when a linked expense already covers the current cycle — for
+  /// example after [BillAutoPoster] posted on the due date and the user taps
+  /// Mark Paid a few days later (defaults to today). Returns the existing
+  /// transaction without inserting a duplicate or advancing [nextDueDate] again.
   Future<MarkPaidResult> markPaid({
     required String billId,
     DateTime? paidDate,
@@ -113,13 +113,9 @@ class BillsService {
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final paidDayStart = DateTime(
-      effectiveDate.year,
-      effectiveDate.month,
-      effectiveDate.day,
-    );
-    final paidDayEnd = paidDayStart.add(const Duration(days: 1));
-    final sameDayTxns = await _txnRepo.getByDateRange(paidDayStart, paidDayEnd);
+    final paidDay = _dayStart(effectiveDate);
+    final paidDayEnd = paidDay.add(const Duration(days: 1));
+    final sameDayTxns = await _txnRepo.getByDateRange(paidDay, paidDayEnd);
     for (final t in sameDayTxns) {
       if (t.type == enumToDb(TransactionType.expense) &&
           t.linkedBillId == billId) {
@@ -127,6 +123,28 @@ class BillsService {
           transactionId: t.id,
           updatedBill: bill,
           paidAmount: t.amount,
+        );
+      }
+    }
+
+    final lastLinked = await _mostRecentLinkedExpense(billId);
+    if (lastLinked != null) {
+      final nextDueDay = _dayStart(bill.nextDueDate);
+      final lastPaidDay = _dayStart(lastLinked.date);
+      final daysSinceLast = paidDay.difference(lastPaidDay).inDays;
+      final daysUntilNext = nextDueDay.difference(paidDay).inDays;
+      // Autopay already posted for a past due and advanced nextDueDate. A later
+      // Mark Paid tap that is still closer to that posted payment than to the
+      // next due date is treated as a redundant confirmation, not an early pay
+      // for the upcoming cycle.
+      if (daysSinceLast >= 0 &&
+          daysUntilNext > 0 &&
+          daysSinceLast < daysUntilNext &&
+          nextDueDay.isAfter(lastPaidDay)) {
+        return MarkPaidResult(
+          transactionId: lastLinked.id,
+          updatedBill: bill,
+          paidAmount: lastLinked.amount,
         );
       }
     }
@@ -170,6 +188,24 @@ class BillsService {
     BillFrequency frequency,
   ) {
     return advanceByBillFrequency(current, frequency);
+  }
+
+  static DateTime _dayStart(DateTime d) =>
+      DateTime(d.year, d.month, d.day);
+
+  Future<Transaction?> _mostRecentLinkedExpense(String billId) async {
+    final txns = await _txnRepo.getAll();
+    Transaction? latest;
+    for (final t in txns) {
+      if (t.type != enumToDb(TransactionType.expense) ||
+          t.linkedBillId != billId) {
+        continue;
+      }
+      if (latest == null || t.date.isAfter(latest.date)) {
+        latest = t;
+      }
+    }
+    return latest;
   }
 }
 
