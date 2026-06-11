@@ -113,22 +113,13 @@ class BillsService {
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final paidDayStart = DateTime(
-      effectiveDate.year,
-      effectiveDate.month,
-      effectiveDate.day,
-    );
-    final paidDayEnd = paidDayStart.add(const Duration(days: 1));
-    final sameDayTxns = await _txnRepo.getByDateRange(paidDayStart, paidDayEnd);
-    for (final t in sameDayTxns) {
-      if (t.type == enumToDb(TransactionType.expense) &&
-          t.linkedBillId == billId) {
-        return MarkPaidResult(
-          transactionId: t.id,
-          updatedBill: bill,
-          paidAmount: t.amount,
-        );
-      }
+    final existing = await _findExistingBillPayment(bill);
+    if (existing != null) {
+      return MarkPaidResult(
+        transactionId: existing.id,
+        updatedBill: bill,
+        paidAmount: existing.amount,
+      );
     }
 
     final txnId = _uuid.v4();
@@ -170,6 +161,36 @@ class BillsService {
     BillFrequency frequency,
   ) {
     return advanceByBillFrequency(current, frequency);
+  }
+
+  /// Returns a linked expense for the bill's current billing cycle, if any.
+  ///
+  /// [BillAutoPoster] records payment on the due date while [markPaid] often
+  /// uses today's date. A same-day check alone misses that cross-day case and
+  /// double-charges the user. We look back up to two billing periods ending
+  /// at [Bill.nextDueDate] so autopost + late manual confirm stays idempotent.
+  Future<Transaction?> _findExistingBillPayment(Bill bill) async {
+    final freq =
+        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
+    var windowEnd = DateTime(
+      bill.nextDueDate.year,
+      bill.nextDueDate.month,
+      bill.nextDueDate.day,
+    );
+
+    for (var period = 0; period < 2; period++) {
+      final windowStart = reverseAdvanceByBillFrequency(windowEnd, freq);
+      final rangeEnd = windowEnd.add(const Duration(days: 1));
+      final txns = await _txnRepo.getByDateRange(windowStart, rangeEnd);
+      for (final t in txns) {
+        if (t.type == enumToDb(TransactionType.expense) &&
+            t.linkedBillId == bill.id) {
+          return t;
+        }
+      }
+      windowEnd = windowStart;
+    }
+    return null;
   }
 }
 

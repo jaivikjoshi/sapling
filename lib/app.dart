@@ -42,6 +42,11 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// Prevents concurrent scheduler runs if build fires multiple times quickly.
   bool _schedulerRunning = false;
 
+  /// Set when [_maybeRunSchedulers] is called with [forceUser] while a run is
+  /// already in flight (e.g. session restore during startup schedulers).
+  bool _pendingSchedulerRerun = false;
+  bool _pendingSchedulerForceUser = false;
+
   StreamSubscription<Uri>? _deepLinkSubscription;
 
   static String _dateKey(DateTime d) =>
@@ -91,19 +96,29 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// Pass [forceUser] = true to bypass the date check when the signed-in
   /// user changed (e.g. session restored, sign-in completed).
   void _maybeRunSchedulers({bool forceUser = false}) {
-    if (_schedulerRunning) return;
+    if (_schedulerRunning) {
+      if (forceUser) {
+        _pendingSchedulerRerun = true;
+        _pendingSchedulerForceUser = true;
+      }
+      return;
+    }
     final today = _dateKey(DateTime.now());
     final userId = ref.read(currentUserProvider)?.id;
     final sameDay = _lastSchedulerRunDate == today;
     final sameUser = _lastSchedulerUserId == userId;
     if (!forceUser && sameDay && sameUser) return;
-    _lastSchedulerRunDate = today;
-    _lastSchedulerUserId = userId;
-    Future.microtask(() => _runSchedulers(ref));
+    _schedulerRunning = true;
+    Future.microtask(
+      () => _runSchedulers(ref, today: today, userId: userId),
+    );
   }
 
-  Future<void> _runSchedulers(WidgetRef ref) async {
-    _schedulerRunning = true;
+  Future<void> _runSchedulers(
+    WidgetRef ref, {
+    required String today,
+    required String? userId,
+  }) async {
     try {
       await ref.read(cycleBoundaryWatcherProvider).checkAndUpdate(DateTime.now());
       final now = DateTime.now();
@@ -111,10 +126,18 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
       await ref.read(billAutoPosterProvider).runForDate(now);
       await ref.read(notificationSchedulerProvider).rescheduleAll();
       await ref.read(snapshotWriterProvider).writeSnapshot();
+      _lastSchedulerRunDate = today;
+      _lastSchedulerUserId = userId;
     } catch (e, st) {
       debugPrint('[Scheduler] error: $e\n$st');
     } finally {
       _schedulerRunning = false;
+      if (_pendingSchedulerRerun) {
+        final rerunForce = _pendingSchedulerForceUser;
+        _pendingSchedulerRerun = false;
+        _pendingSchedulerForceUser = false;
+        _maybeRunSchedulers(forceUser: rerunForce);
+      }
     }
   }
 
