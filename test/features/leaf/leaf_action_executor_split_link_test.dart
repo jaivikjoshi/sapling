@@ -3,6 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:leko/features/leaf/leaf_action_executor.dart';
 
 void main() {
+  group('parseLeafActionDate', () {
+    test('date-only ISO strings parse as local calendar days', () {
+      final parsed = parseLeafActionDate('2025-06-12');
+      expect(parsed, isNotNull);
+      expect(parsed!.year, 2025);
+      expect(parsed.month, 6);
+      expect(parsed.day, 12);
+      expect(parsed.isUtc, isFalse);
+    });
+  });
+
   group('linkedSplitEntryIdFromLeafActionData', () {
     test('prefers linked_split_entry_id', () {
       expect(

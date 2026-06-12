@@ -308,10 +308,23 @@ double? _positiveDoubleOrNull(Object? raw) {
   return value;
 }
 
-DateTime? _parseDate(Object? raw) {
+/// Parses assistant action date fields. Date-only `YYYY-MM-DD` values are
+/// interpreted as local calendar days so they align with ledger bucketing.
+DateTime? parseLeafActionDate(Object? raw) {
   if (raw is! String || raw.trim().isEmpty) return null;
-  return DateTime.tryParse(raw);
+  final text = raw.trim();
+  final dateOnly = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(text);
+  if (dateOnly != null) {
+    return DateTime(
+      int.parse(dateOnly.group(1)!),
+      int.parse(dateOnly.group(2)!),
+      int.parse(dateOnly.group(3)!),
+    );
+  }
+  return DateTime.tryParse(text);
 }
+
+DateTime? _parseDate(Object? raw) => parseLeafActionDate(raw);
 
 String? _joinNoteParts(String? merchant, String? note) {
   final parts = <String>[

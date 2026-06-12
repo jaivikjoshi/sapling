@@ -262,6 +262,7 @@ class ReportsService {
       summary: summary,
       transactions: transactions,
       totalDays: totalDays,
+      elapsedDays: elapsedDays,
       budgetBasis: budgetBasis,
     );
 
@@ -277,6 +278,7 @@ class ReportsService {
       period: request.period,
       expenseTransactions: expenseTransactions,
       targetPerDay: allowance.dailyTargetForPeriod,
+      elapsedDays: elapsedDays,
       currentStreak: streak.currentStreak,
       todayWithinBudget: streak.todayWithinBudget,
       activeRecovery: activeRecovery,
@@ -849,6 +851,7 @@ class ReportsService {
     required MonthlySummary summary,
     required List<Transaction> transactions,
     required int totalDays,
+    required int elapsedDays,
     required double budgetBasis,
   }) async {
     final paycheckAllowance =
@@ -864,9 +867,9 @@ class ReportsService {
     double bankedBuilt = 0;
     double bankedUsed = 0;
 
+    final loopEnd = _elapsedLoopEnd(period, elapsedDays);
     var cursor = _dayBucket(period.start);
-    final endDay = _dayBucket(period.end);
-    while (cursor.isBefore(endDay)) {
+    while (cursor.isBefore(loopEnd)) {
       final spend = spendByDay[cursor] ?? 0.0;
       if (spend <= targetPerDay) {
         daysUnder++;
@@ -913,6 +916,7 @@ class ReportsService {
     required ReportPeriodOption period,
     required List<Transaction> expenseTransactions,
     required double targetPerDay,
+    required int elapsedDays,
     required int currentStreak,
     required bool todayWithinBudget,
     required RecoveryPlan? activeRecovery,
@@ -922,9 +926,9 @@ class ReportsService {
     var overspendEvents = 0;
     double totalOverspendAmount = 0;
 
+    final loopEnd = _elapsedLoopEnd(period, elapsedDays);
     var cursor = _dayBucket(period.start);
-    final endDay = _dayBucket(period.end);
-    while (cursor.isBefore(endDay)) {
+    while (cursor.isBefore(loopEnd)) {
       final spend = spendByDay[cursor] ?? 0.0;
       if (spend == 0) {
         noSpendDays++;
@@ -1012,6 +1016,17 @@ class ReportsService {
     if (!now.isBefore(period.end)) return _periodLengthDays(period.start, period.end);
 
     return _periodLengthDays(period.start, _dayBucket(now).add(const Duration(days: 1)));
+  }
+
+  /// Last day bucket (exclusive) to include when walking daily stats. For an
+  /// in-progress period this stops at today so future days are not treated as
+  /// zero-spend "under budget" days.
+  DateTime _elapsedLoopEnd(ReportPeriodOption period, int elapsedDays) {
+    final periodEndDay = _dayBucket(period.end);
+    if (elapsedDays <= 0) return _dayBucket(period.start);
+    final elapsedEndDay =
+        _dayBucket(period.start).add(Duration(days: elapsedDays));
+    return elapsedEndDay.isBefore(periodEndDay) ? elapsedEndDay : periodEndDay;
   }
 
   Map<DateTime, double> _dailySpend(

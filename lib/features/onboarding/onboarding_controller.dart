@@ -661,6 +661,9 @@ class OnboardingController extends StateNotifier<OnboardingState> {
           ? AllowanceMode.goal
           : AllowanceMode.paycheck;
 
+      // Ensure the settings row exists (Supabase upsert) before onboarding writes.
+      await settingsRepo.get();
+
       await settingsRepo.update(
         AppSettingsCompanion(
           baseCurrency: Value(enumToDb(state.baseCurrency!)),
