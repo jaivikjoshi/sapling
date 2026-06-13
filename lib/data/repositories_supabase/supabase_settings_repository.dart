@@ -109,6 +109,11 @@ class SupabaseSettingsRepository implements SettingsRepository {
 
   @override
   Future<void> update(AppSettingsCompanion companion) async {
+    // Onboarding and settings edits call update() without a prior get()/watch().
+    // Ensure the per-user row exists so UPDATE does not silently affect 0 rows
+    // (e.g. splash settings load timed out before _ensureAndGet completed).
+    await _ensureAndGet();
+
     final updateMap = <String, dynamic>{};
     if (companion.baseCurrency.present) {
       updateMap['base_currency'] = companion.baseCurrency.value;
