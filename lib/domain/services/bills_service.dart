@@ -123,6 +123,35 @@ class BillsService {
     for (final t in sameDayTxns) {
       if (t.type == enumToDb(TransactionType.expense) &&
           t.linkedBillId == billId) {
+        final billDueDay = DateTime(
+          bill.nextDueDate.year,
+          bill.nextDueDate.month,
+          bill.nextDueDate.day,
+        );
+        // Idempotent on the ledger, but still advance the schedule when the
+        // payment was recorded elsewhere (auto-poster crash, linked expense) and
+        // nextDueDate was never rolled forward.
+        if (!billDueDay.isAfter(paidDayStart)) {
+          final freq = enumFromDb<BillFrequency>(
+            bill.frequency,
+            BillFrequency.values,
+          );
+          final nextDue = advanceByBillFrequency(bill.nextDueDate, freq);
+          final now = DateTime.now();
+          await _billsRepo.updateById(
+            billId,
+            BillsCompanion(
+              nextDueDate: Value(nextDue),
+              updatedAt: Value(now),
+            ),
+          );
+          final updated = await _billsRepo.getById(billId);
+          return MarkPaidResult(
+            transactionId: t.id,
+            updatedBill: updated,
+            paidAmount: t.amount,
+          );
+        }
         return MarkPaidResult(
           transactionId: t.id,
           updatedBill: bill,

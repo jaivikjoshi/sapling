@@ -344,5 +344,45 @@ void main() {
         expect((await txnRepo.getAll()).length, countBefore);
       },
     );
+
+    test(
+      'markPaid advances nextDueDate when a same-day expense exists but the '
+      'bill schedule was never rolled forward',
+      () async {
+        final billId = await service.create(
+          name: 'Internet',
+          amount: 80,
+          frequency: BillFrequency.monthly,
+          nextDueDate: DateTime(2025, 4, 1),
+          categoryId: 'cat-1',
+          defaultLabel: SpendLabel.green,
+        );
+
+        const linkedTxnId = 'manual-linked-txn';
+        await txnRepo.insert(Transaction(
+          id: linkedTxnId,
+          type: enumToDb(TransactionType.expense),
+          amount: 80,
+          date: DateTime(2025, 4, 1),
+          categoryId: 'cat-1',
+          label: enumToDb(SpendLabel.green),
+          note: 'Internet',
+          linkedBillId: billId,
+          createdAt: DateTime(2025, 4, 1),
+          updatedAt: DateTime(2025, 4, 1),
+        ));
+
+        final countBefore = (await txnRepo.getAll()).length;
+
+        final result = await service.markPaid(
+          billId: billId,
+          paidDate: DateTime(2025, 4, 1),
+        );
+
+        expect(result.transactionId, linkedTxnId);
+        expect(result.updatedBill.nextDueDate, DateTime(2025, 5, 1));
+        expect((await txnRepo.getAll()).length, countBefore);
+      },
+    );
   });
 }
