@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/notifications/closeout_notification_service.dart';
 import 'core/providers/auth_providers.dart';
+import 'core/scheduling/scheduler_run_gate.dart';
 import 'core/providers/bills_providers.dart';
 import 'core/providers/recurring_income_providers.dart';
 import 'core/providers/scheduler_providers.dart';
@@ -30,17 +31,7 @@ class LekoApp extends ConsumerStatefulWidget {
 class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   bool _closeoutCallbackSet = false;
 
-  /// ISO date (yyyy-MM-dd) of the last scheduler run, used to skip same-day
-  /// re-runs caused by widget rebuilds.
-  String? _lastSchedulerRunDate;
-
-  /// User ID we last ran schedulers for. When the signed-in user changes
-  /// (session restore or explicit login) we force a re-run even if the date
-  /// is the same.
-  String? _lastSchedulerUserId;
-
-  /// Prevents concurrent scheduler runs if build fires multiple times quickly.
-  bool _schedulerRunning = false;
+  final _schedulerGate = SchedulerRunGate();
 
   StreamSubscription<Uri>? _deepLinkSubscription;
 
@@ -91,19 +82,25 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   /// Pass [forceUser] = true to bypass the date check when the signed-in
   /// user changed (e.g. session restored, sign-in completed).
   void _maybeRunSchedulers({bool forceUser = false}) {
-    if (_schedulerRunning) return;
     final today = _dateKey(DateTime.now());
     final userId = ref.read(currentUserProvider)?.id;
-    final sameDay = _lastSchedulerRunDate == today;
-    final sameUser = _lastSchedulerUserId == userId;
-    if (!forceUser && sameDay && sameUser) return;
-    _lastSchedulerRunDate = today;
-    _lastSchedulerUserId = userId;
-    Future.microtask(() => _runSchedulers(ref));
+    if (_schedulerGate.shouldSkip(
+      today: today,
+      userId: userId,
+      forceUser: forceUser,
+    )) {
+      return;
+    }
+    Future.microtask(() => _runSchedulers(ref, today: today, userId: userId));
   }
 
-  Future<void> _runSchedulers(WidgetRef ref) async {
-    _schedulerRunning = true;
+  Future<void> _runSchedulers(
+    WidgetRef ref, {
+    required String today,
+    required String? userId,
+  }) async {
+    _schedulerGate.markStarted();
+    var succeeded = false;
     try {
       await ref.read(cycleBoundaryWatcherProvider).checkAndUpdate(DateTime.now());
       final now = DateTime.now();
@@ -111,10 +108,18 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
       await ref.read(billAutoPosterProvider).runForDate(now);
       await ref.read(notificationSchedulerProvider).rescheduleAll();
       await ref.read(snapshotWriterProvider).writeSnapshot();
+      succeeded = true;
     } catch (e, st) {
       debugPrint('[Scheduler] error: $e\n$st');
     } finally {
-      _schedulerRunning = false;
+      _schedulerGate.markFinished(
+        success: succeeded,
+        today: today,
+        userId: userId,
+      );
+      if (_schedulerGate.consumeRetryNeeded()) {
+        _maybeRunSchedulers(forceUser: true);
+      }
     }
   }
 
@@ -124,7 +129,7 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     // cases: (1) Supabase session being restored after the first build fires,
     // and (2) the user explicitly signing in from the auth screen.
     ref.listen(currentUserProvider, (previous, current) {
-      if (current?.id != _lastSchedulerUserId) {
+      if (current?.id != _schedulerGate.lastUserId) {
         _maybeRunSchedulers(forceUser: true);
       }
     });
