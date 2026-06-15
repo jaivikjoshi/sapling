@@ -113,22 +113,13 @@ class BillsService {
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final paidDayStart = DateTime(
-      effectiveDate.year,
-      effectiveDate.month,
-      effectiveDate.day,
-    );
-    final paidDayEnd = paidDayStart.add(const Duration(days: 1));
-    final sameDayTxns = await _txnRepo.getByDateRange(paidDayStart, paidDayEnd);
-    for (final t in sameDayTxns) {
-      if (t.type == enumToDb(TransactionType.expense) &&
-          t.linkedBillId == billId) {
-        return MarkPaidResult(
-          transactionId: t.id,
-          updatedBill: bill,
-          paidAmount: t.amount,
-        );
-      }
+    final existing = await _findLinkedExpenseInCurrentCycle(bill);
+    if (existing != null) {
+      return MarkPaidResult(
+        transactionId: existing.id,
+        updatedBill: bill,
+        paidAmount: existing.amount,
+      );
     }
 
     final txnId = _uuid.v4();
@@ -170,6 +161,27 @@ class BillsService {
     BillFrequency frequency,
   ) {
     return advanceByBillFrequency(current, frequency);
+  }
+
+  /// Returns an expense already linked to [bill] for the billing period that
+  /// ends at [bill.nextDueDate], if one exists (e.g. from [BillAutoPoster]).
+  Future<Transaction?> _findLinkedExpenseInCurrentCycle(Bill bill) async {
+    final freq =
+        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
+    final cycleEnd = DateTime(
+      bill.nextDueDate.year,
+      bill.nextDueDate.month,
+      bill.nextDueDate.day,
+    );
+    final cycleStart = retreatByBillFrequency(cycleEnd, freq);
+    final cycleTxns = await _txnRepo.getByDateRange(cycleStart, cycleEnd);
+    for (final t in cycleTxns) {
+      if (t.type == enumToDb(TransactionType.expense) &&
+          t.linkedBillId == bill.id) {
+        return t;
+      }
+    }
+    return null;
   }
 }
 
