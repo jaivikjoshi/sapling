@@ -12,7 +12,9 @@ abstract final class LekoColors {
   static const Color surface = Colors.white;
   static const Color error = Color(0xFFD32F2F);
 
-  static const Color textPrimary = Color(0xFF1A1A1A); // Almost black for high legibility
+  static const Color textPrimary = Color(
+    0xFF1A1A1A,
+  ); // Almost black for high legibility
   static const Color textSecondary = Color(0xFF7D8C94); // Soft grey-blue
   static const Color textOnPrimary = Colors.white;
   static const Color textOnAccent = Colors.white;
@@ -24,13 +26,13 @@ abstract final class LekoColors {
   static const Color divider = Color(0xFFECEAE5);
   static const Color shimmer = Color(0xFFEEEEEE);
 
-  // Premium Onboarding Flow (Dark Immerse)
-  static const Color onboardingBackground = Color(0xFF0F1A1B); // Deep midnight forest green
-  static const Color onboardingSurface = Color(0xFF19292A);
-  static const Color onboardingTextPrimary = Color(0xFFF7F5F0); // Off-white/cream
-  static const Color onboardingTextSecondary = Color(0xFFA1B3B0); // Soft glowing sage/grey
-  static const Color onboardingButton = Color(0xFF3B9797); // Seafoam jade as CTA
+  // Onboarding Flow
+  static const Color onboardingBackground = background;
+  static const Color onboardingSurface = surface;
+  static const Color onboardingTextPrimary = textPrimary;
+  static const Color onboardingTextSecondary = textSecondary;
+  static const Color onboardingButton = primary;
   static const Color onboardingButtonText = Colors.white;
-  static const Color onboardingTrack = Color(0xFF1A2D2E);
-  static const Color onboardingFill = Color(0xFF5CBBA7);
+  static const Color onboardingTrack = divider;
+  static const Color onboardingFill = secondary;
 }

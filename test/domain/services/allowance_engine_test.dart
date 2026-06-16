@@ -80,6 +80,8 @@ void main() {
       final result = await engine.computePaycheckMode(settings: baseSettings);
       expect(result.balance, 2950);
       expect(result.todaySpend, 50);
+      expect(result.spendablePool, 3000);
+      expect(result.dailyAllowance, closeTo(3000 / result.daysLeft, 0.01));
       // remainingToday = dailyAllowance - 50
       expect(result.remainingToday, result.dailyAllowance - 50);
     });

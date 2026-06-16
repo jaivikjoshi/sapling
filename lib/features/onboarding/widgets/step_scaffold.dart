@@ -100,7 +100,7 @@ class StepScaffold extends ConsumerWidget {
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: LekoColors.onboardingTextPrimary,
-                      letterSpacing: -0.8,
+                      letterSpacing: 0,
                       height: 1.1,
                     ),
                   ),
@@ -129,11 +129,16 @@ class StepScaffold extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0E1D1F).withValues(alpha: 0.94),
+                      color: LekoColors.surface,
                       borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.05),
-                      ),
+                      border: Border.all(color: LekoColors.divider),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x120F172A),
+                          blurRadius: 18,
+                          offset: Offset(0, 8),
+                        ),
+                      ],
                     ),
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
@@ -206,8 +211,7 @@ class StepScaffold extends ConsumerWidget {
                             const SizedBox(height: 8),
                             TextButton(
                               style: TextButton.styleFrom(
-                                foregroundColor:
-                                    LekoColors.onboardingTextSecondary,
+                                foregroundColor: LekoColors.textSecondary,
                               ),
                               onPressed: onSecondary,
                               child: Text(
@@ -243,48 +247,10 @@ class _OnboardingBackdrop extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF0A1416), Color(0xFF0F1A1B), Color(0xFF0C1718)],
+          colors: [LekoColors.background, Color(0xFFF4F0EA), Color(0xFFEAF6F2)],
         ),
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -60,
-            right: -30,
-            child: _BackdropOrb(
-              size: 180,
-              color: const Color(0xFF5CBBA7).withValues(alpha: 0.10),
-            ),
-          ),
-          Positioned(
-            top: 120,
-            left: -40,
-            child: _BackdropOrb(
-              size: 140,
-              color: const Color(0xFF2E8F88).withValues(alpha: 0.10),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BackdropOrb extends StatelessWidget {
-  const _BackdropOrb({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color, Colors.transparent]),
-      ),
+      child: const SizedBox.expand(),
     );
   }
 }
@@ -306,15 +272,11 @@ class _TopIconButton extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: LekoColors.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+            border: Border.all(color: LekoColors.divider),
           ),
-          child: Icon(
-            icon,
-            color: LekoColors.onboardingTextSecondary,
-            size: 18,
-          ),
+          child: Icon(icon, color: LekoColors.primary, size: 18),
         ),
       ),
     );

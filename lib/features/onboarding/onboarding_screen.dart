@@ -1787,7 +1787,7 @@ class _NameIntroCard extends StatelessWidget {
               fontSize: 28,
               height: 1.08,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.9,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 12),
@@ -2086,12 +2086,12 @@ String _firstName(String value) {
 }
 
 abstract final class _OnboardingPalette {
-  static const surface = Color(0xFF122124);
-  static const surfaceSelected = Color(0xFF173036);
-  static const outline = Color(0x2237A29C);
+  static const surface = Color(0xFFFFFFFF);
+  static const surfaceSelected = Color(0xFFEAF6F2);
+  static const outline = Color(0xFFECEAE5);
   static const teal = Color(0xFF2E8F88);
-  static const tealSoft = Color(0xFF78D0BF);
-  static const textPrimary = Color(0xFFF7F3EC);
-  static const textSecondary = Color(0xFFA2B3B0);
-  static const textMuted = Color(0xFF7B908E);
+  static const tealSoft = Color(0xFF3B9797);
+  static const textPrimary = Color(0xFF1A1A1A);
+  static const textSecondary = Color(0xFF7D8C94);
+  static const textMuted = Color(0xFF9AA5AA);
 }

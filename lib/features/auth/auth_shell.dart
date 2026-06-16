@@ -36,8 +36,10 @@ class AuthScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.paddingOf(context).bottom;
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: AuthPalette.bgTop,
       body: Container(
         decoration: const BoxDecoration(
@@ -48,87 +50,95 @@ class AuthScaffold extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(24, 8, 24, bottomPad + 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed: onBack,
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: AuthPalette.headline,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final verticalPadding = bottomPad + 28;
+              return AnimatedPadding(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(bottom: keyboardInset),
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(24, 8, 24, verticalPadding),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - verticalPadding,
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 440),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                          const Text(
-                            'leko',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'Georgia',
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              color: AuthPalette.headline,
-                              letterSpacing: -0.8,
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
-                            title,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
-                              color: AuthPalette.headline,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            subtitle,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: AuthPalette.subtext,
-                              height: 1.45,
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.04),
-                              borderRadius: BorderRadius.circular(28),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: IconButton(
+                                onPressed: onBack,
+                                icon: const Icon(
+                                  Icons.arrow_back_rounded,
+                                  color: AuthPalette.headline,
+                                ),
                               ),
                             ),
-                            child: child,
-                          ),
-                          if (footer != null) ...[
-                            const SizedBox(height: 24),
-                            footer!,
+                            const SizedBox(height: 18),
+                            const Text(
+                              'leko',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Georgia',
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                color: AuthPalette.headline,
+                                letterSpacing: 0,
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Text(
+                              title,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                color: AuthPalette.headline,
+                                letterSpacing: 0,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              subtitle,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: AuthPalette.subtext,
+                                height: 1.45,
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.04),
+                                borderRadius: BorderRadius.circular(28),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                ),
+                              ),
+                              child: child,
+                            ),
+                            if (footer != null) ...[
+                              const SizedBox(height: 24),
+                              footer!,
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -202,9 +212,7 @@ class AuthErrorBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: AuthPalette.danger.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AuthPalette.danger.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: AuthPalette.danger.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
@@ -234,7 +242,10 @@ class AuthDivider extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Container(height: 1, color: Colors.white.withValues(alpha: 0.12)),
+          child: Container(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
         ),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 14),
@@ -248,7 +259,10 @@ class AuthDivider extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: Container(height: 1, color: Colors.white.withValues(alpha: 0.12)),
+          child: Container(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
         ),
       ],
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/notifications/closeout_notification_service.dart';
+import '../../core/providers/allowance_providers.dart';
 import '../../core/providers/auth_providers.dart';
 import '../../core/providers/bills_providers.dart';
 import '../../core/providers/goals_providers.dart';
@@ -798,6 +799,10 @@ class OnboardingController extends StateNotifier<OnboardingState> {
         ),
       );
 
+      _ref.invalidate(settingsStreamProvider);
+      _ref.invalidate(goalsStreamProvider);
+      _ref.invalidate(paycheckAllowanceProvider);
+      _ref.invalidate(goalAllowanceProvider);
       _completionSucceeded = true;
       state = state.copyWith(isSubmitting: false, error: () => null);
       return true;

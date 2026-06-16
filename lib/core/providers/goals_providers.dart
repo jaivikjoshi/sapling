@@ -24,7 +24,11 @@ final goalsServiceProvider = Provider<GoalsService>((ref) {
 });
 
 final goalsStreamProvider = StreamProvider<List<Goal>>((ref) {
-  return ref.watch(goalsServiceProvider).watchAll();
+  final primaryGoalId =
+      ref.watch(settingsStreamProvider).valueOrNull?.primaryGoalId;
+  return ref
+      .watch(goalsServiceProvider)
+      .watchAll(preferredGoalId: primaryGoalId);
 });
 
 final archivedGoalsProvider = StreamProvider<List<Goal>>((ref) {

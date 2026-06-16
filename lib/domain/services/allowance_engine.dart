@@ -189,10 +189,12 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     // ── Core formula ──
     final daysLeft = cycle.daysLeft;
     final spendablePool = balance + futureIncome - futureBills;
-    final dailyAllowance = spendablePool > 0 ? spendablePool / daysLeft : 0.0;
 
     // ── Today's spend ──
     final todaySpend = _computeTodaySpend(postedTxns, todayStart);
+    final startOfDaySpendablePool = spendablePool + todaySpend;
+    final dailyAllowance =
+        startOfDaySpendablePool > 0 ? startOfDaySpendablePool / daysLeft : 0.0;
     final remainingToday = dailyAllowance - todaySpend;
 
     // ── Behind amount ──
@@ -206,7 +208,7 @@ class AllowanceEngine implements AllowanceEngineForStreak {
       behindAmount: behindAmount,
       projectedIncome: futureIncome,
       projectedBills: futureBills,
-      spendablePool: spendablePool,
+      spendablePool: startOfDaySpendablePool,
       daysLeft: daysLeft,
       cycleWindow: cycle,
     );
@@ -307,10 +309,14 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     // need to have saved = what you can freely spend over the whole horizon
     final goalTarget = goal.targetAmount;
     final spendablePool = balance + futureIncome - futureBills - goalTarget;
-    final dailyAllowance = spendablePool > 0 ? spendablePool / daysToGoal : 0.0;
 
     // ── Today's spend ──
     final todaySpend = _computeTodaySpend(postedCycleTxns, todayStart);
+    final startOfDaySpendablePool = spendablePool + todaySpend;
+    final dailyAllowance =
+        startOfDaySpendablePool > 0
+            ? startOfDaySpendablePool / daysToGoal
+            : 0.0;
     final remainingToday = dailyAllowance - todaySpend;
 
     // ── Feasibility check ──
@@ -341,7 +347,7 @@ class AllowanceEngine implements AllowanceEngineForStreak {
       behindAmount: behindAmount,
       projectedIncome: futureIncome,
       projectedBills: futureBills,
-      spendablePool: spendablePool,
+      spendablePool: startOfDaySpendablePool,
       daysToGoal: daysToGoal,
       goal: goal,
       feasibility: feasibility,

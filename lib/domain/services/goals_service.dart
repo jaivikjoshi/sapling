@@ -14,9 +14,12 @@ class GoalsService {
 
   GoalsService(this._goalsRepo, this._settingsRepo);
 
-  Stream<List<Goal>> watchAll() => _goalsRepo.watchAll().map(_dedupeGoals);
+  Stream<List<Goal>> watchAll({String? preferredGoalId}) => _goalsRepo
+      .watchAll()
+      .map((goals) => _dedupeGoals(goals, preferredGoalId: preferredGoalId));
   Stream<List<Goal>> watchArchived() => _goalsRepo.watchArchived();
-  Future<List<Goal>> getAll() async => _dedupeGoals(await _goalsRepo.getAll());
+  Future<List<Goal>> getAll({String? preferredGoalId}) async =>
+      _dedupeGoals(await _goalsRepo.getAll(), preferredGoalId: preferredGoalId);
   Future<Goal> getById(String id) => _goalsRepo.getById(id);
 
   static String? validateName(String name) {
@@ -107,9 +110,9 @@ class GoalsService {
     );
   }
 
-  static List<Goal> _dedupeGoals(List<Goal> goals) {
+  static List<Goal> _dedupeGoals(List<Goal> goals, {String? preferredGoalId}) {
     final deduped = <Goal>[];
-    final seen = <String>{};
+    final indexByKey = <String, int>{};
     for (final goal in goals) {
       final key = [
         goal.name.trim().toLowerCase(),
@@ -121,8 +124,12 @@ class GoalsService {
         ).toIso8601String(),
         goal.savingStyle,
       ].join('|');
-      if (seen.add(key)) {
+      final existingIndex = indexByKey[key];
+      if (existingIndex == null) {
+        indexByKey[key] = deduped.length;
         deduped.add(goal);
+      } else if (goal.id == preferredGoalId) {
+        deduped[existingIndex] = goal;
       }
     }
     return deduped;
