@@ -75,6 +75,12 @@ Leaf should avoid sounding like a professional financial adviser. Use language s
 - `lib/domain/integrations/product_foundations.dart` now contains first-pass contracts for local badges, household roles, savings growth series, and dynamic report request types.
 - `lib/core/providers/integration_providers.dart` exposes unsupported default providers so UI can be wired without unsafe credentials or platform-specific code.
 - `test/domain/integrations/product_foundations_test.dart` covers transaction review dedupe/approval, OCR-to-draft conversion, local badge awards, and savings growth progress.
+- `lib/features/imports/import_review_screen.dart` provides a review-first screen for bank, notification, OCR, and future aggregator drafts before import.
+- Leaf attachments now attempt OCR-to-review-draft conversion through `ReceiptOcrProvider`, and Leaf voice input routes through `VoiceInputProvider` before using the same typed-message draft flow.
+- Home now shows local/personal badges from real app activity.
+- Goals now include a smooth savings-progress sparkline that can later be backed by explicit contribution history.
+- Reports now surface dynamic checks for bill variance, subscription drift, category anomalies, and weekly/monthly forecast.
+- `lib/features/household/household_screen.dart` stages shared budgeting roles without enabling shared ledgers before the individual flow is stable.
 
 ## Technical Notes
 
