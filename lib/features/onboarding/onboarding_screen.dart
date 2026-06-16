@@ -49,17 +49,20 @@ class _WelcomeStep extends ConsumerStatefulWidget {
 
 class _WelcomeStepState extends ConsumerState<_WelcomeStep> {
   late final TextEditingController _nameCtrl;
+  late final TextEditingController _displayNameCtrl;
 
   @override
   void initState() {
     super.initState();
-    final name = ref.read(onboardingControllerProvider).name;
-    _nameCtrl = TextEditingController(text: name);
+    final state = ref.read(onboardingControllerProvider);
+    _nameCtrl = TextEditingController(text: state.name);
+    _displayNameCtrl = TextEditingController(text: state.displayName);
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _displayNameCtrl.dispose();
     super.dispose();
   }
 
@@ -70,9 +73,8 @@ class _WelcomeStepState extends ConsumerState<_WelcomeStep> {
 
     return StepScaffold(
       step: OnboardingStep.welcome,
-      title: 'What should we call you?',
-      subtitle:
-          'We’ll use this to personalize your experience and make Leko feel more like a calm guide than a blank tool.',
+      title: 'Welcome to Leko',
+      subtitle: 'Leko uses this to personalize your experience.',
       nextLabel: 'Continue',
       onNext: () => controller.next(),
       canProceed: state.name.trim().isNotEmpty,
@@ -80,31 +82,98 @@ class _WelcomeStepState extends ConsumerState<_WelcomeStep> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _NameIntroCard(name: state.name),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             _PremiumField(
-              label: 'First name',
+              label: 'Your name',
               hint: 'Jaivik',
               controller: _nameCtrl,
               textCapitalization: TextCapitalization.words,
               onChanged: controller.setName,
             ),
-            SizedBox(height: 14),
-            _QuietHelperCard(
+            const SizedBox(height: 14),
+            _PremiumField(
+              label: 'Preferred display name',
+              hint: 'Optional',
+              controller: _displayNameCtrl,
+              textCapitalization: TextCapitalization.words,
+              onChanged: controller.setDisplayName,
+            ),
+            const SizedBox(height: 14),
+            _CurrencyDropdown(
+              value: state.baseCurrency ?? Currency.cad,
+              onChanged: controller.setBaseCurrency,
+            ),
+            const SizedBox(height: 14),
+            const _QuietHelperCard(
               icon: Icons.favorite_border_rounded,
               text:
-                  'First name is perfect. This helps us personalize greetings, your recap, and your profile.',
-            ),
-            SizedBox(height: 14),
-            _WarmBullet(
-              title: 'A lighter setup, not a long form',
-              subtitle:
-                  'After this, we only ask for the details Leko actually needs to guide your spending well.',
+                  'Your currency controls balances, budgets, charts, and goals across Leko.',
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CurrencyDropdown extends StatelessWidget {
+  const _CurrencyDropdown({required this.value, required this.onChanged});
+
+  final Currency value;
+  final ValueChanged<Currency> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Currency',
+          style: TextStyle(
+            color: _OnboardingPalette.textPrimary,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<Currency>(
+          value: value,
+          dropdownColor: _OnboardingPalette.surface,
+          iconEnabledColor: _OnboardingPalette.tealSoft,
+          style: const TextStyle(
+            color: _OnboardingPalette.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: _OnboardingPalette.surface,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 16,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: const BorderSide(color: _OnboardingPalette.outline),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(
+                color: _OnboardingPalette.tealSoft.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+          items: const [
+            DropdownMenuItem(value: Currency.cad, child: Text('CAD')),
+            DropdownMenuItem(value: Currency.usd, child: Text('USD')),
+          ],
+          onChanged: (value) {
+            if (value != null) onChanged(value);
+          },
+        ),
+      ],
     );
   }
 }
@@ -172,7 +241,8 @@ class _CurrencyStep extends ConsumerWidget {
           _LargeChoiceTile(
             title: 'US Dollar',
             trailing: 'USD',
-            subtitle: 'Best if your income and spending mainly happen in the US.',
+            subtitle:
+                'Best if your income and spending mainly happen in the US.',
             selected: state.baseCurrency == Currency.usd,
             onTap: () => controller.setBaseCurrency(Currency.usd),
           ),
@@ -230,9 +300,10 @@ class _BalanceStepState extends ConsumerState<_BalanceStep> {
               currencyCode: (currency ?? Currency.cad).name.toUpperCase(),
               controller: _amountCtrl,
               hint: '0.00',
-              onChanged: (value) => controller.setCurrentBalance(
-                double.tryParse(value.replaceAll(',', '').trim()),
-              ),
+              onChanged:
+                  (value) => controller.setCurrentBalance(
+                    double.tryParse(value.replaceAll(',', '').trim()),
+                  ),
             ),
             const SizedBox(height: 18),
             const _QuietHelperCard(
@@ -264,7 +335,8 @@ class _GoalStepState extends ConsumerState<_GoalStep> {
     final state = ref.read(onboardingControllerProvider);
     _nameCtrl = TextEditingController(text: state.goalName);
     _amountCtrl = TextEditingController(
-      text: state.goalAmount != null ? state.goalAmount!.toStringAsFixed(2) : '',
+      text:
+          state.goalAmount != null ? state.goalAmount!.toStringAsFixed(2) : '',
     );
   }
 
@@ -295,7 +367,8 @@ class _GoalStepState extends ConsumerState<_GoalStep> {
           children: [
             _ToggleTile(
               title: 'Set a goal during onboarding',
-              subtitle: 'Recommended if you want Home to feel more personal right away.',
+              subtitle:
+                  'Recommended if you want Home to feel more personal right away.',
               value: state.goalEnabled,
               onChanged: controller.setGoalEnabled,
             ),
@@ -312,11 +385,14 @@ class _GoalStepState extends ConsumerState<_GoalStep> {
                 label: 'Target amount',
                 hint: '2500',
                 controller: _amountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                prefixText: '\$ ',
-                onChanged: (value) => controller.setGoalAmount(
-                  double.tryParse(value.replaceAll(',', '').trim()),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
+                prefixText: '\$ ',
+                onChanged:
+                    (value) => controller.setGoalAmount(
+                      double.tryParse(value.replaceAll(',', '').trim()),
+                    ),
               ),
               const SizedBox(height: 14),
               _DatePickerTile(
@@ -327,7 +403,8 @@ class _GoalStepState extends ConsumerState<_GoalStep> {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate:
-                        state.goalTargetDate ?? now.add(const Duration(days: 90)),
+                        state.goalTargetDate ??
+                        now.add(const Duration(days: 90)),
                     firstDate: now.add(const Duration(days: 1)),
                     lastDate: DateTime(now.year + 10),
                   );
@@ -363,7 +440,8 @@ class _GoalStepState extends ConsumerState<_GoalStep> {
                 description: 'Tighter daily spend, faster goal protection.',
                 icon: Icons.trending_up_rounded,
                 selected: state.goalSavingStyle == SavingStyle.aggressive,
-                onTap: () => controller.setGoalSavingStyle(SavingStyle.aggressive),
+                onTap:
+                    () => controller.setGoalSavingStyle(SavingStyle.aggressive),
               ),
             ],
           ],
@@ -394,14 +472,16 @@ class _IncomeStepState extends ConsumerState<_IncomeStep> {
       text: state.recurringIncome?.name ?? '',
     );
     _expectedAmountCtrl = TextEditingController(
-      text: state.recurringIncome?.expectedAmount != null
-          ? state.recurringIncome!.expectedAmount!.toStringAsFixed(2)
-          : '',
+      text:
+          state.recurringIncome?.expectedAmount != null
+              ? state.recurringIncome!.expectedAmount!.toStringAsFixed(2)
+              : '',
     );
     _oneTimeAmountCtrl = TextEditingController(
-      text: state.oneTimeIncomeAmount != null
-          ? state.oneTimeIncomeAmount!.toStringAsFixed(2)
-          : '',
+      text:
+          state.oneTimeIncomeAmount != null
+              ? state.oneTimeIncomeAmount!.toStringAsFixed(2)
+              : '',
     );
     _oneTimeSourceCtrl = TextEditingController(text: state.oneTimeIncomeSource);
   }
@@ -449,20 +529,25 @@ class _IncomeStepState extends ConsumerState<_IncomeStep> {
                 label: 'Income name',
                 hint: 'Paycheque, freelance retainer...',
                 controller: _recurringNameCtrl,
-                onChanged: (value) => controller.updateRecurringIncome(name: value),
+                onChanged:
+                    (value) => controller.updateRecurringIncome(name: value),
               ),
               const SizedBox(height: 14),
               _SelectorWrap(
                 title: 'Frequency',
-                options: IncomeFrequency.values
-                    .map((frequency) => _ChipOption<IncomeFrequency>(
-                          value: frequency,
-                          label: _incomeFrequencyLabel(frequency),
-                        ))
-                    .toList(),
+                options:
+                    IncomeFrequency.values
+                        .map(
+                          (frequency) => _ChipOption<IncomeFrequency>(
+                            value: frequency,
+                            label: _incomeFrequencyLabel(frequency),
+                          ),
+                        )
+                        .toList(),
                 selected: recurring?.frequency,
-                onSelected: (value) =>
-                    controller.updateRecurringIncome(frequency: value),
+                onSelected:
+                    (value) =>
+                        controller.updateRecurringIncome(frequency: value),
               ),
               const SizedBox(height: 14),
               _DatePickerTile(
@@ -473,12 +558,15 @@ class _IncomeStepState extends ConsumerState<_IncomeStep> {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate:
-                        recurring?.nextPaydayDate ?? now.add(const Duration(days: 14)),
+                        recurring?.nextPaydayDate ??
+                        now.add(const Duration(days: 14)),
                     firstDate: now,
                     lastDate: DateTime(now.year + 5),
                   );
                   if (picked != null) {
-                    controller.updateRecurringIncome(nextPaydayDate: () => picked);
+                    controller.updateRecurringIncome(
+                      nextPaydayDate: () => picked,
+                    );
                   }
                 },
               ),
@@ -496,26 +584,32 @@ class _IncomeStepState extends ConsumerState<_IncomeStep> {
                   ),
                 ],
                 selected: recurring?.paydayBehavior,
-                onSelected: (value) =>
-                    controller.updateRecurringIncome(paydayBehavior: value),
+                onSelected:
+                    (value) =>
+                        controller.updateRecurringIncome(paydayBehavior: value),
               ),
               const SizedBox(height: 14),
               _PremiumField(
                 label: 'Expected amount',
                 hint: 'Only required for auto-post expected',
                 controller: _expectedAmountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                prefixText: '\$ ',
-                onChanged: (value) => controller.updateRecurringIncome(
-                  expectedAmount: () =>
-                      double.tryParse(value.replaceAll(',', '').trim()),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
+                prefixText: '\$ ',
+                onChanged:
+                    (value) => controller.updateRecurringIncome(
+                      expectedAmount:
+                          () =>
+                              double.tryParse(value.replaceAll(',', '').trim()),
+                    ),
               ),
             ],
             const SizedBox(height: 18),
             _ToggleTile(
               title: 'Add one-time income',
-              subtitle: 'Optional if you already know about a deposit or incoming payment.',
+              subtitle:
+                  'Optional if you already know about a deposit or incoming payment.',
               value: state.hasOneTimeIncome,
               onChanged: controller.setHasOneTimeIncome,
             ),
@@ -525,11 +619,14 @@ class _IncomeStepState extends ConsumerState<_IncomeStep> {
                 label: 'Amount',
                 hint: '500',
                 controller: _oneTimeAmountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                prefixText: '\$ ',
-                onChanged: (value) => controller.setOneTimeIncomeAmount(
-                  double.tryParse(value.replaceAll(',', '').trim()),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
+                prefixText: '\$ ',
+                onChanged:
+                    (value) => controller.setOneTimeIncomeAmount(
+                      double.tryParse(value.replaceAll(',', '').trim()),
+                    ),
               ),
               const SizedBox(height: 14),
               _PremiumField(
@@ -585,15 +682,22 @@ class _RolloverStep extends ConsumerWidget {
               description: 'Simple, clean, and predictable month to month.',
               icon: Icons.calendar_month_rounded,
               selected: state.rolloverResetType == RolloverResetType.monthly,
-              onTap: () => controller.setRolloverResetType(RolloverResetType.monthly),
+              onTap:
+                  () => controller.setRolloverResetType(
+                    RolloverResetType.monthly,
+                  ),
             ),
             _ChoiceCard(
               title: 'Payday-based reset',
-              description: 'Best if your spending rhythm revolves around paycheques.',
+              description:
+                  'Best if your spending rhythm revolves around paycheques.',
               icon: Icons.event_repeat_rounded,
-              selected: state.rolloverResetType == RolloverResetType.paydayBased,
-              onTap: () =>
-                  controller.setRolloverResetType(RolloverResetType.paydayBased),
+              selected:
+                  state.rolloverResetType == RolloverResetType.paydayBased,
+              onTap:
+                  () => controller.setRolloverResetType(
+                    RolloverResetType.paydayBased,
+                  ),
             ),
             if (state.rolloverResetType == RolloverResetType.paydayBased) ...[
               const SizedBox(height: 12),
@@ -605,7 +709,8 @@ class _RolloverStep extends ConsumerWidget {
                 )
               else
                 _AnchorChoiceTile(
-                  title: 'Use ${recurring.name.isEmpty ? 'your recurring income' : recurring.name} as the Payday Anchor',
+                  title:
+                      'Use ${recurring.name.isEmpty ? 'your recurring income' : recurring.name} as the Payday Anchor',
                   subtitle:
                       'This tells Leko which schedule should anchor spend planning.',
                   selected: state.paydayAnchorDraftId == recurring.id,
@@ -694,24 +799,31 @@ class _BillsStepState extends ConsumerState<_BillsStep> {
               label: 'Amount',
               hint: '120',
               controller: _amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               prefixText: '\$ ',
             ),
             const SizedBox(height: 14),
             _SelectorWrap(
               title: 'Frequency',
-              options: BillFrequency.values
-                  .where((frequency) => [
-                        BillFrequency.weekly,
-                        BillFrequency.biweekly,
-                        BillFrequency.monthly,
-                        BillFrequency.yearly,
-                      ].contains(frequency))
-                  .map((frequency) => _ChipOption<BillFrequency>(
-                        value: frequency,
-                        label: _billFrequencyLabel(frequency),
-                      ))
-                  .toList(),
+              options:
+                  BillFrequency.values
+                      .where(
+                        (frequency) => [
+                          BillFrequency.weekly,
+                          BillFrequency.biweekly,
+                          BillFrequency.monthly,
+                          BillFrequency.yearly,
+                        ].contains(frequency),
+                      )
+                      .map(
+                        (frequency) => _ChipOption<BillFrequency>(
+                          value: frequency,
+                          label: _billFrequencyLabel(frequency),
+                        ),
+                      )
+                      .toList(),
               selected: _frequency,
               onSelected: (value) => setState(() => _frequency = value),
             ),
@@ -723,7 +835,8 @@ class _BillsStepState extends ConsumerState<_BillsStep> {
                 final now = DateTime.now();
                 final picked = await showDatePicker(
                   context: context,
-                  initialDate: _nextDueDate ?? now.add(const Duration(days: 14)),
+                  initialDate:
+                      _nextDueDate ?? now.add(const Duration(days: 14)),
                   firstDate: now,
                   lastDate: DateTime(now.year + 5),
                 );
@@ -796,7 +909,8 @@ class _BaselineStep extends ConsumerWidget {
         children: [
           _ChoiceCard(
             title: '30 days',
-            description: 'More responsive. Good if your spending changes quickly.',
+            description:
+                'More responsive. Good if your spending changes quickly.',
             icon: Icons.speed_rounded,
             selected: state.spendingBaselineDays == 30,
             onTap: () => controller.setSpendingBaselineDays(30),
@@ -810,7 +924,8 @@ class _BaselineStep extends ConsumerWidget {
           ),
           _ChoiceCard(
             title: '90 days',
-            description: 'Smoother. Better if you want guidance to feel less jumpy.',
+            description:
+                'Smoother. Better if you want guidance to feel less jumpy.',
             icon: Icons.waves_rounded,
             selected: state.spendingBaselineDays == 90,
             onTap: () => controller.setSpendingBaselineDays(90),
@@ -864,9 +979,10 @@ class _NotificationsStep extends ConsumerWidget {
                       ? 'Notifications are on.'
                       : 'Permission wasn’t granted, but you can still continue and change it later.',
                   style: TextStyle(
-                    color: state.notificationsGranted
-                        ? _OnboardingPalette.tealSoft
-                        : _OnboardingPalette.textMuted,
+                    color:
+                        state.notificationsGranted
+                            ? _OnboardingPalette.tealSoft
+                            : _OnboardingPalette.textMuted,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -889,9 +1005,10 @@ class _RecapStep extends ConsumerWidget {
 
     return StepScaffold(
       step: OnboardingStep.recap,
-      title: state.name.trim().isEmpty
-          ? 'You’re set. Let’s build your daily spend plan.'
-          : 'You’re set, ${_firstName(state.name)}.',
+      title:
+          state.name.trim().isEmpty
+              ? 'You’re set. Let’s build your daily spend plan.'
+              : 'You’re set, ${_firstName(state.name)}.',
       subtitle:
           'Leko has enough context now to guide you calmly from the moment you land on Home.',
       onBack: controller.back,
@@ -917,29 +1034,33 @@ class _RecapStep extends ConsumerWidget {
             ),
             _RecapTile(
               label: 'Current balance',
-              value: state.currentBalance != null
-                  ? '\$${state.currentBalance!.toStringAsFixed(2)}'
-                  : 'Not set',
+              value:
+                  state.currentBalance != null
+                      ? '\$${state.currentBalance!.toStringAsFixed(2)}'
+                      : 'Not set',
             ),
             _RecapTile(
               label: 'Main goal',
-              value: state.goalEnabled && state.hasGoalInput
-                  ? state.goalName
-                  : 'Skipping goals for now',
+              value:
+                  state.goalEnabled && state.hasGoalInput
+                      ? state.goalName
+                      : 'Skipping goals for now',
             ),
             _RecapTile(
               label: 'Income setup',
               value: [
                 if (state.hasRecurringIncome) 'Recurring income',
                 if (state.hasOneTimeIncome) 'One-time income',
-                if (!state.hasRecurringIncome && !state.hasOneTimeIncome) 'Skipped for now',
+                if (!state.hasRecurringIncome && !state.hasOneTimeIncome)
+                  'Skipped for now',
               ].join(' + '),
             ),
             _RecapTile(
               label: 'Rollover style',
-              value: state.rolloverResetType == RolloverResetType.monthly
-                  ? 'Monthly reset'
-                  : 'Payday-based reset',
+              value:
+                  state.rolloverResetType == RolloverResetType.monthly
+                      ? 'Monthly reset'
+                      : 'Payday-based reset',
             ),
             _RecapTile(
               label: 'Baseline',
@@ -1145,14 +1266,16 @@ class _ChoiceCard extends StatelessWidget {
           child: Ink(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: selected
-                  ? _OnboardingPalette.surfaceSelected
-                  : _OnboardingPalette.surface,
+              color:
+                  selected
+                      ? _OnboardingPalette.surfaceSelected
+                      : _OnboardingPalette.surface,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: selected
-                    ? _OnboardingPalette.tealSoft.withValues(alpha: 0.7)
-                    : _OnboardingPalette.outline,
+                color:
+                    selected
+                        ? _OnboardingPalette.tealSoft.withValues(alpha: 0.7)
+                        : _OnboardingPalette.outline,
                 width: selected ? 1.5 : 1,
               ),
             ),
@@ -1162,16 +1285,20 @@ class _ChoiceCard extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: selected
-                        ? _OnboardingPalette.tealSoft.withValues(alpha: 0.16)
-                        : Colors.white.withValues(alpha: 0.06),
+                    color:
+                        selected
+                            ? _OnboardingPalette.tealSoft.withValues(
+                              alpha: 0.16,
+                            )
+                            : Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
                     icon,
-                    color: selected
-                        ? _OnboardingPalette.tealSoft
-                        : _OnboardingPalette.textSecondary,
+                    color:
+                        selected
+                            ? _OnboardingPalette.tealSoft
+                            : _OnboardingPalette.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -1204,9 +1331,10 @@ class _ChoiceCard extends StatelessWidget {
                   selected
                       ? Icons.check_circle_rounded
                       : Icons.radio_button_unchecked_rounded,
-                  color: selected
-                      ? _OnboardingPalette.tealSoft
-                      : _OnboardingPalette.textMuted,
+                  color:
+                      selected
+                          ? _OnboardingPalette.tealSoft
+                          : _OnboardingPalette.textMuted,
                 ),
               ],
             ),
@@ -1242,14 +1370,16 @@ class _LargeChoiceTile extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: selected
-                ? _OnboardingPalette.surfaceSelected
-                : _OnboardingPalette.surface,
+            color:
+                selected
+                    ? _OnboardingPalette.surfaceSelected
+                    : _OnboardingPalette.surface,
             borderRadius: BorderRadius.circular(26),
             border: Border.all(
-              color: selected
-                  ? _OnboardingPalette.tealSoft.withValues(alpha: 0.7)
-                  : _OnboardingPalette.outline,
+              color:
+                  selected
+                      ? _OnboardingPalette.tealSoft.withValues(alpha: 0.7)
+                      : _OnboardingPalette.outline,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -1281,7 +1411,10 @@ class _LargeChoiceTile extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(16),
@@ -1430,13 +1563,13 @@ class _PremiumField extends StatelessWidget {
               color: _OnboardingPalette.textPrimary,
               fontWeight: FontWeight.w700,
             ),
-            hintStyle: const TextStyle(
-              color: _OnboardingPalette.textMuted,
-            ),
+            hintStyle: const TextStyle(color: _OnboardingPalette.textMuted),
             filled: true,
             fillColor: _OnboardingPalette.surface,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 18,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
               borderSide: const BorderSide(color: _OnboardingPalette.outline),
@@ -1558,9 +1691,10 @@ class _DatePickerTile extends StatelessWidget {
                         ? DateFormat.yMMMd().format(value!)
                         : 'Choose a date',
                     style: TextStyle(
-                      color: value != null
-                          ? _OnboardingPalette.textPrimary
-                          : _OnboardingPalette.textMuted,
+                      color:
+                          value != null
+                              ? _OnboardingPalette.textPrimary
+                              : _OnboardingPalette.textMuted,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1594,9 +1728,7 @@ class _QuietHelperCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.04),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1752,22 +1884,25 @@ class _SelectorChip extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: selected
-                ? _OnboardingPalette.surfaceSelected
-                : _OnboardingPalette.surface,
+            color:
+                selected
+                    ? _OnboardingPalette.surfaceSelected
+                    : _OnboardingPalette.surface,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected
-                  ? _OnboardingPalette.tealSoft.withValues(alpha: 0.65)
-                  : _OnboardingPalette.outline,
+              color:
+                  selected
+                      ? _OnboardingPalette.tealSoft.withValues(alpha: 0.65)
+                      : _OnboardingPalette.outline,
             ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: selected
-                  ? _OnboardingPalette.textPrimary
-                  : _OnboardingPalette.textSecondary,
+              color:
+                  selected
+                      ? _OnboardingPalette.textPrimary
+                      : _OnboardingPalette.textSecondary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1909,47 +2044,47 @@ class _RecapTile extends StatelessWidget {
 }
 
 String _intentTitle(OnboardingIntent intent) => switch (intent) {
-      OnboardingIntent.stayOnBudget => 'Stay on budget',
-      OnboardingIntent.saveForGoal => 'Save for a goal',
-      OnboardingIntent.stopOverspending => 'Stop overspending',
-      OnboardingIntent.feelInControl => 'Feel more in control',
-      OnboardingIntent.planAroundPayday => 'Plan around payday',
-    };
+  OnboardingIntent.stayOnBudget => 'Stay on budget',
+  OnboardingIntent.saveForGoal => 'Save for a goal',
+  OnboardingIntent.stopOverspending => 'Stop overspending',
+  OnboardingIntent.feelInControl => 'Feel more in control',
+  OnboardingIntent.planAroundPayday => 'Plan around payday',
+};
 
 String _intentDescription(OnboardingIntent intent) => switch (intent) {
-      OnboardingIntent.stayOnBudget =>
-        'Keep spending calmer and more intentional day to day.',
-      OnboardingIntent.saveForGoal =>
-        'Protect progress toward something meaningful without feeling deprived.',
-      OnboardingIntent.stopOverspending =>
-        'Catch drift earlier and tighten up before it snowballs.',
-      OnboardingIntent.feelInControl =>
-        'See your money more clearly and make steadier choices.',
-      OnboardingIntent.planAroundPayday =>
-        'Let your allowance reset with the rhythm of your income.',
-    };
+  OnboardingIntent.stayOnBudget =>
+    'Keep spending calmer and more intentional day to day.',
+  OnboardingIntent.saveForGoal =>
+    'Protect progress toward something meaningful without feeling deprived.',
+  OnboardingIntent.stopOverspending =>
+    'Catch drift earlier and tighten up before it snowballs.',
+  OnboardingIntent.feelInControl =>
+    'See your money more clearly and make steadier choices.',
+  OnboardingIntent.planAroundPayday =>
+    'Let your allowance reset with the rhythm of your income.',
+};
 
 IconData _intentIcon(OnboardingIntent intent) => switch (intent) {
-      OnboardingIntent.stayOnBudget => Icons.savings_rounded,
-      OnboardingIntent.saveForGoal => Icons.flag_circle_rounded,
-      OnboardingIntent.stopOverspending => Icons.insights_rounded,
-      OnboardingIntent.feelInControl => Icons.self_improvement_rounded,
-      OnboardingIntent.planAroundPayday => Icons.event_repeat_rounded,
-    };
+  OnboardingIntent.stayOnBudget => Icons.savings_rounded,
+  OnboardingIntent.saveForGoal => Icons.flag_circle_rounded,
+  OnboardingIntent.stopOverspending => Icons.insights_rounded,
+  OnboardingIntent.feelInControl => Icons.self_improvement_rounded,
+  OnboardingIntent.planAroundPayday => Icons.event_repeat_rounded,
+};
 
 String _incomeFrequencyLabel(IncomeFrequency frequency) => switch (frequency) {
-      IncomeFrequency.weekly => 'Weekly',
-      IncomeFrequency.biweekly => 'Biweekly',
-      IncomeFrequency.monthly => 'Monthly',
-    };
+  IncomeFrequency.weekly => 'Weekly',
+  IncomeFrequency.biweekly => 'Biweekly',
+  IncomeFrequency.monthly => 'Monthly',
+};
 
 String _billFrequencyLabel(BillFrequency frequency) => switch (frequency) {
-      BillFrequency.weekly => 'Weekly',
-      BillFrequency.biweekly => 'Biweekly',
-      BillFrequency.monthly => 'Monthly',
-      BillFrequency.yearly => 'Yearly',
-      BillFrequency.quarterly => 'Quarterly',
-    };
+  BillFrequency.weekly => 'Weekly',
+  BillFrequency.biweekly => 'Biweekly',
+  BillFrequency.monthly => 'Monthly',
+  BillFrequency.yearly => 'Yearly',
+  BillFrequency.quarterly => 'Quarterly',
+};
 
 String _firstName(String value) {
   final trimmed = value.trim();

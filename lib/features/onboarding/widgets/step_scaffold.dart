@@ -31,9 +31,13 @@ class StepScaffold extends ConsumerWidget {
   final bool canProceed;
   final bool isLoading;
 
+  int get _stepIndex {
+    final index = OnboardingController.orderedSteps.indexOf(step);
+    return index < 0 ? 0 : index;
+  }
+
   double get _progress =>
-      (OnboardingStep.values.indexOf(step) + 1) /
-      OnboardingStep.values.length;
+      (_stepIndex + 1) / OnboardingController.orderedSteps.length;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -63,7 +67,7 @@ class StepScaffold extends ConsumerWidget {
                         const SizedBox(width: 42, height: 42),
                       const Spacer(),
                       Text(
-                        'Step ${OnboardingStep.values.indexOf(step) + 1} of ${OnboardingStep.values.length}',
+                        'Step ${_stepIndex + 1} of ${OnboardingController.orderedSteps.length}',
                         style: const TextStyle(
                           color: LekoColors.onboardingTextSecondary,
                           fontSize: 12,
@@ -94,11 +98,11 @@ class StepScaffold extends ConsumerWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: LekoColors.onboardingTextPrimary,
-                          letterSpacing: -0.8,
-                          height: 1.1,
-                        ),
+                      fontWeight: FontWeight.w700,
+                      color: LekoColors.onboardingTextPrimary,
+                      letterSpacing: -0.8,
+                      height: 1.1,
+                    ),
                   ),
                 ),
                 if (subtitle != null) ...[
@@ -108,9 +112,9 @@ class StepScaffold extends ConsumerWidget {
                     child: Text(
                       subtitle!,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: LekoColors.onboardingTextSecondary,
-                            height: 1.45,
-                          ),
+                        color: LekoColors.onboardingTextSecondary,
+                        height: 1.45,
+                      ),
                     ),
                   ),
                 ],
@@ -120,8 +124,8 @@ class StepScaffold extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: child,
                   ),
-              ),
-              Padding(
+                ),
+                Padding(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -166,14 +170,12 @@ class StepScaffold extends ConsumerWidget {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: LekoColors.onboardingButton,
                               foregroundColor: LekoColors.onboardingButtonText,
-                              disabledBackgroundColor:
-                                  LekoColors.onboardingButton.withValues(
-                                alpha: 0.28,
-                              ),
-                              disabledForegroundColor:
-                                  LekoColors.onboardingButtonText.withValues(
-                                alpha: 0.55,
-                              ),
+                              disabledBackgroundColor: LekoColors
+                                  .onboardingButton
+                                  .withValues(alpha: 0.28),
+                              disabledForegroundColor: LekoColors
+                                  .onboardingButtonText
+                                  .withValues(alpha: 0.55),
                               padding: const EdgeInsets.symmetric(vertical: 18),
                               elevation: 0,
                               shape: RoundedRectangleBorder(
@@ -181,24 +183,26 @@ class StepScaffold extends ConsumerWidget {
                               ),
                             ),
                             onPressed: canProceed && !isLoading ? onNext : null,
-                            child: isLoading
-                                ? const SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: LekoColors.onboardingButtonText,
+                            child:
+                                isLoading
+                                    ? const SizedBox(
+                                      height: 24,
+                                      width: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: LekoColors.onboardingButtonText,
+                                      ),
+                                    )
+                                    : Text(
+                                      nextLabel,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
-                                  )
-                                : Text(
-                                    nextLabel,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
                           ),
-                          if (secondaryLabel != null && onSecondary != null) ...[
+                          if (secondaryLabel != null &&
+                              onSecondary != null) ...[
                             const SizedBox(height: 8),
                             TextButton(
                               style: TextButton.styleFrom(
@@ -239,11 +243,7 @@ class _OnboardingBackdrop extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF0A1416),
-            Color(0xFF0F1A1B),
-            Color(0xFF0C1718),
-          ],
+          colors: [Color(0xFF0A1416), Color(0xFF0F1A1B), Color(0xFF0C1718)],
         ),
       ),
       child: Stack(

@@ -102,8 +102,9 @@ class OnboardingState {
   const OnboardingState({
     this.step = OnboardingStep.welcome,
     this.name = '',
+    this.displayName = '',
     this.intent,
-    this.baseCurrency,
+    this.baseCurrency = Currency.cad,
     this.currentBalance,
     this.goalEnabled = true,
     this.goalName = '',
@@ -128,6 +129,7 @@ class OnboardingState {
 
   final OnboardingStep step;
   final String name;
+  final String displayName;
   final OnboardingIntent? intent;
   final Currency? baseCurrency;
   final double? currentBalance;
@@ -160,6 +162,7 @@ class OnboardingState {
   OnboardingState copyWith({
     OnboardingStep? step,
     String? name,
+    String? displayName,
     OnboardingIntent? Function()? intent,
     Currency? Function()? baseCurrency,
     double? Function()? currentBalance,
@@ -186,6 +189,7 @@ class OnboardingState {
     return OnboardingState(
       step: step ?? this.step,
       name: name ?? this.name,
+      displayName: displayName ?? this.displayName,
       intent: intent != null ? intent() : this.intent,
       baseCurrency: baseCurrency != null ? baseCurrency() : this.baseCurrency,
       currentBalance:
@@ -200,21 +204,26 @@ class OnboardingState {
       recurringIncome:
           recurringIncome != null ? recurringIncome() : this.recurringIncome,
       hasOneTimeIncome: hasOneTimeIncome ?? this.hasOneTimeIncome,
-      oneTimeIncomeAmount: oneTimeIncomeAmount != null
-          ? oneTimeIncomeAmount()
-          : this.oneTimeIncomeAmount,
+      oneTimeIncomeAmount:
+          oneTimeIncomeAmount != null
+              ? oneTimeIncomeAmount()
+              : this.oneTimeIncomeAmount,
       oneTimeIncomeDate:
-          oneTimeIncomeDate != null ? oneTimeIncomeDate() : this.oneTimeIncomeDate,
+          oneTimeIncomeDate != null
+              ? oneTimeIncomeDate()
+              : this.oneTimeIncomeDate,
       oneTimeIncomeSource: oneTimeIncomeSource ?? this.oneTimeIncomeSource,
       rolloverResetType: rolloverResetType ?? this.rolloverResetType,
-      paydayAnchorDraftId: paydayAnchorDraftId != null
-          ? paydayAnchorDraftId()
-          : this.paydayAnchorDraftId,
+      paydayAnchorDraftId:
+          paydayAnchorDraftId != null
+              ? paydayAnchorDraftId()
+              : this.paydayAnchorDraftId,
       billDrafts: billDrafts ?? this.billDrafts,
       spendingBaselineDays: spendingBaselineDays ?? this.spendingBaselineDays,
-      notificationPreference: notificationPreference != null
-          ? notificationPreference()
-          : this.notificationPreference,
+      notificationPreference:
+          notificationPreference != null
+              ? notificationPreference()
+              : this.notificationPreference,
       notificationsGranted: notificationsGranted ?? this.notificationsGranted,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error != null ? error() : this.error,
@@ -231,8 +240,8 @@ class OnboardingState {
 
 final onboardingControllerProvider =
     StateNotifierProvider<OnboardingController, OnboardingState>((ref) {
-  return OnboardingController(ref);
-});
+      return OnboardingController(ref);
+    });
 
 class OnboardingController extends StateNotifier<OnboardingState> {
   OnboardingController(this._ref) : super(const OnboardingState()) {
@@ -246,14 +255,28 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   final Ref _ref;
   static const _uuid = Uuid();
 
-  static const orderedSteps = OnboardingStep.values;
+  static const orderedSteps = <OnboardingStep>[
+    OnboardingStep.welcome,
+    OnboardingStep.intent,
+    OnboardingStep.balance,
+    OnboardingStep.goal,
+    OnboardingStep.income,
+    OnboardingStep.rollover,
+    OnboardingStep.bills,
+    OnboardingStep.notifications,
+    OnboardingStep.recap,
+  ];
 
   void clearError() => state = state.copyWith(error: () => null);
 
-  void goTo(OnboardingStep step) => state = state.copyWith(step: step, error: () => null);
+  void goTo(OnboardingStep step) =>
+      state = state.copyWith(step: step, error: () => null);
 
   void setName(String value) =>
       state = state.copyWith(name: value, error: () => null);
+
+  void setDisplayName(String value) =>
+      state = state.copyWith(displayName: value, error: () => null);
 
   void setIntent(OnboardingIntent intent) =>
       state = state.copyWith(intent: () => intent, error: () => null);
@@ -288,15 +311,18 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       state = state.copyWith(goalSavingStyle: style, error: () => null);
 
   void setHasRecurringIncome(bool enabled) {
-    final draft = enabled
-        ? (state.recurringIncome ?? OnboardingRecurringIncomeDraft(id: _uuid.v4()))
-        : null;
+    final draft =
+        enabled
+            ? (state.recurringIncome ??
+                OnboardingRecurringIncomeDraft(id: _uuid.v4()))
+            : null;
 
     state = state.copyWith(
       hasRecurringIncome: enabled,
       recurringIncome: () => draft,
       paydayAnchorDraftId: () {
-        if (!enabled && state.rolloverResetType == RolloverResetType.paydayBased) {
+        if (!enabled &&
+            state.rolloverResetType == RolloverResetType.paydayBased) {
           return null;
         }
         if (enabled &&
@@ -352,8 +378,11 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     );
   }
 
-  void setOneTimeIncomeAmount(double? amount) => state =
-      state.copyWith(oneTimeIncomeAmount: () => amount, error: () => null);
+  void setOneTimeIncomeAmount(double? amount) =>
+      state = state.copyWith(
+        oneTimeIncomeAmount: () => amount,
+        error: () => null,
+      );
 
   void setOneTimeIncomeDate(DateTime? date) =>
       state = state.copyWith(oneTimeIncomeDate: () => date, error: () => null);
@@ -411,7 +440,8 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       );
 
   Future<void> requestNotifications() async {
-    final granted = await CloseoutNotificationService.instance.requestPermissions();
+    final granted =
+        await CloseoutNotificationService.instance.requestPermissions();
     state = state.copyWith(
       notificationPreference: () => NotificationPreference.enable,
       notificationsGranted: granted,
@@ -427,10 +457,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     }
     final idx = orderedSteps.indexOf(state.step);
     if (idx < orderedSteps.length - 1) {
-      state = state.copyWith(
-        step: orderedSteps[idx + 1],
-        error: () => null,
-      );
+      state = state.copyWith(step: orderedSteps[idx + 1], error: () => null);
     }
     return true;
   }
@@ -438,10 +465,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   void back() {
     final idx = orderedSteps.indexOf(state.step);
     if (idx > 0) {
-      state = state.copyWith(
-        step: orderedSteps[idx - 1],
-        error: () => null,
-      );
+      state = state.copyWith(step: orderedSteps[idx - 1], error: () => null);
     }
   }
 
@@ -457,7 +481,10 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   }
 
   void skipBills() {
-    state = state.copyWith(step: OnboardingStep.baseline, error: () => null);
+    state = state.copyWith(
+      step: OnboardingStep.notifications,
+      error: () => null,
+    );
   }
 
   void skipNotifications() {
@@ -475,7 +502,9 @@ class OnboardingController extends StateNotifier<OnboardingState> {
             ? 'Add your name so Leko can feel more personal from the start.'
             : null;
       case OnboardingStep.intent:
-        return state.intent == null ? 'Choose what you want help with first.' : null;
+        return state.intent == null
+            ? 'Choose what you want help with first.'
+            : null;
       case OnboardingStep.currency:
         return state.baseCurrency == null ? 'Choose a base currency.' : null;
       case OnboardingStep.balance:
@@ -504,7 +533,9 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       case OnboardingStep.bills:
         return null;
       case OnboardingStep.baseline:
-        return SettingsValidation.validateBaselineDays(state.spendingBaselineDays);
+        return SettingsValidation.validateBaselineDays(
+          state.spendingBaselineDays,
+        );
       case OnboardingStep.notifications:
         return state.notificationPreference == null
             ? 'Choose whether to enable notifications now or later.'
@@ -536,7 +567,8 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     }
 
     if (state.hasOneTimeIncome) {
-      if (state.oneTimeIncomeAmount == null || state.oneTimeIncomeAmount! <= 0) {
+      if (state.oneTimeIncomeAmount == null ||
+          state.oneTimeIncomeAmount! <= 0) {
         return 'Enter a positive one-time income amount.';
       }
       if (state.oneTimeIncomeDate == null) {
@@ -547,13 +579,11 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   }
 
   String? _validateFinalState() {
-    return validateStep(OnboardingStep.currency) ??
-        validateStep(OnboardingStep.welcome) ??
+    return validateStep(OnboardingStep.welcome) ??
         validateStep(OnboardingStep.balance) ??
         validateStep(OnboardingStep.goal) ??
         validateStep(OnboardingStep.income) ??
         validateStep(OnboardingStep.rollover) ??
-        validateStep(OnboardingStep.baseline) ??
         validateStep(OnboardingStep.notifications);
   }
 
@@ -575,7 +605,10 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       final profileService = _ref.read(profileServiceProvider);
 
       if (_ref.read(currentUserProvider) != null) {
-        await profileService.updateDisplayName(state.name);
+        final preferredName = state.displayName.trim();
+        await profileService.updateDisplayName(
+          preferredName.isEmpty ? state.name.trim() : preferredName,
+        );
       }
 
       String? goalId;
@@ -609,9 +642,10 @@ class OnboardingController extends StateNotifier<OnboardingState> {
             name: recurring.name.trim(),
             nextPaydayDate: recurring.nextPaydayDate!,
             frequency: Value(enumToDb(recurring.frequency)),
-            expectedAmount: recurring.expectedAmount != null
-                ? Value(recurring.expectedAmount)
-                : const Value.absent(),
+            expectedAmount:
+                recurring.expectedAmount != null
+                    ? Value(recurring.expectedAmount)
+                    : const Value.absent(),
             paydayBehavior: Value(enumToDb(recurring.paydayBehavior)),
             isPaydayAnchor: Value(state.paydayAnchorDraftId == recurring.id),
             reminderEnabled: Value(
@@ -629,9 +663,10 @@ class OnboardingController extends StateNotifier<OnboardingState> {
           amount: state.oneTimeIncomeAmount!,
           date: state.oneTimeIncomeDate!,
           postingType: IncomePostingType.manualOneTime,
-          source: state.oneTimeIncomeSource.trim().isEmpty
-              ? null
-              : state.oneTimeIncomeSource.trim(),
+          source:
+              state.oneTimeIncomeSource.trim().isEmpty
+                  ? null
+                  : state.oneTimeIncomeSource.trim(),
           note: 'Added during onboarding',
         );
       }
@@ -655,11 +690,12 @@ class OnboardingController extends StateNotifier<OnboardingState> {
         );
       }
 
-      final defaultMode = (goalId != null &&
-              (state.intent == OnboardingIntent.saveForGoal ||
-                  state.intent == OnboardingIntent.feelInControl))
-          ? AllowanceMode.goal
-          : AllowanceMode.paycheck;
+      final defaultMode =
+          (goalId != null &&
+                  (state.intent == OnboardingIntent.saveForGoal ||
+                      state.intent == OnboardingIntent.feelInControl))
+              ? AllowanceMode.goal
+              : AllowanceMode.paycheck;
 
       await settingsRepo.update(
         AppSettingsCompanion(
