@@ -8,6 +8,8 @@ import '../../core/utils/enum_serialization.dart';
 import '../../data/db/leko_database.dart';
 import '../../data/integrations/http_bank_provider.dart';
 import '../../data/integrations/platform_notification_provider.dart';
+import '../../data/integrations/receipt_ocr_provider_factory.dart';
+import '../../data/integrations/speech_voice_input_provider.dart';
 import '../../domain/integrations/product_foundations.dart';
 import '../../domain/integrations/transaction_importer.dart';
 import '../../domain/models/enums.dart';
@@ -43,11 +45,11 @@ final notificationImportProvider = Provider<NotificationProvider>((ref) {
 });
 
 final receiptOcrProvider = Provider<ReceiptOcrProvider>((ref) {
-  return const UnsupportedReceiptOcrProvider();
+  return createReceiptOcrProvider();
 });
 
 final voiceInputProvider = Provider<VoiceInputProvider>((ref) {
-  return const UnsupportedVoiceInputProvider();
+  return SpeechVoiceInputProvider();
 });
 
 final transactionReviewQueueProvider = Provider<TransactionReviewQueue>((ref) {
