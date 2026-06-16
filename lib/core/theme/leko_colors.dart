@@ -24,6 +24,18 @@ abstract final class LekoColors {
   static const Color divider = Color(0xFFECEAE5);
   static const Color shimmer = Color(0xFFEEEEEE);
 
+  // Savings Pace card tokens (Wealthsimple-inspired)
+  static const Color paceLine = Color(0xFF3F8F7A); // Solid teal — actual savings line
+  static const Color paceLineSoft = Color(0x143F8F7A); // 8% teal — area fill under actual
+  static const Color paceIdeal = Color(0xFF9AA5B1); // Slate — dotted ideal pace
+  static const Color cardSurfaceSoft = Color(0xFFFBF9F5); // Off-white card surface
+  static const Color pillOnTrackBg = Color(0x143F8F7A);
+  static const Color pillOnTrackFg = Color(0xFF2F6E5E);
+  static const Color pillAheadBg = Color(0x143F8F7A);
+  static const Color pillAheadFg = Color(0xFF2F6E5E);
+  static const Color pillBehindBg = Color(0x14C4763C);
+  static const Color pillBehindFg = Color(0xFF8C5224);
+
   // Premium Onboarding Flow (Dark Immerse)
   static const Color onboardingBackground = Color(0xFF0F1A1B); // Deep midnight forest green
   static const Color onboardingSurface = Color(0xFF19292A);

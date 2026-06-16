@@ -19,9 +19,9 @@ class LeafActionExecutor {
     required LedgerService ledgerService,
     required GoalsService goalsService,
     required BillsService billsService,
-  })  : _ledgerService = ledgerService,
-        _goalsService = goalsService,
-        _billsService = billsService;
+  }) : _ledgerService = ledgerService,
+       _goalsService = goalsService,
+       _billsService = billsService;
 
   final LedgerService _ledgerService;
   final GoalsService _goalsService;
@@ -34,12 +34,15 @@ class LeafActionExecutor {
     required List<Bill> bills,
   }) async {
     return switch (action.intent) {
-      LeafIntent.addExpense =>
-        _addExpense(action: action, categories: categories),
+      LeafIntent.addExpense => _addExpense(
+        action: action,
+        categories: categories,
+      ),
       LeafIntent.addIncome => _addIncome(action),
       LeafIntent.markBillPaid => _markBillPaid(action: action, bills: bills),
       LeafIntent.createGoal => _createGoal(action: action, goals: goals),
-      _ => throw LeafActionException(
+      _ =>
+        throw LeafActionException(
           'Leaf can’t execute ${action.intent.label.toLowerCase()} yet.',
         ),
     };
@@ -63,9 +66,8 @@ class LeafActionExecutor {
         'I need a category before I can log that expense.',
       );
     }
-    final label = _spendLabelFromWire(
-          action.data['label'] as String?,
-        ) ??
+    final label =
+        _spendLabelFromWire(action.data['label'] as String?) ??
         _spendLabelFromWire(category.defaultLabel) ??
         SpendLabel.orange;
     final note = _joinNoteParts(
@@ -94,9 +96,8 @@ class LeafActionExecutor {
   Future<Map<String, dynamic>> _addIncome(LeafPendingAction action) async {
     final amount = _requirePositiveDouble(action.data['amount'], 'amount');
     final date = _parseDate(action.data['date']) ?? DateTime.now();
-    final postingType = _incomePostingTypeFromWire(
-          action.data['posting_type'] as String?,
-        ) ??
+    final postingType =
+        _incomePostingTypeFromWire(action.data['posting_type'] as String?) ??
         IncomePostingType.manualOneTime;
 
     final transactionId = await _ledgerService.addIncome(
@@ -155,15 +156,18 @@ class LeafActionExecutor {
     if (name.isEmpty) {
       throw const LeafActionException('I need a goal name first.');
     }
-    final targetAmount =
-        _requirePositiveDouble(action.data['target_amount'], 'target_amount');
+    final targetAmount = _requirePositiveDouble(
+      action.data['target_amount'],
+      'target_amount',
+    );
     final targetDate = _parseDate(action.data['target_date']);
     if (targetDate == null) {
-      throw const LeafActionException('I need a valid target date for the goal.');
+      throw const LeafActionException(
+        'I need a valid target date for the goal.',
+      );
     }
-    final savingStyle = _savingStyleFromWire(
-          action.data['saving_style'] as String?,
-        ) ??
+    final savingStyle =
+        _savingStyleFromWire(action.data['saving_style'] as String?) ??
         SavingStyle.natural;
 
     final goalId = await _goalsService.create(
@@ -207,7 +211,8 @@ class LeafActionExecutor {
         if (category.name.trim().toLowerCase() == target) return category;
       }
       for (final category in categories) {
-        if (category.name.trim().toLowerCase().contains(target)) return category;
+        if (category.name.trim().toLowerCase().contains(target))
+          return category;
       }
     }
 
@@ -293,7 +298,9 @@ String? linkedSplitEntryIdFromLeafActionData(Map<String, dynamic> data) {
 double _requirePositiveDouble(Object? raw, String fieldName) {
   final value = _positiveDoubleOrNull(raw);
   if (value == null) {
-    throw LeafActionException('I need a valid $fieldName before I can do that.');
+    throw LeafActionException(
+      'I need a valid $fieldName before I can do that.',
+    );
   }
   return value;
 }
@@ -308,10 +315,21 @@ double? _positiveDoubleOrNull(Object? raw) {
   return value;
 }
 
-DateTime? _parseDate(Object? raw) {
+DateTime? parseLeafActionDate(Object? raw) {
   if (raw is! String || raw.trim().isEmpty) return null;
-  return DateTime.tryParse(raw);
+  final text = raw.trim();
+  final dateOnly = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(text);
+  if (dateOnly != null) {
+    return DateTime(
+      int.parse(dateOnly.group(1)!),
+      int.parse(dateOnly.group(2)!),
+      int.parse(dateOnly.group(3)!),
+    );
+  }
+  return DateTime.tryParse(text);
 }
+
+DateTime? _parseDate(Object? raw) => parseLeafActionDate(raw);
 
 String? _joinNoteParts(String? merchant, String? note) {
   final parts = <String>[

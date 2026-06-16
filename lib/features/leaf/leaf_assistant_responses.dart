@@ -29,7 +29,9 @@ int? _daysLeftInCycle(LeafContext ctx) {
 String buildHeroBriefing(LeafContext ctx) {
   final name = ctx.greetingName.isEmpty ? 'there' : ctx.greetingName;
   final modeLabel =
-      ctx.allowanceMode == AllowanceMode.paycheck ? 'paycheck rhythm' : 'goal pace';
+      ctx.allowanceMode == AllowanceMode.paycheck
+          ? 'paycheck rhythm'
+          : 'goal pace';
 
   if (ctx.settings == null) {
     return '$name, finish setup in Settings and I’ll mirror your allowance here.';
@@ -45,9 +47,10 @@ String buildHeroBriefing(LeafContext ctx) {
 
   final allowanceStr = _money(ctx, daily);
   final leftStr = _money(ctx, left.abs());
-  final tone = left >= 0
-      ? 'Stay within $allowanceStr today and you keep the cycle feeling easy.'
-      : 'You’re about $leftStr over today’s allowance — small pulls for the rest of the day will help.';
+  final tone =
+      left >= 0
+          ? 'Stay within $allowanceStr today and you keep the cycle feeling easy.'
+          : 'You’re about $leftStr over today’s allowance — small pulls for the rest of the day will help.';
 
   if (ctx.allowanceMode == AllowanceMode.goal && ctx.goal != null) {
     final g = ctx.goal!.goal.name;
@@ -74,7 +77,8 @@ String responseForFreeText(LeafContext ctx, String raw) {
     return 'Ask me about spending today, bills, your goal, or this cycle — I’ll use your live Leko data.';
   }
   if (_isGreeting(q)) {
-    final name = ctx.greetingName.trim().isEmpty ? 'there' : ctx.greetingName.trim();
+    final name =
+        ctx.greetingName.trim().isEmpty ? 'there' : ctx.greetingName.trim();
     return 'Hey $name. I can help with spending today, upcoming bills, your goal, or record something like “Add my \$25 dinner.”';
   }
   if (_isThanks(q)) {
@@ -88,8 +92,8 @@ String responseForFreeText(LeafContext ctx, String raw) {
     return _goal(ctx);
   }
   if (RegExp(
-          r'\b(spend|spending|allowance|left|remaining|today|coffee|budget)\b')
-      .hasMatch(q)) {
+    r'\b(spend|spending|allowance|left|remaining|today|coffee|budget)\b',
+  ).hasMatch(q)) {
     return _spendingToday(ctx);
   }
   if (RegExp(r'\b(cycle|paycheck|month|rhythm|window)\b').hasMatch(q)) {
@@ -107,7 +111,7 @@ String responseForFreeText(LeafContext ctx, String raw) {
     return _advice(ctx, q);
   }
 
-  return 'I can help with budgeting advice, your allowance, bills, goals, or record something you spent. What would you like to dig into?';
+  return 'I didn’t quite catch that. Ask about spending today, bills, your goal, or say something like “Add my \$25 dinner.”';
 }
 
 String _advice(LeafContext ctx, String query) {
@@ -124,7 +128,9 @@ String _advice(LeafContext ctx, String query) {
   final dailyStr = _money(ctx, daily);
   final spentStr = _money(ctx, spent);
 
-  if (RegExp(r'\b(dining|restaurant|food|lunch|dinner|coffee)\b').hasMatch(query)) {
+  if (RegExp(
+    r'\b(dining|restaurant|food|lunch|dinner|coffee)\b',
+  ).hasMatch(query)) {
     return "You've used $spentStr of your $dailyStr daily budget today ($pct%). "
         'For a category-level view of dining vs other spending, check the Reports tab.';
   }
@@ -147,7 +153,9 @@ String _advice(LeafContext ctx, String query) {
 }
 
 bool _isGreeting(String input) {
-  return RegExp(r"^(hi|hey|hello|yo|sup|what'?s up|whats up)\b").hasMatch(input);
+  return RegExp(
+    r"^(hi|hey|hello|yo|sup|what'?s up|whats up)\b",
+  ).hasMatch(input);
 }
 
 bool _isThanks(String input) {
@@ -165,12 +173,14 @@ String _spendingToday(LeafContext ctx) {
     return 'I don’t have today’s allowance snapshot yet. Open Home for a second to let data sync, then ask again.';
   }
 
-  final mode = ctx.allowanceMode == AllowanceMode.paycheck
-      ? 'paycheck-based daily allowance'
-      : 'goal-based daily allowance';
-  final line = left >= 0
-      ? 'You can still spend about ${_money(ctx, left)} today (${_money(ctx, spent)} used of ${_money(ctx, daily)}).'
-      : 'Today you’re roughly ${_money(ctx, left.abs())} past the ${_money(ctx, daily)} $mode line, with ${_money(ctx, spent)} spent so far.';
+  final mode =
+      ctx.allowanceMode == AllowanceMode.paycheck
+          ? 'paycheck-based daily allowance'
+          : 'goal-based daily allowance';
+  final line =
+      left >= 0
+          ? 'You can still spend about ${_money(ctx, left)} today (${_money(ctx, spent)} used of ${_money(ctx, daily)}).'
+          : 'Today you’re roughly ${_money(ctx, left.abs())} past the ${_money(ctx, daily)} $mode line, with ${_money(ctx, spent)} spent so far.';
 
   return 'Using your $mode: $line';
 }
@@ -223,7 +233,9 @@ String _thisCycle(LeafContext ctx) {
     parts.add('Posted balance is ${_money(ctx, bal)}.');
   }
   if (pool != null) {
-    parts.add('Spendable pool (after projected income and bills in view) is around ${_money(ctx, pool)}.');
+    parts.add(
+      'Spendable pool (after projected income and bills in view) is around ${_money(ctx, pool)}.',
+    );
   }
   return parts.join(' ');
 }
