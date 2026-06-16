@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 
 import '../../core/utils/enum_serialization.dart';
+import '../../data/integrations/http_bank_provider.dart';
 import '../../data/db/leko_database.dart';
 import '../../domain/integrations/product_foundations.dart';
 import '../../domain/integrations/transaction_importer.dart';
@@ -11,6 +13,23 @@ import '../../domain/services/category_service.dart';
 import 'ledger_providers.dart';
 
 final bankProviderProvider = Provider<BankProvider>((ref) {
+  const baseUrl = String.fromEnvironment('LEKO_BANK_API_BASE_URL');
+  if (baseUrl.trim().isNotEmpty) {
+    final client = http.Client();
+    ref.onDispose(client.close);
+    return HttpBankProvider(
+      client: client,
+      baseUri: Uri.parse(baseUrl),
+      providerIdValue: const String.fromEnvironment(
+        'LEKO_BANK_PROVIDER_ID',
+        defaultValue: 'trusted_aggregator',
+      ),
+      displayNameValue: const String.fromEnvironment(
+        'LEKO_BANK_PROVIDER_NAME',
+        defaultValue: 'Trusted bank connection',
+      ),
+    );
+  }
   return const UnsupportedBankProvider();
 });
 
