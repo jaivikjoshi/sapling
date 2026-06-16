@@ -14,9 +14,9 @@ class GoalsService {
 
   GoalsService(this._goalsRepo, this._settingsRepo);
 
-  Stream<List<Goal>> watchAll() => _goalsRepo.watchAll();
+  Stream<List<Goal>> watchAll() => _goalsRepo.watchAll().map(_dedupeGoals);
   Stream<List<Goal>> watchArchived() => _goalsRepo.watchArchived();
-  Future<List<Goal>> getAll() => _goalsRepo.getAll();
+  Future<List<Goal>> getAll() async => _dedupeGoals(await _goalsRepo.getAll());
   Future<Goal> getById(String id) => _goalsRepo.getById(id);
 
   static String? validateName(String name) {
@@ -105,5 +105,26 @@ class GoalsService {
     await _settingsRepo.update(
       const AppSettingsCompanion(primaryGoalId: Value(null)),
     );
+  }
+
+  static List<Goal> _dedupeGoals(List<Goal> goals) {
+    final deduped = <Goal>[];
+    final seen = <String>{};
+    for (final goal in goals) {
+      final key = [
+        goal.name.trim().toLowerCase(),
+        goal.targetAmount.toStringAsFixed(2),
+        DateTime(
+          goal.targetDate.year,
+          goal.targetDate.month,
+          goal.targetDate.day,
+        ).toIso8601String(),
+        goal.savingStyle,
+      ].join('|');
+      if (seen.add(key)) {
+        deduped.add(goal);
+      }
+    }
+    return deduped;
   }
 }
