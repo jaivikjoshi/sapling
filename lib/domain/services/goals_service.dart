@@ -16,6 +16,7 @@ class GoalsService {
 
   Stream<List<Goal>> watchAll() => _goalsRepo.watchAll();
   Stream<List<Goal>> watchArchived() => _goalsRepo.watchArchived();
+  Future<List<Goal>> getAll() => _goalsRepo.getAll();
   Future<Goal> getById(String id) => _goalsRepo.getById(id);
 
   static String? validateName(String name) {
@@ -45,16 +46,18 @@ class GoalsService {
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _goalsRepo.insert(GoalsCompanion.insert(
-      id: id,
-      name: name.trim(),
-      targetAmount: targetAmount,
-      targetDate: targetDate,
-      savingStyle: Value(enumToDb(savingStyle)),
-      priorityOrder: Value(priorityOrder),
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _goalsRepo.insert(
+      GoalsCompanion.insert(
+        id: id,
+        name: name.trim(),
+        targetAmount: targetAmount,
+        targetDate: targetDate,
+        savingStyle: Value(enumToDb(savingStyle)),
+        priorityOrder: Value(priorityOrder),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     return id;
   }
 
@@ -73,9 +76,8 @@ class GoalsService {
         targetAmount: Value(targetAmount),
         targetDate: Value(targetDate),
         savingStyle: Value(enumToDb(savingStyle)),
-        priorityOrder: priorityOrder != null
-            ? Value(priorityOrder)
-            : const Value.absent(),
+        priorityOrder:
+            priorityOrder != null ? Value(priorityOrder) : const Value.absent(),
         updatedAt: Value(DateTime.now()),
       ),
     );

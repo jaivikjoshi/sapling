@@ -254,6 +254,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
 
   final Ref _ref;
   static const _uuid = Uuid();
+  bool _completionSucceeded = false;
 
   static const orderedSteps = <OnboardingStep>[
     OnboardingStep.welcome,
@@ -588,6 +589,9 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   }
 
   Future<bool> complete() async {
+    if (_completionSucceeded) return true;
+    if (state.isSubmitting) return false;
+
     final validationError = _validateFinalState();
     if (validationError != null) {
       state = state.copyWith(error: () => validationError);
@@ -602,6 +606,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       final goalsService = _ref.read(goalsServiceProvider);
       final billsRepo = _ref.read(billsRepositoryProvider);
       final incomeRepo = _ref.read(recurringIncomeRepositoryProvider);
+      final transactionsRepo = _ref.read(transactionsRepositoryProvider);
       final profileService = _ref.read(profileServiceProvider);
 
       if (_ref.read(currentUserProvider) != null) {
@@ -615,7 +620,13 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       String? anchorIncomeId;
 
       final balance = state.currentBalance ?? 0;
-      if (balance != 0) {
+      final existingTransactions = await transactionsRepo.getAll();
+      final hasInitialBalance = existingTransactions.any(
+        (transaction) =>
+            transaction.type == enumToDb(TransactionType.adjustment) &&
+            transaction.note == 'Initial balance from onboarding',
+      );
+      if (balance != 0 && !hasInitialBalance) {
         await ledgerService.addAdjustment(
           amount: balance,
           date: DateTime.now(),
@@ -624,70 +635,120 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       }
 
       if (state.goalEnabled && state.hasGoalInput) {
-        goalId = await goalsService.create(
-          name: state.goalName,
-          targetAmount: state.goalAmount!,
-          targetDate: state.goalTargetDate!,
-          savingStyle: state.goalSavingStyle,
-          priorityOrder: 0,
-        );
+        final existingGoals = await goalsService.getAll();
+        final normalizedGoalName = state.goalName.trim().toLowerCase();
+        Goal? matchingGoal;
+        for (final goal in existingGoals) {
+          final sameDate =
+              goal.targetDate.year == state.goalTargetDate!.year &&
+              goal.targetDate.month == state.goalTargetDate!.month &&
+              goal.targetDate.day == state.goalTargetDate!.day;
+          if (goal.name.trim().toLowerCase() == normalizedGoalName &&
+              goal.targetAmount == state.goalAmount &&
+              sameDate &&
+              goal.savingStyle == enumToDb(state.goalSavingStyle)) {
+            matchingGoal = goal;
+            break;
+          }
+        }
+        goalId =
+            matchingGoal?.id ??
+            await goalsService.create(
+              name: state.goalName,
+              targetAmount: state.goalAmount!,
+              targetDate: state.goalTargetDate!,
+              savingStyle: state.goalSavingStyle,
+              priorityOrder: 0,
+            );
       }
 
       if (state.hasRecurringIncome && state.recurringIncome != null) {
         final recurring = state.recurringIncome!;
         anchorIncomeId = recurring.id;
-        await incomeRepo.insert(
-          RecurringIncomesCompanion.insert(
-            id: recurring.id,
-            name: recurring.name.trim(),
-            nextPaydayDate: recurring.nextPaydayDate!,
-            frequency: Value(enumToDb(recurring.frequency)),
-            expectedAmount:
-                recurring.expectedAmount != null
-                    ? Value(recurring.expectedAmount)
-                    : const Value.absent(),
-            paydayBehavior: Value(enumToDb(recurring.paydayBehavior)),
-            isPaydayAnchor: Value(state.paydayAnchorDraftId == recurring.id),
-            reminderEnabled: Value(
-              state.notificationPreference == NotificationPreference.enable &&
-                  recurring.reminderEnabled,
-            ),
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          ),
+        final existingIncomes = await incomeRepo.getAll();
+        final alreadyExists = existingIncomes.any(
+          (income) => income.id == recurring.id,
         );
+        if (!alreadyExists) {
+          await incomeRepo.insert(
+            RecurringIncomesCompanion.insert(
+              id: recurring.id,
+              name: recurring.name.trim(),
+              nextPaydayDate: recurring.nextPaydayDate!,
+              frequency: Value(enumToDb(recurring.frequency)),
+              expectedAmount:
+                  recurring.expectedAmount != null
+                      ? Value(recurring.expectedAmount)
+                      : const Value.absent(),
+              paydayBehavior: Value(enumToDb(recurring.paydayBehavior)),
+              isPaydayAnchor: Value(state.paydayAnchorDraftId == recurring.id),
+              reminderEnabled: Value(
+                state.notificationPreference == NotificationPreference.enable &&
+                    recurring.reminderEnabled,
+              ),
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+        }
       }
 
       if (state.hasOneTimeIncome && state.oneTimeIncomeAmount != null) {
-        await ledgerService.addIncome(
-          amount: state.oneTimeIncomeAmount!,
-          date: state.oneTimeIncomeDate!,
-          postingType: IncomePostingType.manualOneTime,
-          source:
-              state.oneTimeIncomeSource.trim().isEmpty
-                  ? null
-                  : state.oneTimeIncomeSource.trim(),
-          note: 'Added during onboarding',
+        final hasOneTimeIncome = existingTransactions.any(
+          (transaction) =>
+              transaction.type == enumToDb(TransactionType.income) &&
+              transaction.note == 'Added during onboarding' &&
+              transaction.amount == state.oneTimeIncomeAmount &&
+              transaction.date.year == state.oneTimeIncomeDate!.year &&
+              transaction.date.month == state.oneTimeIncomeDate!.month &&
+              transaction.date.day == state.oneTimeIncomeDate!.day,
         );
+        if (!hasOneTimeIncome) {
+          await ledgerService.addIncome(
+            amount: state.oneTimeIncomeAmount!,
+            date: state.oneTimeIncomeDate!,
+            postingType: IncomePostingType.manualOneTime,
+            source:
+                state.oneTimeIncomeSource.trim().isEmpty
+                    ? null
+                    : state.oneTimeIncomeSource.trim(),
+            note: 'Added during onboarding',
+          );
+        }
       }
 
+      final existingBills = await billsRepo.getAll();
       for (final bill in state.billDrafts) {
-        await billsRepo.insert(
-          BillsCompanion.insert(
-            id: bill.id,
-            name: bill.name,
-            amount: bill.amount,
-            frequency: Value(enumToDb(bill.frequency)),
-            nextDueDate: bill.nextDueDate,
-            categoryId: 'cat_other',
-            autopay: const Value(true),
-            reminderEnabled: Value(
-              state.notificationPreference == NotificationPreference.enable,
+        final billExists = existingBills.any((existing) {
+          final sameDate =
+              existing.nextDueDate.year == bill.nextDueDate.year &&
+              existing.nextDueDate.month == bill.nextDueDate.month &&
+              existing.nextDueDate.day == bill.nextDueDate.day;
+          return existing.id == bill.id ||
+              (existing.name.trim().toLowerCase() ==
+                      bill.name.trim().toLowerCase() &&
+                  existing.amount == bill.amount &&
+                  existing.frequency == enumToDb(bill.frequency) &&
+                  sameDate);
+        });
+        if (!billExists) {
+          await billsRepo.insert(
+            BillsCompanion.insert(
+              id: bill.id,
+              name: bill.name,
+              amount: bill.amount,
+              frequency: Value(enumToDb(bill.frequency)),
+              nextDueDate: bill.nextDueDate,
+              categoryId: 'cat_other',
+              autopay: const Value(true),
+              reminderEnabled: Value(
+                state.notificationPreference == NotificationPreference.enable,
+              ),
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
             ),
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          ),
-        );
+          );
+        }
       }
 
       final defaultMode =
@@ -737,6 +798,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
         ),
       );
 
+      _completionSucceeded = true;
       state = state.copyWith(isSubmitting: false, error: () => null);
       return true;
     } catch (e) {

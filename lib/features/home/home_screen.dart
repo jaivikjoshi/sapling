@@ -643,7 +643,22 @@ class _GoalProgressSection extends ConsumerWidget {
         ref.watch(goalInsightsProvider).valueOrNull ??
         const <String, GoalInsight>{};
 
-    final ordered = [...goals];
+    final ordered = <Goal>[];
+    final seenGoalKeys = <String>{};
+    for (final goal in goals) {
+      final key = [
+        goal.name.trim().toLowerCase(),
+        goal.targetAmount.toStringAsFixed(2),
+        DateTime(
+          goal.targetDate.year,
+          goal.targetDate.month,
+          goal.targetDate.day,
+        ).toIso8601String(),
+      ].join('|');
+      if (seenGoalKeys.add(key)) {
+        ordered.add(goal);
+      }
+    }
     if (settings?.primaryGoalId != null) {
       ordered.sort((a, b) {
         final aRank = a.id == settings!.primaryGoalId ? 0 : 1;

@@ -148,9 +148,10 @@ class AllowanceEngine implements AllowanceEngineForStreak {
 
     // Transactions within this cycle (for today-spend calc)
     final allTxns = await _txnRepo.getByDateRange(cycle.start, cycle.end);
+    final postedTxns = allTxns.where((t) => !t.date.isAfter(now)).toList();
     final incomeTxns = allTxns.where((t) => t.type == 'income').toList();
     final billPaidTxns =
-        allTxns.where((t) => t.linkedBillId != null).toList();
+        postedTxns.where((t) => t.linkedBillId != null).toList();
 
     final schedules = await _incomeRepo.getAll();
     final bills = await _billsRepo.getAll();
@@ -160,17 +161,26 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     // but those are already reflected in `balance`. Subtract confirmed
     // amounts so we only count truly future income/bills.
     final grossProjectedIncome = ProjectionService.projectIncome(
-      start: todayStart, end: cycle.end,
-      confirmedIncome: incomeTxns, schedules: schedules,
+      start: todayStart,
+      end: cycle.end,
+      confirmedIncome: incomeTxns,
+      schedules: schedules,
     );
     final confirmedIncomeInWindow = incomeTxns
-        .where((t) => !t.date.isBefore(todayStart) && t.date.isBefore(cycle.end))
+        .where(
+          (t) =>
+              !t.date.isAfter(now) &&
+              !t.date.isBefore(todayStart) &&
+              t.date.isBefore(cycle.end),
+        )
         .fold<double>(0, (sum, t) => sum + t.amount);
     final futureIncome = grossProjectedIncome - confirmedIncomeInWindow;
 
     final grossProjectedBills = ProjectionService.projectBills(
-      start: todayStart, end: cycle.end,
-      bills: bills, paidBillTransactions: billPaidTxns,
+      start: todayStart,
+      end: cycle.end,
+      bills: bills,
+      paidBillTransactions: billPaidTxns,
     );
     // Bills that are already paid are excluded by ProjectionService,
     // so grossProjectedBills = future-only bills already. No dedup needed.
@@ -179,18 +189,14 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     // ── Core formula ──
     final daysLeft = cycle.daysLeft;
     final spendablePool = balance + futureIncome - futureBills;
-    final dailyAllowance = spendablePool > 0
-        ? spendablePool / daysLeft
-        : 0.0;
+    final dailyAllowance = spendablePool > 0 ? spendablePool / daysLeft : 0.0;
 
     // ── Today's spend ──
-    final todaySpend = _computeTodaySpend(allTxns, todayStart);
+    final todaySpend = _computeTodaySpend(postedTxns, todayStart);
     final remainingToday = dailyAllowance - todaySpend;
 
     // ── Behind amount ──
-    final behindAmount = spendablePool < 0
-        ? spendablePool.abs()
-        : 0.0;
+    final behindAmount = spendablePool < 0 ? spendablePool.abs() : 0.0;
 
     return PaycheckAllowanceResult(
       balance: balance,
@@ -233,16 +239,23 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final targetDay = DateTime(
-        goal.targetDate.year, goal.targetDate.month, goal.targetDate.day);
+      goal.targetDate.year,
+      goal.targetDate.month,
+      goal.targetDate.day,
+    );
     final horizon = targetDay.difference(todayStart).inDays + 1;
     final daysToGoal = horizon < 1 ? 1 : horizon;
     final horizonEnd = DateTime(
-        todayStart.year, todayStart.month, todayStart.day + daysToGoal);
+      todayStart.year,
+      todayStart.month,
+      todayStart.day + daysToGoal,
+    );
 
     // Cycle (for UI display)
     final anchor = await _incomeRepo.getAnchor();
     final cycle = CycleWindowCalculator.compute(
-      resetType: settings.rolloverResetType, now: now,
+      resetType: settings.rolloverResetType,
+      now: now,
       anchorFrequency: anchor?.frequency,
       anchorNextPaydayDate: anchor?.nextPaydayDate,
     );
@@ -251,10 +264,15 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     final balance = await _txnRepo.computeBalance();
 
     // Transactions (for today-spend calc)
-    final allTxns = await _txnRepo.getByDateRange(cycle.start, cycle.end);
-    final incomeTxns = allTxns.where((t) => t.type == 'income').toList();
+    final cycleTxns = await _txnRepo.getByDateRange(cycle.start, cycle.end);
+    final postedCycleTxns =
+        cycleTxns.where((t) => !t.date.isAfter(now)).toList();
+    final horizonTxns = await _txnRepo.getByDateRange(todayStart, horizonEnd);
+    final incomeTxns = horizonTxns.where((t) => t.type == 'income').toList();
     final billPaidTxns =
-        allTxns.where((t) => t.linkedBillId != null).toList();
+        horizonTxns
+            .where((t) => t.linkedBillId != null && !t.date.isAfter(now))
+            .toList();
 
     final schedules = await _incomeRepo.getAll();
     final bills = await _billsRepo.getAll();
@@ -262,31 +280,37 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     // Project income & bills to goal date.
     // Subtract confirmed income that's already in balance.
     final grossProjectedIncome = ProjectionService.projectIncome(
-      start: todayStart, end: horizonEnd,
-      confirmedIncome: incomeTxns, schedules: schedules,
+      start: todayStart,
+      end: horizonEnd,
+      confirmedIncome: incomeTxns,
+      schedules: schedules,
     );
     final confirmedIncomeInWindow = incomeTxns
-        .where((t) => !t.date.isBefore(todayStart) && t.date.isBefore(horizonEnd))
+        .where(
+          (t) =>
+              !t.date.isAfter(now) &&
+              !t.date.isBefore(todayStart) &&
+              t.date.isBefore(horizonEnd),
+        )
         .fold<double>(0, (sum, t) => sum + t.amount);
     final futureIncome = grossProjectedIncome - confirmedIncomeInWindow;
 
     final futureBills = ProjectionService.projectBills(
-      start: todayStart, end: horizonEnd,
-      bills: bills, paidBillTransactions: billPaidTxns,
+      start: todayStart,
+      end: horizonEnd,
+      bills: bills,
+      paidBillTransactions: billPaidTxns,
     );
 
     // ── Core formula ──
     // Everything coming in, minus everything going out, minus what you
     // need to have saved = what you can freely spend over the whole horizon
     final goalTarget = goal.targetAmount;
-    final spendablePool =
-        balance + futureIncome - futureBills - goalTarget;
-    final dailyAllowance = spendablePool > 0
-        ? spendablePool / daysToGoal
-        : 0.0;
+    final spendablePool = balance + futureIncome - futureBills - goalTarget;
+    final dailyAllowance = spendablePool > 0 ? spendablePool / daysToGoal : 0.0;
 
     // ── Today's spend ──
-    final todaySpend = _computeTodaySpend(allTxns, todayStart);
+    final todaySpend = _computeTodaySpend(postedCycleTxns, todayStart);
     final remainingToday = dailyAllowance - todaySpend;
 
     // ── Feasibility check ──
@@ -294,18 +318,20 @@ class AllowanceEngine implements AllowanceEngineForStreak {
       allTxns: await _txnRepo.getAll(),
       windowDays: settings.spendingBaselineDays,
     );
-    final style = enumFromDb<SavingStyle>(
-        goal.savingStyle, SavingStyle.values);
+    final style = enumFromDb<SavingStyle>(goal.savingStyle, SavingStyle.values);
     final feasibility = GoalFeasibilityService.compute(
-      goal: goal, balance: balance,
-      projectedIncome: futureIncome, projectedBills: futureBills,
+      goal: goal,
+      balance: balance,
+      projectedIncome: futureIncome,
+      projectedBills: futureBills,
       dailyVariableSpend: baselineDailySpend,
       savingStyleMultiplier: style.multiplier,
     );
 
-    final behindAmount = spendablePool < 0
-        ? spendablePool.abs()
-        : (!feasibility.isFeasible ? feasibility.deficit : 0.0);
+    final behindAmount =
+        spendablePool < 0
+            ? spendablePool.abs()
+            : (!feasibility.isFeasible ? feasibility.deficit : 0.0);
 
     return GoalAllowanceResult(
       balance: balance,
@@ -357,9 +383,7 @@ class AllowanceEngine implements AllowanceEngineForStreak {
     return windowDays > 0 ? varSum / windowDays : 0;
   }
 
-  Future<double> computeBehindAmount({
-    required UserSettings settings,
-  }) async {
+  Future<double> computeBehindAmount({required UserSettings settings}) async {
     final result = await computePaycheckMode(settings: settings);
     return result.behindAmount;
   }
@@ -374,16 +398,15 @@ class AllowanceEngine implements AllowanceEngineForStreak {
   ) async {
     final dayStart = DateTime(date.year, date.month, date.day);
     final monthStart = DateTime(date.year, date.month, 1);
-    final monthEnd = date.month == 12
-        ? DateTime(date.year + 1, 1, 1)
-        : DateTime(date.year, date.month + 1, 1);
+    final monthEnd =
+        date.month == 12
+            ? DateTime(date.year + 1, 1, 1)
+            : DateTime(date.year, date.month + 1, 1);
 
-    final balanceAtMonthStart =
-        await _txnRepo.computeBalanceUpTo(monthStart);
+    final balanceAtMonthStart = await _txnRepo.computeBalanceUpTo(monthStart);
     final allTxns = await _txnRepo.getByDateRange(monthStart, monthEnd);
     final incomeTxns = allTxns.where((t) => t.type == 'income').toList();
-    final billPaidTxns =
-        allTxns.where((t) => t.linkedBillId != null).toList();
+    final billPaidTxns = allTxns.where((t) => t.linkedBillId != null).toList();
 
     final schedules = await _incomeRepo.getAll();
     final bills = await _billsRepo.getAll();
@@ -403,9 +426,8 @@ class AllowanceEngine implements AllowanceEngineForStreak {
 
     final available = balanceAtMonthStart + projectedIncome - projectedBills;
     final daysInMonth = monthEnd.difference(monthStart).inDays;
-    final dailyBase = daysInMonth > 0 && available > 0
-        ? available / daysInMonth
-        : 0.0;
+    final dailyBase =
+        daysInMonth > 0 && available > 0 ? available / daysInMonth : 0.0;
 
     double spendOnDay = 0;
     for (final t in allTxns) {

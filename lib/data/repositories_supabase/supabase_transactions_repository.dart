@@ -45,24 +45,26 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
 
   @override
   Future<Transaction> getById(String id) async {
-    final res = await _client
-        .from('transactions')
-        .select()
-        .eq('id', id)
-        .eq('user_id', _userId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from('transactions')
+            .select()
+            .eq('id', id)
+            .eq('user_id', _userId)
+            .maybeSingle();
     if (res == null) throw Exception('Transaction not found: $id');
     return transactionFromSupabase(res);
   }
 
   @override
   Future<Transaction?> getByIdOrNull(String id) async {
-    final res = await _client
-        .from('transactions')
-        .select()
-        .eq('id', id)
-        .eq('user_id', _userId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from('transactions')
+            .select()
+            .eq('id', id)
+            .eq('user_id', _userId)
+            .maybeSingle();
     if (res == null) return null;
     return transactionFromSupabase(res);
   }
@@ -143,7 +145,8 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
     final res = await _client
         .from('transactions')
         .select()
-        .eq('user_id', _userId);
+        .eq('user_id', _userId)
+        .lte('date', DateTime.now().toIso8601String());
     return _computeBalanceFromRows((res as List).cast<Map<String, dynamic>>());
   }
 

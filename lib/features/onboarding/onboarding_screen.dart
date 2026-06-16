@@ -87,7 +87,7 @@ class _WelcomeStepState extends ConsumerState<_WelcomeStep> {
             const SizedBox(height: 24),
             _PremiumField(
               label: 'Your name',
-              hint: 'Jaivik',
+              hint: 'First name',
               controller: _nameCtrl,
               textCapitalization: TextCapitalization.words,
               onChanged: controller.setName,
@@ -736,6 +736,7 @@ class _BillsStepState extends ConsumerState<_BillsStep> {
   late final TextEditingController _amountCtrl;
   BillFrequency _frequency = BillFrequency.monthly;
   DateTime? _nextDueDate;
+  String? _billError;
 
   @override
   void initState() {
@@ -751,11 +752,20 @@ class _BillsStepState extends ConsumerState<_BillsStep> {
     super.dispose();
   }
 
-  void _addBill(OnboardingController controller) {
+  bool get _hasDraftInput =>
+      _nameCtrl.text.trim().isNotEmpty ||
+      _amountCtrl.text.trim().isNotEmpty ||
+      _nextDueDate != null;
+
+  bool _addBill(OnboardingController controller) {
     final name = _nameCtrl.text.trim();
     final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '').trim());
     if (name.isEmpty || amount == null || amount <= 0 || _nextDueDate == null) {
-      return;
+      setState(() {
+        _billError =
+            'Add a bill name, positive amount, and due date before saving it.';
+      });
+      return false;
     }
     controller.addBillDraft(
       name: name,
@@ -768,7 +778,9 @@ class _BillsStepState extends ConsumerState<_BillsStep> {
     setState(() {
       _frequency = BillFrequency.monthly;
       _nextDueDate = null;
+      _billError = null;
     });
+    return true;
   }
 
   @override
@@ -780,9 +792,12 @@ class _BillsStepState extends ConsumerState<_BillsStep> {
       step: OnboardingStep.bills,
       title: 'Add bills you already know about',
       subtitle:
-          'This is optional, but even one or two bills makes Home feel smarter right away.',
+          'Add as many recurring bills as you want. Each saved bill repeats on its schedule.',
       onBack: controller.back,
-      onNext: () => controller.next(),
+      onNext: () {
+        if (_hasDraftInput && !_addBill(controller)) return;
+        controller.next();
+      },
       secondaryLabel: 'Skip for now',
       onSecondary: controller.skipBills,
       child: SingleChildScrollView(
@@ -790,7 +805,7 @@ class _BillsStepState extends ConsumerState<_BillsStep> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _PremiumField(
-              label: 'Bill name',
+              label: 'Bill ${state.billDrafts.length + 1} name',
               hint: 'Rent, phone, internet...',
               controller: _nameCtrl,
             ),
@@ -861,11 +876,23 @@ class _BillsStepState extends ConsumerState<_BillsStep> {
                   ),
                 ),
                 child: const Text(
-                  'Add bill',
+                  'Add bill to list',
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
             ),
+            if (_billError != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                _billError!,
+                style: const TextStyle(
+                  color: Color(0xFFF2B6AE),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  height: 1.35,
+                ),
+              ),
+            ],
             if (state.billDrafts.isNotEmpty) ...[
               const SizedBox(height: 20),
               const Text(
@@ -1015,7 +1042,7 @@ class _RecapStep extends ConsumerWidget {
       onNext: () async {
         final success = await controller.complete();
         if (success && context.mounted) {
-          context.go('/');
+          context.go('/home');
         }
       },
       nextLabel: 'Open Leko',
@@ -1430,31 +1457,47 @@ class _AmountEntryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: onChanged,
-            style: const TextStyle(
-              color: _OnboardingPalette.textPrimary,
-              fontSize: 34,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -1.4,
-            ),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(
-                color: _OnboardingPalette.textMuted,
-                fontSize: 34,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -1.4,
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFF0C181A),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: _OnboardingPalette.tealSoft.withValues(alpha: 0.22),
               ),
-              prefixText: '\$ ',
-              prefixStyle: const TextStyle(
+            ),
+            child: TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              cursorColor: _OnboardingPalette.tealSoft,
+              onChanged: onChanged,
+              style: const TextStyle(
                 color: _OnboardingPalette.textPrimary,
                 fontSize: 34,
                 fontWeight: FontWeight.w700,
+                letterSpacing: 0,
               ),
-              border: InputBorder.none,
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(
+                  color: Color(0xFF94A8A5),
+                  fontSize: 34,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+                prefixText: '\$ ',
+                prefixStyle: const TextStyle(
+                  color: _OnboardingPalette.textPrimary,
+                  fontSize: 34,
+                  fontWeight: FontWeight.w700,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
+                ),
+                border: InputBorder.none,
+              ),
             ),
           ),
         ],
