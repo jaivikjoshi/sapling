@@ -1,11 +1,13 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/utils/enum_serialization.dart';
-import '../../data/integrations/http_bank_provider.dart';
 import '../../data/db/leko_database.dart';
+import '../../data/integrations/http_bank_provider.dart';
+import '../../data/integrations/platform_notification_provider.dart';
 import '../../domain/integrations/product_foundations.dart';
 import '../../domain/integrations/transaction_importer.dart';
 import '../../domain/models/enums.dart';
@@ -34,6 +36,9 @@ final bankProviderProvider = Provider<BankProvider>((ref) {
 });
 
 final notificationImportProvider = Provider<NotificationProvider>((ref) {
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    return const PlatformNotificationProvider();
+  }
   return const UnsupportedNotificationProvider();
 });
 
