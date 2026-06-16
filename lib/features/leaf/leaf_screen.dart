@@ -69,7 +69,8 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
     try {
       final attachment = await _loadAttachmentFromSource(source);
       if (attachment == null || !mounted) return;
-      if (attachment.sizeBytes != null && attachment.sizeBytes! > 6 * 1024 * 1024) {
+      if (attachment.sizeBytes != null &&
+          attachment.sizeBytes! > 6 * 1024 * 1024) {
         _showSnack('File is too large. Pick something under 6 MB.');
         return;
       }
@@ -89,9 +90,10 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
       case _AttachmentSource.photo:
         final picker = ImagePicker();
         final picked = await picker.pickImage(
-          source: source == _AttachmentSource.camera
-              ? ImageSource.camera
-              : ImageSource.gallery,
+          source:
+              source == _AttachmentSource.camera
+                  ? ImageSource.camera
+                  : ImageSource.gallery,
           imageQuality: 82,
           maxWidth: 2048,
         );
@@ -111,10 +113,9 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
         );
         final file = result?.files.first;
         if (file == null) return null;
-        final bytes = file.bytes ??
-            (file.path != null
-                ? await File(file.path!).readAsBytes()
-                : null);
+        final bytes =
+            file.bytes ??
+            (file.path != null ? await File(file.path!).readAsBytes() : null);
         if (bytes == null) return null;
         return LeafAttachment(
           name: file.name,
@@ -203,36 +204,31 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, i) {
-                            final m = convo.messages[i];
-                            return _ChatBubble(
-                              message: m,
-                              isPendingAction: identical(
-                                convo.pendingAction,
-                                m.action,
-                              ),
-                              onSelectOption: (option) {
-                                ref
-                                    .read(leafConversationProvider.notifier)
-                                    .selectClarificationOption(
-                                      source: m,
-                                      option: option,
-                                    );
-                                _scrollToEnd();
-                              },
-                            );
-                          },
-                          childCount: convo.messages.length,
-                        ),
+                        delegate: SliverChildBuilderDelegate((context, i) {
+                          final m = convo.messages[i];
+                          return _ChatBubble(
+                            message: m,
+                            isPendingAction: identical(
+                              convo.pendingAction,
+                              m.action,
+                            ),
+                            onSelectOption: (option) {
+                              ref
+                                  .read(leafConversationProvider.notifier)
+                                  .selectClarificationOption(
+                                    source: m,
+                                    option: option,
+                                  );
+                              _scrollToEnd();
+                            },
+                          );
+                        }, childCount: convo.messages.length),
                       ),
                     ),
                     if (convo.isLoading)
                       const SliverPadding(
                         padding: EdgeInsets.symmetric(horizontal: 24),
-                        sliver: SliverToBoxAdapter(
-                          child: _LoadingBubble(),
-                        ),
+                        sliver: SliverToBoxAdapter(child: _LoadingBubble()),
                       ),
                     SliverToBoxAdapter(child: SizedBox(height: navPad + 88)),
                   ],
@@ -265,9 +261,14 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
                       .read(leafConversationProvider.notifier)
                       .removeStagedAttachmentAt(index);
                 },
-                onAttach: () => _pickAttachments(
-                  currentCount: convo.stagedAttachments.length,
-                ),
+                onAttach:
+                    () => _pickAttachments(
+                      currentCount: convo.stagedAttachments.length,
+                    ),
+                onVoice:
+                    () => _showSnack(
+                      'Voice input is coming soon. Type the same request for now.',
+                    ),
                 onSend: () {
                   final t = _composer.text;
                   final hasText = t.trim().isNotEmpty;
@@ -306,10 +307,7 @@ abstract final class _LeafPalette {
 }
 
 class _LeafHeader extends StatelessWidget {
-  const _LeafHeader({
-    required this.name,
-    required this.onNewChat,
-  });
+  const _LeafHeader({required this.name, required this.onNewChat});
 
   final String name;
   final VoidCallback onNewChat;
@@ -419,9 +417,8 @@ class _SafeToSpendCard extends StatelessWidget {
     final remaining = contextData.remainingToday;
     final daily = contextData.dailyAllowance;
     final over = remaining != null && remaining < 0;
-    final primaryValue = remaining != null
-        ? formatCurrency(remaining.abs())
-        : '—';
+    final primaryValue =
+        remaining != null ? formatCurrency(remaining.abs()) : '—';
 
     final subtitle = _safeToSpendSubtitle(contextData);
     final bill = contextData.nextBill;
@@ -521,9 +518,7 @@ class _SafeToSpendCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                over
-                    ? Icons.trending_up_rounded
-                    : Icons.trending_flat_rounded,
+                over ? Icons.trending_up_rounded : Icons.trending_flat_rounded,
                 size: 18,
                 color: over ? _LeafPalette.ember : _LeafPalette.mint,
               ),
@@ -532,9 +527,7 @@ class _SafeToSpendCard extends StatelessWidget {
                 child: Text(
                   subtitle,
                   style: TextStyle(
-                    color: over
-                        ? _LeafPalette.ember
-                        : const Color(0xFF7FE4C7),
+                    color: over ? _LeafPalette.ember : const Color(0xFF7FE4C7),
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -548,12 +541,14 @@ class _SafeToSpendCard extends StatelessWidget {
               Expanded(
                 child: _HeroMiniPanel(
                   label: 'Next bill',
-                  value: bill == null
-                      ? 'You\'re clear'
-                      : '${bill.name} · ${formatCurrency(bill.amount)}',
-                  hint: bill == null
-                      ? 'No upcoming bill'
-                      : DateFormat.MMMd().format(bill.nextDueDate),
+                  value:
+                      bill == null
+                          ? 'You\'re clear'
+                          : '${bill.name} · ${formatCurrency(bill.amount)}',
+                  hint:
+                      bill == null
+                          ? 'No upcoming bill'
+                          : DateFormat.MMMd().format(bill.nextDueDate),
                 ),
               ),
               const SizedBox(width: 10),
@@ -779,11 +774,7 @@ class _SectionLabel extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         const Expanded(
-          child: Divider(
-            color: _LeafPalette.outline,
-            thickness: 1,
-            height: 1,
-          ),
+          child: Divider(color: _LeafPalette.outline, thickness: 1, height: 1),
         ),
       ],
     );
@@ -791,10 +782,7 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _SuggestedPrompts extends StatelessWidget {
-  const _SuggestedPrompts({
-    required this.prompts,
-    required this.onTap,
-  });
+  const _SuggestedPrompts({required this.prompts, required this.onTap});
 
   final List<String> prompts;
   final void Function(String) onTap;
@@ -936,13 +924,14 @@ class _ChatBubble extends StatelessWidget {
                       bottomLeft: Radius.circular(user ? 20 : 6),
                       bottomRight: Radius.circular(user ? 6 : 20),
                     ),
-                    border: user
-                        ? null
-                        : Border.all(color: _LeafPalette.outline),
+                    border:
+                        user ? null : Border.all(color: _LeafPalette.outline),
                   ),
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Text(
                       message.text,
                       style: TextStyle(
@@ -973,10 +962,7 @@ class _ChatBubble extends StatelessWidget {
 /// option so the conversation controller can merge the `patch` into the
 /// pending action and move forward without a server round-trip.
 class _ClarificationOptions extends StatelessWidget {
-  const _ClarificationOptions({
-    required this.options,
-    required this.onTap,
-  });
+  const _ClarificationOptions({required this.options, required this.onTap});
 
   final List<LeafClarificationOption> options;
   final void Function(LeafClarificationOption) onTap;
@@ -1071,9 +1057,10 @@ class _InlineAttachmentRow extends StatelessWidget {
       children: [
         for (final attachment in attachments)
           _AttachmentPill(
-            icon: attachment.isImage
-                ? Icons.image_outlined
-                : Icons.picture_as_pdf_rounded,
+            icon:
+                attachment.isImage
+                    ? Icons.image_outlined
+                    : Icons.picture_as_pdf_rounded,
             label: attachment.name,
             tone: _AttachmentPillTone.onNavy,
           ),
@@ -1090,6 +1077,7 @@ class _ComposerBar extends StatelessWidget {
     required this.onSend,
     required this.attachments,
     required this.onAttach,
+    required this.onVoice,
     required this.onRemoveAttachment,
   });
 
@@ -1099,6 +1087,7 @@ class _ComposerBar extends StatelessWidget {
   final VoidCallback onSend;
   final List<LeafAttachment> attachments;
   final VoidCallback onAttach;
+  final VoidCallback onVoice;
   final void Function(int index) onRemoveAttachment;
 
   @override
@@ -1151,6 +1140,8 @@ class _ComposerBar extends StatelessWidget {
                       enabled: attachments.length < 3 && !isLoading,
                       onTap: onAttach,
                     ),
+                    const SizedBox(width: 4),
+                    _VoiceButton(enabled: !isLoading, onTap: onVoice),
                     const SizedBox(width: 4),
                     Expanded(
                       child: TextField(
@@ -1226,6 +1217,47 @@ class _AttachButton extends StatelessWidget {
   }
 }
 
+class _VoiceButton extends StatelessWidget {
+  const _VoiceButton({required this.enabled, required this.onTap});
+
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Tooltip(
+        message: 'Voice input',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: enabled ? onTap : null,
+            borderRadius: BorderRadius.circular(999),
+            child: Ink(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: enabled ? Colors.white : const Color(0xFFF1F4FA),
+                shape: BoxShape.circle,
+                border: Border.all(color: _LeafPalette.outline),
+              ),
+              child: Icon(
+                Icons.mic_none_rounded,
+                size: 18,
+                color:
+                    enabled
+                        ? _LeafPalette.textSecondary
+                        : _LeafPalette.textMuted,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _StagedAttachmentRow extends StatelessWidget {
   const _StagedAttachmentRow({
     required this.attachments,
@@ -1247,9 +1279,10 @@ class _StagedAttachmentRow extends StatelessWidget {
         itemBuilder: (context, i) {
           final attachment = attachments[i];
           return _AttachmentPill(
-            icon: attachment.isImage
-                ? Icons.image_outlined
-                : Icons.picture_as_pdf_rounded,
+            icon:
+                attachment.isImage
+                    ? Icons.image_outlined
+                    : Icons.picture_as_pdf_rounded,
             label: attachment.name,
             tone: _AttachmentPillTone.surface,
             onRemove: () => onRemove(i),
@@ -1278,10 +1311,10 @@ class _AttachmentPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final onNavy = tone == _AttachmentPillTone.onNavy;
-    final background = onNavy ? Colors.white.withValues(alpha: 0.14) : Colors.white;
-    final border = onNavy
-        ? Colors.white.withValues(alpha: 0.22)
-        : _LeafPalette.outline;
+    final background =
+        onNavy ? Colors.white.withValues(alpha: 0.14) : Colors.white;
+    final border =
+        onNavy ? Colors.white.withValues(alpha: 0.22) : _LeafPalette.outline;
     final textColor = onNavy ? Colors.white : _LeafPalette.textPrimary;
     final iconColor = onNavy ? Colors.white : _LeafPalette.mint;
     return ConstrainedBox(
@@ -1409,11 +1442,12 @@ class _AttachmentSourceTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          border: isLast
-              ? null
-              : const Border(
-                  bottom: BorderSide(color: _LeafPalette.outline, width: 1),
-                ),
+          border:
+              isLast
+                  ? null
+                  : const Border(
+                    bottom: BorderSide(color: _LeafPalette.outline, width: 1),
+                  ),
         ),
         child: Row(
           children: [
@@ -1470,20 +1504,20 @@ class _SendButton extends StatelessWidget {
           child: SizedBox(
             width: 40,
             height: 40,
-            child: isLoading
-                ? const Padding(
-                    padding: EdgeInsets.all(11),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.white),
+            child:
+                isLoading
+                    ? const Padding(
+                      padding: EdgeInsets.all(11),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                    : const Icon(
+                      Icons.arrow_upward_rounded,
+                      color: Colors.white,
+                      size: 20,
                     ),
-                  )
-                : const Icon(
-                    Icons.arrow_upward_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
           ),
         ),
       ),
@@ -1550,8 +1584,9 @@ class _PendingActionBar extends StatelessWidget {
           const SizedBox(width: 12),
           TextButton(
             onPressed: onCancel,
-            style:
-                TextButton.styleFrom(foregroundColor: _LeafPalette.textSecondary),
+            style: TextButton.styleFrom(
+              foregroundColor: _LeafPalette.textSecondary,
+            ),
             child: const Text('Cancel'),
           ),
           const SizedBox(width: 8),
@@ -1596,8 +1631,7 @@ class _LoadingBubble extends StatelessWidget {
                 height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(_LeafPalette.mint),
+                  valueColor: AlwaysStoppedAnimation<Color>(_LeafPalette.mint),
                 ),
               ),
               SizedBox(width: 10),
@@ -1634,9 +1668,10 @@ class _ActionPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isError
-        ? _LeafPalette.ember
-        : success == true
+    final accent =
+        isError
+            ? _LeafPalette.ember
+            : success == true
             ? _LeafPalette.mint
             : _LeafPalette.navy;
     return ConstrainedBox(
@@ -1663,8 +1698,10 @@ class _ActionPreviewCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(999),
@@ -1673,10 +1710,10 @@ class _ActionPreviewCard extends StatelessWidget {
                     isError
                         ? 'Needs attention'
                         : success == true
-                            ? 'Completed'
-                            : isPending
-                                ? 'Awaiting confirmation'
-                                : 'Preview',
+                        ? 'Completed'
+                        : isPending
+                        ? 'Awaiting confirmation'
+                        : 'Preview',
                     style: TextStyle(
                       color: accent,
                       fontSize: 11,

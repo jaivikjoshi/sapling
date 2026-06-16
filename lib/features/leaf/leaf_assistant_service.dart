@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../data/db/leko_database.dart';
 import '../../core/utils/currency_formatter.dart';
 import 'leaf_assistant_responses.dart';
+import 'leaf_clarification_options.dart';
 import 'leaf_context.dart';
 import 'leaf_models.dart';
 
@@ -32,10 +33,11 @@ class LeafHttpAssistantService implements LeafAssistantService {
   LeafHttpAssistantService({
     required http.Client client,
     required String baseUrl,
-  })  : _client = client,
-        _baseUrl = baseUrl.endsWith('/')
-            ? baseUrl.substring(0, baseUrl.length - 1)
-            : baseUrl;
+  }) : _client = client,
+       _baseUrl =
+           baseUrl.endsWith('/')
+               ? baseUrl.substring(0, baseUrl.length - 1)
+               : baseUrl;
 
   final http.Client _client;
   final String _baseUrl;
@@ -206,23 +208,27 @@ List<LeafEntityRef> _billsToRefs(List<Bill> bills) {
     ..sort((a, b) => a.nextDueDate.compareTo(b.nextDueDate));
   return sorted
       .take(12)
-      .map((bill) => LeafEntityRef(
-            id: bill.id,
-            name: bill.name,
-            amount: bill.amount,
-            dueDate: bill.nextDueDate.toIso8601String().split('T').first,
-          ))
+      .map(
+        (bill) => LeafEntityRef(
+          id: bill.id,
+          name: bill.name,
+          amount: bill.amount,
+          dueDate: bill.nextDueDate.toIso8601String().split('T').first,
+        ),
+      )
       .toList();
 }
 
 List<LeafEntityRef> _goalsToRefs(List<Goal> goals) {
   return goals
       .take(12)
-      .map((goal) => LeafEntityRef(
-            id: goal.id,
-            name: goal.name,
-            amount: goal.targetAmount,
-          ))
+      .map(
+        (goal) => LeafEntityRef(
+          id: goal.id,
+          name: goal.name,
+          amount: goal.targetAmount,
+        ),
+      )
       .toList();
 }
 
@@ -243,7 +249,7 @@ LeafAssistantEnvelope? _tryBuildWritePreview({
   if (_looksLikeExpense(normalized)) {
     final amount = _extractAmount(message);
     final date = _extractDate(message) ?? DateTime.now();
-    final matched = _extractCategory(message, categories);
+    final matched = _extractExplicitCategory(message, categories);
     final merchant = _extractMerchant(message);
     final missing = <String>[
       if (amount == null) 'amount',
@@ -273,21 +279,11 @@ LeafAssistantEnvelope? _tryBuildWritePreview({
       );
     }
     if (matched == null) {
-      final shortlist = _shortlistCategories(normalized, categories);
       return LeafAssistantEnvelope.clarification(
-        'Which category fits that one?',
+        'What category should I use?',
         action: action,
         clarificationField: 'category_id',
-        clarificationOptions: shortlist
-            .map((category) => LeafClarificationOption(
-                  id: category.id,
-                  label: category.name,
-                  patch: {
-                    'category_id': category.id,
-                    'category_name': category.name,
-                  },
-                ))
-            .toList(),
+        clarificationOptions: standardExpenseCategoryOptions(categories),
       );
     }
     return LeafAssistantEnvelope.preview(
@@ -355,18 +351,21 @@ LeafAssistantEnvelope? _tryBuildWritePreview({
         'Which bill do you mean?',
         action: action,
         clarificationField: 'bill_id',
-        clarificationOptions: shortlist
-            .map((candidate) => LeafClarificationOption(
-                  id: candidate.id,
-                  label: candidate.name,
-                  subtitle: formatCurrency(candidate.amount),
-                  patch: {
-                    'bill_id': candidate.id,
-                    'bill_name': candidate.name,
-                    'amount': candidate.amount,
-                  },
-                ))
-            .toList(),
+        clarificationOptions:
+            shortlist
+                .map(
+                  (candidate) => LeafClarificationOption(
+                    id: candidate.id,
+                    label: candidate.name,
+                    subtitle: formatCurrency(candidate.amount),
+                    patch: {
+                      'bill_id': candidate.id,
+                      'bill_name': candidate.name,
+                      'amount': candidate.amount,
+                    },
+                  ),
+                )
+                .toList(),
       );
     }
     return LeafAssistantEnvelope.preview(
@@ -383,9 +382,8 @@ LeafAssistantEnvelope? _tryBuildWritePreview({
     final goalName = _extractGoalName(message);
     final action = LeafPendingAction(
       intent: LeafIntent.createGoal,
-      confidence: goalName != null && amount != null && targetDate != null
-          ? 0.9
-          : 0.66,
+      confidence:
+          goalName != null && amount != null && targetDate != null ? 0.9 : 0.66,
       requiresConfirmation: true,
       isReadOnly: false,
       missingFields: [
@@ -420,15 +418,19 @@ LeafAssistantEnvelope? _tryBuildWritePreview({
 }
 
 bool _looksLikeExpense(String input) {
-  return RegExp(r'\b(add|log|track|spent|expense|bought|paid)\b').hasMatch(input) &&
+  return RegExp(
+        r'\b(add|log|track|spent|expense|bought|paid)\b',
+      ).hasMatch(input) &&
       RegExp(r'(\$|\b\d)').hasMatch(input) &&
-      !RegExp(r'\b(goal|save|saving|income|paycheck|salary|bill)\b')
-          .hasMatch(input);
+      !RegExp(
+        r'\b(goal|save|saving|income|paycheck|salary|bill)\b',
+      ).hasMatch(input);
 }
 
 bool _looksLikeIncome(String input) {
-  return RegExp(r'\b(add|log|received|got|income|paycheck|salary|deposit)\b')
-          .hasMatch(input) &&
+  return RegExp(
+        r'\b(add|log|received|got|income|paycheck|salary|deposit)\b',
+      ).hasMatch(input) &&
       RegExp(r'(\$|\b\d)').hasMatch(input);
 }
 
@@ -438,8 +440,9 @@ bool _looksLikeBillPayment(String input) {
 }
 
 bool _looksLikeGoal(String input) {
-  return RegExp(r'\b(goal|save for|saving for|start goal|create goal)\b')
-      .hasMatch(input);
+  return RegExp(
+    r'\b(goal|save for|saving for|start goal|create goal)\b',
+  ).hasMatch(input);
 }
 
 double? _extractAmount(String raw) {
@@ -493,7 +496,7 @@ int? _monthNumber(String raw) {
   };
 }
 
-Category? _extractCategory(String raw, List<Category> categories) {
+Category? _extractExplicitCategory(String raw, List<Category> categories) {
   final lower = raw.toLowerCase();
   for (final category in categories) {
     final name = category.name.toLowerCase();
@@ -503,67 +506,7 @@ Category? _extractCategory(String raw, List<Category> categories) {
       return category;
     }
   }
-  if (lower.contains('dinner') ||
-      lower.contains('lunch') ||
-      lower.contains('coffee') ||
-      lower.contains('restaurant')) {
-    return _matchCategoryByHint(categories, 'Dining');
-  }
-  if (lower.contains('uber') ||
-      lower.contains('train') ||
-      lower.contains('bus') ||
-      lower.contains('gas')) {
-    return _matchCategoryByHint(categories, 'Transport');
-  }
-  if (lower.contains('grocery') || lower.contains('whole foods')) {
-    return _matchCategoryByHint(categories, 'Groceries');
-  }
-  if (lower.contains('spotify') || lower.contains('netflix')) {
-    return _matchCategoryByHint(categories, 'Subscriptions');
-  }
   return null;
-}
-
-Category? _matchCategoryByHint(List<Category> categories, String query) {
-  final lowered = query.toLowerCase();
-  for (final category in categories) {
-    if (category.name.toLowerCase().contains(lowered)) return category;
-  }
-  return null;
-}
-
-/// Pick the 6 most relevant categories to show as clarification options.
-/// Heuristic-matched categories bubble to the top, then a stable alphabetical
-/// order fills the rest so the user gets a predictable shortlist.
-List<Category> _shortlistCategories(
-  String normalized,
-  List<Category> categories,
-) {
-  if (categories.isEmpty) return const [];
-  final preferredHints = <String>[
-    if (RegExp(r'dinner|lunch|coffee|restaurant|brunch').hasMatch(normalized))
-      'dining',
-    if (RegExp(r'grocer|whole foods|market').hasMatch(normalized)) 'grocer',
-    if (RegExp(r'uber|lyft|train|bus|gas|fuel|transit').hasMatch(normalized))
-      'transport',
-    if (RegExp(r'spotify|netflix|subscription').hasMatch(normalized)) 'subscription',
-    if (RegExp(r'amazon|shopping|store').hasMatch(normalized)) 'shop',
-  ];
-
-  final seen = <String>{};
-  final ranked = <Category>[];
-  for (final hint in preferredHints) {
-    for (final category in categories) {
-      if (category.name.toLowerCase().contains(hint) && seen.add(category.id)) {
-        ranked.add(category);
-      }
-    }
-  }
-  for (final category in categories) {
-    if (seen.add(category.id)) ranked.add(category);
-    if (ranked.length >= 6) break;
-  }
-  return ranked.take(6).toList();
 }
 
 Bill? _extractBill(String raw, List<Bill> bills) {
@@ -579,10 +522,14 @@ Bill? _extractBill(String raw, List<Bill> bills) {
 }
 
 String? _extractMerchant(String raw) {
-  final cleaned = raw
-      .replaceAll(RegExp(r'^\s*(add|log|track)\s+', caseSensitive: false), '')
-      .replaceAll(RegExp(r'\$?\s?\d+(?:\.\d{1,2})?'), '')
-      .trim();
+  final cleaned =
+      raw
+          .replaceAll(
+            RegExp(r'^\s*(add|log|track)\s+', caseSensitive: false),
+            '',
+          )
+          .replaceAll(RegExp(r'\$?\s?\d+(?:\.\d{1,2})?'), '')
+          .trim();
   if (cleaned.isEmpty) return null;
   return cleaned.length > 40 ? cleaned.substring(0, 40).trim() : cleaned;
 }
@@ -600,10 +547,15 @@ String? _extractGoalName(String raw) {
   if (quoteMatch != null) {
     return quoteMatch.group(1)!.trim();
   }
-  final forMatch = RegExp(r'(?:for|goal)\s+([a-zA-Z][a-zA-Z ]{2,40})').firstMatch(raw);
+  final forMatch = RegExp(
+    r'(?:for|goal)\s+([a-zA-Z][a-zA-Z ]{2,40})',
+  ).firstMatch(raw);
   if (forMatch == null) return null;
   final candidate = forMatch.group(1)!.trim();
-  final stop = RegExp(r'\b(by|on|at|\$)\b', caseSensitive: false).firstMatch(candidate);
+  final stop = RegExp(
+    r'\b(by|on|at|\$)\b',
+    caseSensitive: false,
+  ).firstMatch(candidate);
   if (stop == null) return candidate.trim();
   return candidate.substring(0, stop.start).trim();
 }
