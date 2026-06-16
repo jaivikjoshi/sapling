@@ -591,7 +591,7 @@ class _GoalsReferenceCard extends StatelessWidget {
                             color: _GoalsReferencePalette.textPrimary,
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
-                            letterSpacing: -0.3,
+                            letterSpacing: 0,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -673,6 +673,8 @@ class _GoalsReferenceCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
+              _SavingsSparkline(progress: progress),
+              const SizedBox(height: 14),
               Row(
                 children: [
                   Expanded(
@@ -699,6 +701,82 @@ class _GoalsReferenceCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _SavingsSparkline extends StatelessWidget {
+  const _SavingsSparkline({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 82,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAF8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _GoalsReferencePalette.progressTrack),
+      ),
+      child: CustomPaint(
+        painter: _SavingsSparklinePainter(progress: progress),
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+}
+
+class _SavingsSparklinePainter extends CustomPainter {
+  const _SavingsSparklinePainter({required this.progress});
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final track =
+        Paint()
+          ..color = _GoalsReferencePalette.progressTrack
+          ..strokeWidth = 3
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.stroke;
+    final fill =
+        Paint()
+          ..shader = const LinearGradient(
+            colors: [Color(0xFF3B9797), Color(0xFF7ED7C1)],
+          ).createShader(Offset.zero & size)
+          ..strokeWidth = 4
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.stroke;
+
+    final path = _curvePath(size);
+    canvas.drawPath(path, track);
+    final metric = path.computeMetrics().first;
+    final filled = metric.extractPath(0, metric.length * progress.clamp(0, 1));
+    canvas.drawPath(filled, fill);
+
+    final dotOffset =
+        metric
+            .getTangentForOffset(metric.length * progress.clamp(0, 1))
+            ?.position;
+    if (dotOffset != null) {
+      canvas.drawCircle(dotOffset, 5.5, Paint()..color = Colors.white);
+      canvas.drawCircle(dotOffset, 4, Paint()..color = const Color(0xFF3B9797));
+    }
+  }
+
+  Path _curvePath(Size size) {
+    final h = size.height;
+    final w = size.width;
+    return Path()
+      ..moveTo(0, h * 0.78)
+      ..cubicTo(w * 0.22, h * 0.86, w * 0.25, h * 0.46, w * 0.44, h * 0.54)
+      ..cubicTo(w * 0.62, h * 0.62, w * 0.65, h * 0.20, w, h * 0.18);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SavingsSparklinePainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
 }
 

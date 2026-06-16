@@ -115,6 +115,18 @@ class _PrototypeSettingsBody extends ConsumerWidget {
               onTap: () => context.push('/settings'),
             ),
             _PrototypeSettingsRow(
+              icon: Icons.account_balance_rounded,
+              title: 'Connections and imports',
+              subtitle: 'Bank drafts, alerts, receipts, review queue',
+              onTap: () => context.push('/imports'),
+            ),
+            _PrototypeSettingsRow(
+              icon: Icons.group_outlined,
+              title: 'Household mode',
+              subtitle: 'Shared budgets, roles, and consent',
+              onTap: () => context.push('/household'),
+            ),
+            _PrototypeSettingsRow(
               icon: Icons.paid_outlined,
               title: 'Budget preferences',
               subtitle: 'Default budget and categories',

@@ -12,6 +12,7 @@ import 'allowance_providers.dart';
 import 'auth_providers.dart';
 import 'bills_providers.dart';
 import 'goals_providers.dart';
+import 'integration_providers.dart';
 import 'ledger_providers.dart';
 import 'profile_providers.dart';
 import 'settings_providers.dart';
@@ -278,6 +279,10 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
       stagedAttachments: const [],
     );
 
+    if (attachments.isNotEmpty) {
+      await _extractAttachmentReviewDrafts(attachments);
+    }
+
     final envelope = await _assistant.handleMessage(
       message: trimmed.isEmpty ? '[attachment]' : trimmed,
       context: _ctx,
@@ -490,6 +495,31 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
         ),
       ],
     );
+  }
+
+  Future<void> _extractAttachmentReviewDrafts(
+    List<LeafAttachment> attachments,
+  ) async {
+    var created = 0;
+    for (var i = 0; i < attachments.length; i++) {
+      final attachment = attachments[i];
+      final draft = await ref
+          .read(transactionReviewControllerProvider.notifier)
+          .extractReceiptDraft(
+            attachmentId: _attachmentDraftId(attachment, i),
+            fileName: attachment.name,
+            mimeType: attachment.mime,
+            dataBase64: attachment.dataBase64,
+          );
+      if (draft != null) created += 1;
+    }
+    if (created > 0) {
+      _appendAssistant(
+        text:
+            '$created receipt draft${created == 1 ? '' : 's'} ready in transaction review. I will still keep this chat draft separate until you approve an import.',
+        kind: LeafMessageKind.text,
+      );
+    }
   }
 
   /// Last ~8 turns so Gemini gets continuity without blowing the token budget.
@@ -738,6 +768,11 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
       _ => const [],
     };
   }
+}
+
+String _attachmentDraftId(LeafAttachment attachment, int index) {
+  final size = attachment.sizeBytes ?? attachment.dataBase64.length;
+  return '${attachment.name}-$size-$index';
 }
 
 bool _fieldResolvedBy(

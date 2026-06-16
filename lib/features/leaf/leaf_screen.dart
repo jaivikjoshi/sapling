@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/providers/integration_providers.dart';
 import '../../core/providers/leaf_providers.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../domain/models/enums.dart';
@@ -135,6 +136,25 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
+  }
+
+  Future<void> _startVoiceInput() async {
+    final result = await ref.read(voiceInputProvider).listen();
+    if (!mounted) return;
+    if (result.permissionDenied) {
+      _showSnack('Voice input needs microphone permission on this platform.');
+      return;
+    }
+    final transcript = result.transcript.trim();
+    if (transcript.isEmpty) {
+      _showSnack('I did not catch anything. Try typing it for now.');
+      return;
+    }
+    _composer.clear();
+    await ref
+        .read(leafConversationProvider.notifier)
+        .submitFreeText(transcript);
+    _scrollToEnd();
   }
 
   @override
@@ -265,10 +285,7 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
                     () => _pickAttachments(
                       currentCount: convo.stagedAttachments.length,
                     ),
-                onVoice:
-                    () => _showSnack(
-                      'Voice input is coming soon. Type the same request for now.',
-                    ),
+                onVoice: _startVoiceInput,
                 onSend: () {
                   final t = _composer.text;
                   final hasText = t.trim().isNotEmpty;

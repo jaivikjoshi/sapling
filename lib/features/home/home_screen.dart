@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/allowance_providers.dart';
+import '../../core/providers/badge_providers.dart';
 import '../../core/providers/auth_providers.dart';
 import '../../core/providers/bills_providers.dart';
 import '../../core/providers/goals_providers.dart';
@@ -14,6 +15,7 @@ import '../../core/providers/profile_providers.dart';
 import '../../core/providers/settings_providers.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../data/db/leko_database.dart';
+import '../../domain/integrations/product_foundations.dart';
 import '../../domain/models/enums.dart';
 import '../goals/goals_screen.dart' show GoalInsight, goalInsightsProvider;
 
@@ -66,6 +68,8 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             _UpcomingBillsSection(onViewAll: () => context.push('/bills')),
             const SizedBox(height: 24),
+            const _BadgesSection(),
+            const SizedBox(height: 24),
             _GoalProgressSection(onViewAll: () => context.go('/goals')),
             const SizedBox(height: 24),
             _RecentActivitySection(
@@ -73,6 +77,97 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _BadgesSection extends ConsumerWidget {
+  const _BadgesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final earned = ref.watch(earnedBadgesProvider);
+    final badges = LocalBadgeId.values.take(6).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(
+          title: 'Personal badges',
+          actionLabel: 'Local only',
+          onTap: () {},
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 92,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: badges.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final badge = badges[index];
+              return _BadgePill(
+                label: _badgeLabel(badge),
+                icon: _badgeIcon(badge),
+                earned: earned.contains(badge),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BadgePill extends StatelessWidget {
+  const _BadgePill({
+    required this.label,
+    required this.icon,
+    required this.earned,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool earned;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 132,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: earned ? const Color(0xFFEAF6F2) : Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: earned ? _HomePalette.mintAccent : _HomePalette.line,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color:
+                earned ? _HomePalette.mintAccent : _HomePalette.textSecondary,
+          ),
+          const Spacer(),
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color:
+                  earned
+                      ? _HomePalette.textPrimary
+                      : _HomePalette.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              height: 1.2,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1125,6 +1220,28 @@ String _trendText(double? trend) {
   final rounded = trend.abs().round();
   if (trend <= 0) return 'Down $rounded%';
   return 'Up $rounded%';
+}
+
+String _badgeLabel(LocalBadgeId badge) {
+  return switch (badge) {
+    LocalBadgeId.firstExpenseAdded => 'First expense',
+    LocalBadgeId.firstGoalCreated => 'First goal',
+    LocalBadgeId.sevenDayTrackingStreak => '7-day streak',
+    LocalBadgeId.underBudgetToday => 'Under budget',
+    LocalBadgeId.savedThisWeek => 'Saved this week',
+    LocalBadgeId.billPaidOnTime => 'Bill paid',
+  };
+}
+
+IconData _badgeIcon(LocalBadgeId badge) {
+  return switch (badge) {
+    LocalBadgeId.firstExpenseAdded => Icons.receipt_long_outlined,
+    LocalBadgeId.firstGoalCreated => Icons.flag_outlined,
+    LocalBadgeId.sevenDayTrackingStreak => Icons.local_fire_department_outlined,
+    LocalBadgeId.underBudgetToday => Icons.check_circle_outline_rounded,
+    LocalBadgeId.savedThisWeek => Icons.savings_outlined,
+    LocalBadgeId.billPaidOnTime => Icons.event_available_outlined,
+  };
 }
 
 String _billDueLabel(DateTime date) {

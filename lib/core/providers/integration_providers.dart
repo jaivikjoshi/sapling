@@ -1,7 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/enum_serialization.dart';
+import '../../data/db/leko_database.dart';
 import '../../domain/integrations/product_foundations.dart';
 import '../../domain/integrations/transaction_importer.dart';
+import '../../domain/models/enums.dart';
+import '../../domain/services/category_service.dart';
+import 'ledger_providers.dart';
 
 final bankProviderProvider = Provider<BankProvider>((ref) {
   return const UnsupportedBankProvider();
@@ -22,6 +29,268 @@ final voiceInputProvider = Provider<VoiceInputProvider>((ref) {
 final transactionReviewQueueProvider = Provider<TransactionReviewQueue>((ref) {
   return const TransactionReviewQueue();
 });
+
+class TransactionReviewState {
+  const TransactionReviewState({
+    this.drafts = const [],
+    this.isLoading = false,
+    this.message,
+  });
+
+  final List<ImportedTransactionDraft> drafts;
+  final bool isLoading;
+  final String? message;
+
+  List<ImportedTransactionDraft> get pending => drafts
+      .where((draft) => draft.reviewStatus == ImportReviewStatus.pending)
+      .toList(growable: false);
+
+  List<ImportedTransactionDraft> get approved => drafts
+      .where((draft) => draft.reviewStatus == ImportReviewStatus.approved)
+      .toList(growable: false);
+
+  TransactionReviewState copyWith({
+    List<ImportedTransactionDraft>? drafts,
+    bool? isLoading,
+    String? Function()? message,
+  }) {
+    return TransactionReviewState(
+      drafts: drafts ?? this.drafts,
+      isLoading: isLoading ?? this.isLoading,
+      message: message != null ? message() : this.message,
+    );
+  }
+}
+
+final transactionReviewControllerProvider =
+    StateNotifierProvider<TransactionReviewController, TransactionReviewState>((
+      ref,
+    ) {
+      return TransactionReviewController(ref);
+    });
+
+class TransactionReviewController
+    extends StateNotifier<TransactionReviewState> {
+  TransactionReviewController(this._ref)
+    : super(const TransactionReviewState());
+
+  final Ref _ref;
+
+  Future<BankConnectionIntent> startBankConnection() async {
+    return _ref.read(bankProviderProvider).startConnection();
+  }
+
+  Future<void> previewBankTransactions() async {
+    await _preview(_ref.read(bankProviderProvider));
+  }
+
+  Future<void> previewNotificationTransactions() async {
+    final provider = _ref.read(notificationImportProvider);
+    if (!await provider.hasPermission()) {
+      final granted = await provider.requestPermission();
+      if (!granted) {
+        state = state.copyWith(
+          message:
+              () =>
+                  'Notification import is unavailable or permission was not granted.',
+        );
+        return;
+      }
+    }
+    await _preview(provider);
+  }
+
+  Future<ImportedTransactionDraft?> extractReceiptDraft({
+    required String attachmentId,
+    required String fileName,
+    required String mimeType,
+    required String dataBase64,
+  }) async {
+    final bytes = base64Decode(dataBase64);
+    final result = await _ref
+        .read(receiptOcrProvider)
+        .extract(
+          ReceiptAttachment(
+            id: attachmentId,
+            fileName: fileName,
+            mimeType: mimeType,
+            bytes: bytes,
+          ),
+        );
+    final draft = result.toDraft();
+    if (draft == null) {
+      state = state.copyWith(
+        message:
+            () =>
+                'Receipt parsing is ready for a platform OCR provider, but this file did not produce a complete draft yet.',
+      );
+      return null;
+    }
+    addDrafts([draft]);
+    return draft;
+  }
+
+  void addDrafts(List<ImportedTransactionDraft> drafts) {
+    final queue = _ref.read(transactionReviewQueueProvider);
+    state = state.copyWith(
+      drafts: queue.mergeDrafts(existing: state.drafts, incoming: drafts),
+      message:
+          () =>
+              '${drafts.length} draft${drafts.length == 1 ? '' : 's'} ready for review.',
+    );
+  }
+
+  void approve(String dedupeKey) {
+    final queue = _ref.read(transactionReviewQueueProvider);
+    state = state.copyWith(
+      drafts: queue.approve(state.drafts, {dedupeKey}),
+      message: () => 'Draft approved. Import it when you are ready.',
+    );
+  }
+
+  void reject(String dedupeKey) {
+    final queue = _ref.read(transactionReviewQueueProvider);
+    state = state.copyWith(
+      drafts: queue.reject(state.drafts, {dedupeKey}),
+      message: () => 'Draft dismissed.',
+    );
+  }
+
+  Future<TransactionImportResult> importApproved() async {
+    final approved = _ref
+        .read(transactionReviewQueueProvider)
+        .approvedOnly(state.drafts);
+    if (approved.isEmpty) {
+      return const TransactionImportResult(
+        createdCount: 0,
+        skippedCount: 0,
+        message: 'Approve at least one transaction before importing.',
+      );
+    }
+
+    state = state.copyWith(isLoading: true, message: () => null);
+    var created = 0;
+    var skipped = 0;
+    try {
+      final ledger = _ref.read(ledgerServiceProvider);
+      final transactionsRepo = _ref.read(transactionsRepositoryProvider);
+      final existing = await transactionsRepo.getAll();
+      final importedNotes =
+          existing.map((txn) => txn.note).whereType<String>().toSet();
+      final categories =
+          _ref.read(categoriesProvider).valueOrNull ?? const <Category>[];
+
+      for (final draft in approved) {
+        final importNote = _importNote(draft);
+        if (importedNotes.contains(importNote)) {
+          skipped += 1;
+          continue;
+        }
+        if (draft.type == ImportedTransactionType.income) {
+          await ledger.addIncome(
+            amount: draft.amount,
+            date: draft.date,
+            postingType: IncomePostingType.manualOneTime,
+            source: draft.merchant,
+            note: importNote,
+          );
+        } else {
+          final category = _categoryForDraft(draft, categories);
+          await ledger.addExpense(
+            amount: draft.amount,
+            date: draft.date,
+            categoryId: category?.id ?? 'cat_other',
+            label:
+                category == null
+                    ? SpendLabel.green
+                    : LabelRules.defaultForCategory(category),
+            note: importNote,
+          );
+        }
+        importedNotes.add(importNote);
+        created += 1;
+      }
+
+      final importedKeys = approved.map((draft) => draft.dedupeKey).toSet();
+      state = state.copyWith(
+        isLoading: false,
+        drafts: state.drafts
+            .map(
+              (draft) =>
+                  importedKeys.contains(draft.dedupeKey)
+                      ? draft.copyWith(
+                        reviewStatus: ImportReviewStatus.imported,
+                      )
+                      : draft,
+            )
+            .toList(growable: false),
+        message:
+            () => 'Imported $created transaction${created == 1 ? '' : 's'}.',
+      );
+      return TransactionImportResult(
+        createdCount: created,
+        skippedCount: skipped,
+        message: state.message,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        message: () => 'Import failed: $error',
+      );
+      return TransactionImportResult(
+        createdCount: created,
+        skippedCount: skipped,
+        message: state.message,
+      );
+    }
+  }
+
+  Future<void> _preview(TransactionImporter importer) async {
+    state = state.copyWith(isLoading: true, message: () => null);
+    try {
+      final drafts = await importer.preview();
+      addDrafts(drafts);
+      state = state.copyWith(isLoading: false);
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        message: () => 'Could not preview imported transactions: $error',
+      );
+    }
+  }
+
+  Category? _categoryForDraft(
+    ImportedTransactionDraft draft,
+    List<Category> categories,
+  ) {
+    final suggestion = draft.categorySuggestion?.trim().toLowerCase();
+    if (suggestion != null && suggestion.isNotEmpty) {
+      for (final category in categories) {
+        if (category.name.trim().toLowerCase() == suggestion) {
+          return category;
+        }
+      }
+    }
+    for (final category in categories) {
+      if (category.id == 'cat_other' ||
+          category.name.trim().toLowerCase() == 'other') {
+        return category;
+      }
+    }
+    return categories.isEmpty ? null : categories.first;
+  }
+
+  String _importNote(ImportedTransactionDraft draft) {
+    final parts = [
+      if (draft.merchant != null && draft.merchant!.trim().isNotEmpty)
+        draft.merchant!.trim(),
+      if (draft.note != null && draft.note!.trim().isNotEmpty)
+        draft.note!.trim(),
+      'Imported from ${enumToDb(draft.source)}:${draft.sourceId}',
+    ];
+    return parts.join(' • ');
+  }
+}
 
 final localBadgeEngineProvider = Provider<LocalBadgeEngine>((ref) {
   return const LocalBadgeEngine();

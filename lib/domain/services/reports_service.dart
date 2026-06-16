@@ -11,6 +11,7 @@ import '../../data/repositories/settings_repository.dart';
 import '../../data/repositories/transactions_repository.dart';
 import '../models/enums.dart';
 import '../models/settings_model.dart';
+import '../integrations/product_foundations.dart';
 import 'allowance_engine.dart';
 import 'closeout_service.dart';
 import 'cycle_window_calculator.dart';
@@ -300,6 +301,16 @@ class ReportsService {
       todayWithinBudget: streak.todayWithinBudget,
       activeRecovery: activeRecovery,
     );
+    final dynamicInsights = _buildDynamicInsights(
+      request: request,
+      transactions: transactions,
+      previousTransactions: previousTransactions,
+      allBills: allBills,
+      billById: billById,
+      categoryById: categoryById,
+      budgetBasis: budgetBasis,
+      projectedEndSpend: chart.projectedEndSpend,
+    );
 
     final comparison =
         previousSummary == null
@@ -344,6 +355,7 @@ class ReportsService {
       goal: goal,
       allowance: allowance,
       habits: habits,
+      dynamicInsights: dynamicInsights,
     );
   }
 
@@ -1027,6 +1039,121 @@ class ReportsService {
     );
   }
 
+  List<ReportDynamicInsight> _buildDynamicInsights({
+    required ReportsRequest request,
+    required List<Transaction> transactions,
+    required List<Transaction> previousTransactions,
+    required List<Bill> allBills,
+    required Map<String, Bill> billById,
+    required Map<String, Category> categoryById,
+    required double budgetBasis,
+    required double projectedEndSpend,
+  }) {
+    final insights = <ReportDynamicInsight>[];
+    final expenseTransactions =
+        transactions.where((txn) => txn.type == 'expense').toList();
+    final previousExpenseTransactions =
+        previousTransactions.where((txn) => txn.type == 'expense').toList();
+
+    for (final txn in expenseTransactions.where(
+      (txn) => txn.linkedBillId != null,
+    )) {
+      final bill = billById[txn.linkedBillId];
+      if (bill == null || bill.amount <= 0) continue;
+      final variance = txn.amount - bill.amount;
+      if (variance.abs() < math.max(5, bill.amount * 0.08)) continue;
+      insights.add(
+        ReportDynamicInsight(
+          type: DynamicReportType.billVariance,
+          title: '${bill.name} changed',
+          detail:
+              '${bill.name} was ${variance > 0 ? 'above' : 'below'} plan by ${_money(variance.abs())}.',
+          amount: variance,
+        ),
+      );
+    }
+
+    final currentByCategory = _expenseTotalsByCategory(expenseTransactions);
+    final previousByCategory = _expenseTotalsByCategory(
+      previousExpenseTransactions,
+    );
+    for (final entry in currentByCategory.entries) {
+      final previous = previousByCategory[entry.key] ?? 0;
+      if (previous <= 0 || entry.value < 25) continue;
+      final change = entry.value - previous;
+      final percent = change / previous;
+      if (percent.abs() < 0.4) continue;
+      insights.add(
+        ReportDynamicInsight(
+          type: DynamicReportType.categoryAnomaly,
+          title: '${categoryById[entry.key]?.name ?? 'Category'} moved',
+          detail:
+              '${categoryById[entry.key]?.name ?? 'This category'} is ${(percent * 100).abs().round()}% ${percent > 0 ? 'higher' : 'lower'} than the comparison period.',
+          amount: change,
+        ),
+      );
+    }
+
+    final currentBills = _expenseTotalsByBill(expenseTransactions);
+    final previousBills = _expenseTotalsByBill(previousExpenseTransactions);
+    for (final entry in currentBills.entries) {
+      final previous = previousBills[entry.key] ?? 0;
+      if (previous <= 0) continue;
+      final change = entry.value - previous;
+      if (change.abs() < math.max(5, previous * 0.12)) continue;
+      final billName = billById[entry.key]?.name ?? 'Recurring bill';
+      insights.add(
+        ReportDynamicInsight(
+          type: DynamicReportType.recurringSubscriptionDrift,
+          title: '$billName drift',
+          detail:
+              '$billName is ${_money(change.abs())} ${change > 0 ? 'higher' : 'lower'} than the comparison period.',
+          amount: change,
+        ),
+      );
+    }
+
+    final forecastDelta = projectedEndSpend - budgetBasis;
+    insights.add(
+      ReportDynamicInsight(
+        type:
+            request.period.timeframe == ReportTimeframe.month
+                ? DynamicReportType.monthlyForecast
+                : DynamicReportType.weeklyForecast,
+        title: forecastDelta > 0 ? 'Forecast over plan' : 'Forecast on track',
+        detail:
+            forecastDelta > 0
+                ? 'At this pace, spending may land ${_money(forecastDelta)} above available money.'
+                : 'At this pace, spending is tracking within available money.',
+        amount: forecastDelta,
+      ),
+    );
+
+    return insights.take(5).toList(growable: false);
+  }
+
+  Map<String, double> _expenseTotalsByCategory(List<Transaction> txns) {
+    final result = <String, double>{};
+    for (final txn in txns) {
+      final categoryId = txn.categoryId;
+      if (categoryId == null) continue;
+      result[categoryId] = (result[categoryId] ?? 0) + txn.amount;
+    }
+    return result;
+  }
+
+  Map<String, double> _expenseTotalsByBill(List<Transaction> txns) {
+    final result = <String, double>{};
+    for (final txn in txns) {
+      final billId = txn.linkedBillId;
+      if (billId == null) continue;
+      result[billId] = (result[billId] ?? 0) + txn.amount;
+    }
+    return result;
+  }
+
+  String _money(double amount) => '\$${amount.toStringAsFixed(0)}';
+
   List<DateTime> _bucketStarts(ReportPeriodOption period) {
     switch (period.timeframe) {
       case ReportTimeframe.year:
@@ -1396,6 +1523,7 @@ class ReportsSnapshot {
   final ReportGoalSection goal;
   final ReportAllowanceSection allowance;
   final ReportHabitsSection habits;
+  final List<ReportDynamicInsight> dynamicInsights;
 
   const ReportsSnapshot({
     required this.period,
@@ -1419,6 +1547,21 @@ class ReportsSnapshot {
     required this.goal,
     required this.allowance,
     required this.habits,
+    required this.dynamicInsights,
+  });
+}
+
+class ReportDynamicInsight {
+  final DynamicReportType type;
+  final String title;
+  final String detail;
+  final double amount;
+
+  const ReportDynamicInsight({
+    required this.type,
+    required this.title,
+    required this.detail,
+    required this.amount,
   });
 }
 
