@@ -18,6 +18,16 @@ DateTime advanceByBillFrequency(DateTime date, BillFrequency frequency) {
   };
 }
 
+DateTime retreatByBillFrequency(DateTime date, BillFrequency frequency) {
+  return switch (frequency) {
+    BillFrequency.weekly => _addDays(date, -7),
+    BillFrequency.biweekly => _addDays(date, -14),
+    BillFrequency.monthly => _addMonths(date, -1),
+    BillFrequency.quarterly => _addMonths(date, -3),
+    BillFrequency.yearly => _addMonths(date, -12),
+  };
+}
+
 DateTime _addDays(DateTime d, int days) {
   return DateTime(d.year, d.month, d.day + days, d.hour, d.minute, d.second);
 }

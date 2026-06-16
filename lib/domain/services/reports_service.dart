@@ -106,7 +106,10 @@ class ReportsService {
   }
 
   /// Per-category expense total for the month. Only expenses with categoryId.
-  Future<List<CategoryBreakdownItem>> categoryBreakdown(int year, int month) async {
+  Future<List<CategoryBreakdownItem>> categoryBreakdown(
+    int year,
+    int month,
+  ) async {
     final start = monthStart(year, month);
     final end = monthEnd(year, month);
     return categoryBreakdownByPeriod(start, end);
@@ -143,9 +146,10 @@ class ReportsService {
     DateTime end,
   ) async {
     final txns = await _txnRepo.getByDateRange(start, end);
-    final paid = txns
-        .where((t) => t.type == 'expense' && t.linkedBillId != null)
-        .toList();
+    final paid =
+        txns
+            .where((t) => t.type == 'expense' && t.linkedBillId != null)
+            .toList();
     final count = paid.length;
     final total = paid.fold<double>(0, (s, t) => s + t.amount);
     return BillsPaidInPeriodResult(count: count, totalAmount: total);
@@ -168,7 +172,9 @@ class ReportsService {
   Future<ReportsSnapshot> buildSnapshot(ReportsRequest request) async {
     final settings = UserSettings.fromDb(await _settingsRepo.get());
     final allCategories = await _categoriesRepo.getAll();
-    final categoryById = {for (final category in allCategories) category.id: category};
+    final categoryById = {
+      for (final category in allCategories) category.id: category,
+    };
     final allBills = await _billsRepo.getAll();
     final billById = {for (final bill in allBills) bill.id: bill};
     final incomes = await _incomeRepo.getAll();
@@ -182,24 +188,32 @@ class ReportsService {
     );
     final summary = await _summarize(transactions);
 
-    final previousPeriod = request.comparisonMode == ReportComparisonMode.previousPeriod
-        ? await _previousPeriod(request.period, settings)
-        : null;
-    final previousTransactions = previousPeriod == null
-        ? const <Transaction>[]
-        : await _txnRepo.getByDateRange(previousPeriod.start, previousPeriod.end);
-    final previousSummary = previousTransactions.isEmpty
-        ? null
-        : await _summarize(previousTransactions);
+    final previousPeriod =
+        request.comparisonMode == ReportComparisonMode.previousPeriod
+            ? await _previousPeriod(request.period, settings)
+            : null;
+    final previousTransactions =
+        previousPeriod == null
+            ? const <Transaction>[]
+            : await _txnRepo.getByDateRange(
+              previousPeriod.start,
+              previousPeriod.end,
+            );
+    final previousSummary =
+        previousTransactions.isEmpty
+            ? null
+            : await _summarize(previousTransactions);
 
     final budgetBasis =
         math.max(0.0, summary.incomeTotal + summary.adjustmentTotal).toDouble();
     final elapsedDays = _elapsedDays(request.period);
-    final totalDays = _periodLengthDays(request.period.start, request.period.end);
+    final totalDays = _periodLengthDays(
+      request.period.start,
+      request.period.end,
+    );
     final remainingDays = math.max(totalDays - elapsedDays, 0);
-    final expectedSpendByNow = totalDays > 0
-        ? budgetBasis * (elapsedDays / totalDays)
-        : 0.0;
+    final expectedSpendByNow =
+        totalDays > 0 ? budgetBasis * (elapsedDays / totalDays) : 0.0;
     final safeRemaining = budgetBasis - summary.expenseTotal;
     final paceDelta = summary.expenseTotal - expectedSpendByNow;
     final paceStatus = _paceStatus(
@@ -262,6 +276,7 @@ class ReportsService {
       summary: summary,
       transactions: transactions,
       totalDays: totalDays,
+      elapsedDays: elapsedDays,
       budgetBasis: budgetBasis,
     );
 
@@ -269,31 +284,37 @@ class ReportsService {
         .computeStreak(settings: settings)
         .timeout(
           const Duration(milliseconds: 900),
-          onTimeout: () =>
-              const StreakResult(currentStreak: 0, todayWithinBudget: false),
+          onTimeout:
+              () => const StreakResult(
+                currentStreak: 0,
+                todayWithinBudget: false,
+              ),
         );
     final activeRecovery = await _recoveryPlansRepo.getActive();
     final habits = _buildHabitsSection(
       period: request.period,
       expenseTransactions: expenseTransactions,
       targetPerDay: allowance.dailyTargetForPeriod,
+      elapsedDays: elapsedDays,
       currentStreak: streak.currentStreak,
       todayWithinBudget: streak.todayWithinBudget,
       activeRecovery: activeRecovery,
     );
 
-    final comparison = previousSummary == null
-        ? null
-        : ReportComparisonSummary(
-            previousLabel: previousPeriod!.label,
-            expenseDelta: summary.expenseTotal - previousSummary.expenseTotal,
-            incomeDelta: summary.incomeTotal - previousSummary.incomeTotal,
-            expenseChangePercent: previousSummary.expenseTotal > 0
-                ? ((summary.expenseTotal - previousSummary.expenseTotal) /
-                        previousSummary.expenseTotal) *
-                    100
-                : null,
-          );
+    final comparison =
+        previousSummary == null
+            ? null
+            : ReportComparisonSummary(
+              previousLabel: previousPeriod!.label,
+              expenseDelta: summary.expenseTotal - previousSummary.expenseTotal,
+              incomeDelta: summary.incomeTotal - previousSummary.incomeTotal,
+              expenseChangePercent:
+                  previousSummary.expenseTotal > 0
+                      ? ((summary.expenseTotal - previousSummary.expenseTotal) /
+                              previousSummary.expenseTotal) *
+                          100
+                      : null,
+            );
 
     return ReportsSnapshot(
       period: request.period,
@@ -331,32 +352,39 @@ class ReportsService {
   ) async {
     final transactions = await _txnRepo.getByDateRange(query.start, query.end);
     final categories = await _categoriesRepo.getAll();
-    final categoryById = {for (final category in categories) category.id: category};
+    final categoryById = {
+      for (final category in categories) category.id: category,
+    };
 
-    final filtered = transactions.where((txn) {
-      if (query.expensesOnly && txn.type != 'expense') return false;
-      if (query.incomeOnly && txn.type != 'income') return false;
-      if (query.adjustmentsOnly && txn.type != 'adjustment') return false;
-      if (query.billOnly && txn.linkedBillId == null) return false;
-      if (query.linkedBillId != null && txn.linkedBillId != query.linkedBillId) {
-        return false;
-      }
-      if (query.categoryId != null && txn.categoryId != query.categoryId) {
-        return false;
-      }
-      if (query.recurringIncomeOnly && txn.linkedRecurringIncomeId == null) {
-        return false;
-      }
-      if (query.oneTimeIncomeOnly && txn.linkedRecurringIncomeId != null) {
-        return false;
-      }
-      if (query.spendLabel != null) {
-        final label = _resolvedLabel(txn, categoryById);
-        if (label != query.spendLabel) return false;
-      }
-      return true;
-    }).toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+    final filtered =
+        transactions.where((txn) {
+            if (query.expensesOnly && txn.type != 'expense') return false;
+            if (query.incomeOnly && txn.type != 'income') return false;
+            if (query.adjustmentsOnly && txn.type != 'adjustment') return false;
+            if (query.billOnly && txn.linkedBillId == null) return false;
+            if (query.linkedBillId != null &&
+                txn.linkedBillId != query.linkedBillId) {
+              return false;
+            }
+            if (query.categoryId != null &&
+                txn.categoryId != query.categoryId) {
+              return false;
+            }
+            if (query.recurringIncomeOnly &&
+                txn.linkedRecurringIncomeId == null) {
+              return false;
+            }
+            if (query.oneTimeIncomeOnly &&
+                txn.linkedRecurringIncomeId != null) {
+              return false;
+            }
+            if (query.spendLabel != null) {
+              final label = _resolvedLabel(txn, categoryById);
+              if (label != query.spendLabel) return false;
+            }
+            return true;
+          }).toList()
+          ..sort((a, b) => b.date.compareTo(a.date));
 
     return filtered;
   }
@@ -364,7 +392,10 @@ class ReportsService {
   Future<List<ReportDrilldownRow>> billDrilldownRows(
     ReportPeriodOption period,
   ) async {
-    final transactions = await _txnRepo.getByDateRange(period.start, period.end);
+    final transactions = await _txnRepo.getByDateRange(
+      period.start,
+      period.end,
+    );
     final bills = await _billsRepo.getAll();
     final billById = {for (final bill in bills) bill.id: bill};
     final totals = <String, double>{};
@@ -372,17 +403,18 @@ class ReportsService {
       if (txn.type != 'expense' || txn.linkedBillId == null) continue;
       totals[txn.linkedBillId!] = (totals[txn.linkedBillId!] ?? 0) + txn.amount;
     }
-    final rows = totals.entries
-        .map(
-          (entry) => ReportDrilldownRow(
-            id: entry.key,
-            title: billById[entry.key]?.name ?? 'Bill',
-            subtitle: '${entry.value.toStringAsFixed(2)} paid',
-            amount: entry.value,
-          ),
-        )
-        .toList()
-      ..sort((a, b) => b.amount.compareTo(a.amount));
+    final rows =
+        totals.entries
+            .map(
+              (entry) => ReportDrilldownRow(
+                id: entry.key,
+                title: billById[entry.key]?.name ?? 'Bill',
+                subtitle: '${entry.value.toStringAsFixed(2)} paid',
+                amount: entry.value,
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.amount.compareTo(a.amount));
     return rows;
   }
 
@@ -550,24 +582,23 @@ class ReportsService {
       final label = _bucketLabel(period.timeframe, bucket);
 
       if (index < elapsedBuckets) {
-        spendPoints.add(ReportChartPoint(x: x, y: cumulativeSpend, label: label));
-        incomePoints.add(ReportChartPoint(x: x, y: cumulativeIncome, label: label));
+        spendPoints.add(
+          ReportChartPoint(x: x, y: cumulativeSpend, label: label),
+        );
+        incomePoints.add(
+          ReportChartPoint(x: x, y: cumulativeIncome, label: label),
+        );
       }
 
       final progress = totalBuckets > 0 ? (index + 1) / totalBuckets : 0.0;
       pacePoints.add(
-        ReportChartPoint(
-          x: x,
-          y: budgetBasis * progress,
-          label: label,
-        ),
+        ReportChartPoint(x: x, y: budgetBasis * progress, label: label),
       );
     }
 
     final spentSoFar = spendPoints.isEmpty ? 0.0 : spendPoints.last.y;
-    final projectedEndSpend = elapsedBuckets > 0
-        ? spentSoFar / elapsedBuckets * totalBuckets
-        : 0.0;
+    final projectedEndSpend =
+        elapsedBuckets > 0 ? spentSoFar / elapsedBuckets * totalBuckets : 0.0;
 
     for (var index = 0; index < buckets.length; index++) {
       final x = index.toDouble();
@@ -575,14 +606,18 @@ class ReportsService {
       if (index < elapsedBuckets && spendPoints.length > index) {
         projectedPoints.add(spendPoints[index]);
       } else {
-        final futureProgress = totalBuckets <= elapsedBuckets
-            ? 1.0
-            : (index + 1 - elapsedBuckets) / (totalBuckets - elapsedBuckets);
+        final futureProgress =
+            totalBuckets <= elapsedBuckets
+                ? 1.0
+                : (index + 1 - elapsedBuckets) /
+                    (totalBuckets - elapsedBuckets);
         projectedPoints.add(
           ReportChartPoint(
             x: x,
-            y: spentSoFar +
-                ((projectedEndSpend - spentSoFar) * futureProgress.clamp(0.0, 1.0)),
+            y:
+                spentSoFar +
+                ((projectedEndSpend - spentSoFar) *
+                    futureProgress.clamp(0.0, 1.0)),
             label: label,
           ),
         );
@@ -598,10 +633,16 @@ class ReportsService {
     ].reduce(math.max);
 
     final labelIndexes = <int>{0, buckets.length ~/ 2, buckets.length - 1};
-    final xLabels = labelIndexes
-        .map((index) => ReportAxisLabel(x: index.toDouble(), label: _bucketLabel(period.timeframe, buckets[index])))
-        .toList()
-      ..sort((a, b) => a.x.compareTo(b.x));
+    final xLabels =
+        labelIndexes
+            .map(
+              (index) => ReportAxisLabel(
+                x: index.toDouble(),
+                label: _bucketLabel(period.timeframe, buckets[index]),
+              ),
+            )
+            .toList()
+          ..sort((a, b) => a.x.compareTo(b.x));
 
     return ReportChartModel(
       spend: spendPoints,
@@ -629,7 +670,8 @@ class ReportsService {
     for (final txn in transactions) {
       if (txn.type != 'expense') continue;
       if (txn.categoryId != null) {
-        currentTotals[txn.categoryId!] = (currentTotals[txn.categoryId!] ?? 0) + txn.amount;
+        currentTotals[txn.categoryId!] =
+            (currentTotals[txn.categoryId!] ?? 0) + txn.amount;
       }
       if (biggestExpense == null || txn.amount > biggestExpense.amount) {
         biggestExpense = txn;
@@ -639,16 +681,18 @@ class ReportsService {
 
     for (final txn in previousTransactions) {
       if (txn.type != 'expense' || txn.categoryId == null) continue;
-      previousTotals[txn.categoryId!] = (previousTotals[txn.categoryId!] ?? 0) + txn.amount;
+      previousTotals[txn.categoryId!] =
+          (previousTotals[txn.categoryId!] ?? 0) + txn.amount;
     }
 
-    final topCategories = currentTotals.entries
-        .map(
-          (entry) {
+    final topCategories =
+        currentTotals.entries.map((entry) {
             final previousTotal = previousTotals[entry.key] ?? 0;
-            final percentOfSpend = totalExpense > 0 ? entry.value / totalExpense : 0.0;
+            final percentOfSpend =
+                totalExpense > 0 ? entry.value / totalExpense : 0.0;
             final trendAmount = entry.value - previousTotal;
-            final trendPercent = previousTotal > 0 ? (trendAmount / previousTotal) * 100 : null;
+            final trendPercent =
+                previousTotal > 0 ? (trendAmount / previousTotal) * 100 : null;
             return ReportCategoryBreakdown(
               categoryId: entry.key,
               categoryName: categoryById[entry.key]?.name ?? 'Uncategorized',
@@ -657,10 +701,8 @@ class ReportsService {
               trendAmount: trendAmount,
               trendPercent: trendPercent,
             );
-          },
-        )
-        .toList()
-      ..sort((a, b) => b.total.compareTo(a.total));
+          }).toList()
+          ..sort((a, b) => b.total.compareTo(a.total));
 
     return ReportSpendingSection(
       topCategories: topCategories.take(5).toList(),
@@ -688,15 +730,19 @@ class ReportsService {
     }
 
     return ReportLabelSection(
-      items: SpendLabel.values
-          .map(
-            (label) => ReportLabelBreakdown(
-              label: label,
-              total: totals[label] ?? 0,
-              share: totalExpense > 0 ? (totals[label] ?? 0) / totalExpense : 0.0,
-            ),
-          )
-          .toList(),
+      items:
+          SpendLabel.values
+              .map(
+                (label) => ReportLabelBreakdown(
+                  label: label,
+                  total: totals[label] ?? 0,
+                  share:
+                      totalExpense > 0
+                          ? (totals[label] ?? 0) / totalExpense
+                          : 0.0,
+                ),
+              )
+              .toList(),
     );
   }
 
@@ -713,15 +759,17 @@ class ReportsService {
 
     for (final txn in incomeTransactions) {
       paydayCount++;
-      final postingType = txn.incomePostingType == null
-          ? null
-          : enumFromDb<IncomePostingType>(
-              txn.incomePostingType!,
-              IncomePostingType.values,
-            );
+      final postingType =
+          txn.incomePostingType == null
+              ? null
+              : enumFromDb<IncomePostingType>(
+                txn.incomePostingType!,
+                IncomePostingType.values,
+              );
       if (txn.linkedRecurringIncomeId != null) {
         recurringTotal += txn.amount;
-        expectedReference += incomeById[txn.linkedRecurringIncomeId!]?.expectedAmount ?? 0;
+        expectedReference +=
+            incomeById[txn.linkedRecurringIncomeId!]?.expectedAmount ?? 0;
       } else {
         oneTimeTotal += txn.amount;
       }
@@ -751,14 +799,18 @@ class ReportsService {
     required Map<String, Category> categoryById,
   }) async {
     final futureEnd = period.end.add(const Duration(days: 30));
-    final futureTransactions = await _txnRepo.getByDateRange(period.end, futureEnd);
+    final futureTransactions = await _txnRepo.getByDateRange(
+      period.end,
+      futureEnd,
+    );
     final upcomingLoad = ProjectionService.projectBills(
       start: period.end,
       end: futureEnd,
       bills: allBills,
-      paidBillTransactions: futureTransactions
-          .where((txn) => txn.type == 'expense' && txn.linkedBillId != null)
-          .toList(),
+      paidBillTransactions:
+          futureTransactions
+              .where((txn) => txn.type == 'expense' && txn.linkedBillId != null)
+              .toList(),
     );
 
     final paidCategories = <String, double>{};
@@ -766,25 +818,32 @@ class ReportsService {
       final bill = billById[txn.linkedBillId!];
       final categoryId = bill?.categoryId;
       if (categoryId == null) continue;
-      paidCategories[categoryId] = (paidCategories[categoryId] ?? 0) + txn.amount;
+      paidCategories[categoryId] =
+          (paidCategories[categoryId] ?? 0) + txn.amount;
     }
 
-    final topBillCategories = paidCategories.entries
-        .map(
-          (entry) => ReportNamedAmount(
-            name: categoryById[entry.key]?.name ?? 'Bills',
-            amount: entry.value,
-          ),
-        )
-        .toList()
-      ..sort((a, b) => b.amount.compareTo(a.amount));
+    final topBillCategories =
+        paidCategories.entries
+            .map(
+              (entry) => ReportNamedAmount(
+                name: categoryById[entry.key]?.name ?? 'Bills',
+                amount: entry.value,
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.amount.compareTo(a.amount));
 
-    final upcomingCount = allBills.where((bill) {
-      return !bill.nextDueDate.isBefore(period.end) && bill.nextDueDate.isBefore(futureEnd);
-    }).length;
+    final upcomingCount =
+        allBills.where((bill) {
+          return !bill.nextDueDate.isBefore(period.end) &&
+              bill.nextDueDate.isBefore(futureEnd);
+        }).length;
 
     return ReportBillsSection(
-      paidBillsTotal: paidBillTransactions.fold<double>(0, (sum, txn) => sum + txn.amount),
+      paidBillsTotal: paidBillTransactions.fold<double>(
+        0,
+        (sum, txn) => sum + txn.amount,
+      ),
       paidBillsCount: paidBillTransactions.length,
       upcomingBillLoad: upcomingLoad,
       upcomingBillsCount: upcomingCount,
@@ -806,15 +865,20 @@ class ReportsService {
 
     final balance = await _txnRepo.computeBalance();
     final goal = goalById[goalId]!;
-    final allowance = await _allowanceEngine.computeGoalMode(settings: settings);
+    final allowance = await _allowanceEngine.computeGoalMode(
+      settings: settings,
+    );
     final remaining = math.max(goal.targetAmount - balance, 0.0).toDouble();
     final daysToGoal = _daysUntil(goal.targetDate);
     final paceNeeded = daysToGoal > 0 ? remaining / daysToGoal : remaining;
 
-    final status = allowance == null
-        ? ReportGoalStatus.tight
-        : allowance.feasibility.isFeasible
-            ? (paceNeeded > allowance.dailyAllowance ? ReportGoalStatus.tight : ReportGoalStatus.onTrack)
+    final status =
+        allowance == null
+            ? ReportGoalStatus.tight
+            : allowance.feasibility.isFeasible
+            ? (paceNeeded > allowance.dailyAllowance
+                ? ReportGoalStatus.tight
+                : ReportGoalStatus.onTrack)
             : ReportGoalStatus.unrealistic;
 
     final impactLine = switch (status) {
@@ -849,11 +913,15 @@ class ReportsService {
     required MonthlySummary summary,
     required List<Transaction> transactions,
     required int totalDays,
+    required int elapsedDays,
     required double budgetBasis,
   }) async {
-    final paycheckAllowance =
-        await _allowanceEngine.computePaycheckMode(settings: settings);
-    final goalAllowance = await _allowanceEngine.computeGoalMode(settings: settings);
+    final paycheckAllowance = await _allowanceEngine.computePaycheckMode(
+      settings: settings,
+    );
+    final goalAllowance = await _allowanceEngine.computeGoalMode(
+      settings: settings,
+    );
     final isGoalMode =
         request.allowanceMode == AllowanceMode.goal && goalAllowance != null;
 
@@ -865,8 +933,8 @@ class ReportsService {
     double bankedUsed = 0;
 
     var cursor = _dayBucket(period.start);
-    final endDay = _dayBucket(period.end);
-    while (cursor.isBefore(endDay)) {
+    final loopEnd = _elapsedLoopEnd(period, elapsedDays);
+    while (cursor.isBefore(loopEnd)) {
       final spend = spendByDay[cursor] ?? 0.0;
       if (spend <= targetPerDay) {
         daysUnder++;
@@ -881,21 +949,25 @@ class ReportsService {
     final modeImpactTitle = isGoalMode ? 'To goal date' : 'To next cycle';
     final modeImpactValue =
         isGoalMode ? goalAllowance.daysToGoal : paycheckAllowance.daysLeft;
-    final currentDailyAllowance = isGoalMode
-        ? goalAllowance.dailyAllowance
-        : paycheckAllowance.dailyAllowance;
-    final modeImpactRemaining = isGoalMode
-        ? goalAllowance.spendablePool
-        : paycheckAllowance.spendablePool;
-    final behindAmount = isGoalMode
-        ? goalAllowance.behindAmount
-        : paycheckAllowance.behindAmount;
+    final currentDailyAllowance =
+        isGoalMode
+            ? goalAllowance.dailyAllowance
+            : paycheckAllowance.dailyAllowance;
+    final modeImpactRemaining =
+        isGoalMode
+            ? goalAllowance.spendablePool
+            : paycheckAllowance.spendablePool;
+    final behindAmount =
+        isGoalMode
+            ? goalAllowance.behindAmount
+            : paycheckAllowance.behindAmount;
     final spendToday =
         isGoalMode ? goalAllowance.todaySpend : paycheckAllowance.todaySpend;
 
     return ReportAllowanceSection(
       currentDailyAllowance: currentDailyAllowance,
-      averageDailyActualSpend: totalDays > 0 ? summary.expenseTotal / totalDays : 0.0,
+      averageDailyActualSpend:
+          totalDays > 0 ? summary.expenseTotal / totalDays : 0.0,
       daysUnderAllowance: daysUnder,
       daysOverAllowance: daysOver,
       bankedBuilt: bankedBuilt,
@@ -913,18 +985,23 @@ class ReportsService {
     required ReportPeriodOption period,
     required List<Transaction> expenseTransactions,
     required double targetPerDay,
+    required int elapsedDays,
     required int currentStreak,
     required bool todayWithinBudget,
     required RecoveryPlan? activeRecovery,
   }) {
-    final spendByDay = _dailySpend(period.start, period.end, expenseTransactions);
+    final spendByDay = _dailySpend(
+      period.start,
+      period.end,
+      expenseTransactions,
+    );
     var noSpendDays = 0;
     var overspendEvents = 0;
     double totalOverspendAmount = 0;
 
     var cursor = _dayBucket(period.start);
-    final endDay = _dayBucket(period.end);
-    while (cursor.isBefore(endDay)) {
+    final loopEnd = _elapsedLoopEnd(period, elapsedDays);
+    while (cursor.isBefore(loopEnd)) {
       final spend = spendByDay[cursor] ?? 0.0;
       if (spend == 0) {
         noSpendDays++;
@@ -943,8 +1020,9 @@ class ReportsService {
       overspendEvents: overspendEvents,
       totalOverspendAmount: totalOverspendAmount,
       hasActiveRecoveryPlan: activeRecovery?.status == 'active',
-      activeRecoveryAdjustment:
-          RecoveryPlanService.computeTodayAdjustment(activeRecovery),
+      activeRecoveryAdjustment: RecoveryPlanService.computeTodayAdjustment(
+        activeRecovery,
+      ),
       activeRecoveryType: activeRecovery?.planType,
     );
   }
@@ -973,8 +1051,8 @@ class ReportsService {
   DateTime _bucketFor(ReportTimeframe timeframe, DateTime date) {
     return switch (timeframe) {
       ReportTimeframe.year => DateTime(date.year, date.month, 1),
-      ReportTimeframe.month || ReportTimeframe.cycle =>
-        DateTime(date.year, date.month, date.day),
+      ReportTimeframe.month ||
+      ReportTimeframe.cycle => DateTime(date.year, date.month, date.day),
     };
   }
 
@@ -1009,9 +1087,22 @@ class ReportsService {
   int _elapsedDays(ReportPeriodOption period) {
     final now = DateTime.now();
     if (!now.isAfter(period.start)) return 0;
-    if (!now.isBefore(period.end)) return _periodLengthDays(period.start, period.end);
+    if (!now.isBefore(period.end))
+      return _periodLengthDays(period.start, period.end);
 
-    return _periodLengthDays(period.start, _dayBucket(now).add(const Duration(days: 1)));
+    return _periodLengthDays(
+      period.start,
+      _dayBucket(now).add(const Duration(days: 1)),
+    );
+  }
+
+  DateTime _elapsedLoopEnd(ReportPeriodOption period, int elapsedDays) {
+    final periodEndDay = _dayBucket(period.end);
+    if (elapsedDays <= 0) return _dayBucket(period.start);
+    final elapsedEndDay = _dayBucket(
+      period.start,
+    ).add(Duration(days: elapsedDays));
+    return elapsedEndDay.isBefore(periodEndDay) ? elapsedEndDay : periodEndDay;
   }
 
   Map<DateTime, double> _dailySpend(
@@ -1033,7 +1124,8 @@ class ReportsService {
     Transaction txn,
     Map<String, Category> categoryById,
   ) {
-    final raw = txn.label ?? categoryById[txn.categoryId]?.defaultLabel ?? 'green';
+    final raw =
+        txn.label ?? categoryById[txn.categoryId]?.defaultLabel ?? 'green';
     return enumFromDb<SpendLabel>(raw, SpendLabel.values);
   }
 
@@ -1082,12 +1174,17 @@ class ReportsService {
     }
   }
 
-  DateTime _subtractByIncomeFrequency(DateTime date, IncomeFrequency frequency) {
+  DateTime _subtractByIncomeFrequency(
+    DateTime date,
+    IncomeFrequency frequency,
+  ) {
     return switch (frequency) {
-      IncomeFrequency.weekly =>
-        DateTime(date.year, date.month, date.day - 7),
-      IncomeFrequency.biweekly =>
-        DateTime(date.year, date.month, date.day - 14),
+      IncomeFrequency.weekly => DateTime(date.year, date.month, date.day - 7),
+      IncomeFrequency.biweekly => DateTime(
+        date.year,
+        date.month,
+        date.day - 14,
+      ),
       IncomeFrequency.monthly => DateTime(date.year, date.month - 1, date.day),
     };
   }
@@ -1153,7 +1250,8 @@ class ReportsService {
     return names[date.month - 1];
   }
 
-  DateTime _dayBucket(DateTime date) => DateTime(date.year, date.month, date.day);
+  DateTime _dayBucket(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
 
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
@@ -1623,18 +1721,18 @@ class ReportDrilldownQuery {
 
   @override
   int get hashCode => Object.hash(
-        start,
-        end,
-        expensesOnly,
-        incomeOnly,
-        adjustmentsOnly,
-        billOnly,
-        linkedBillId,
-        categoryId,
-        spendLabel,
-        recurringIncomeOnly,
-        oneTimeIncomeOnly,
-      );
+    start,
+    end,
+    expensesOnly,
+    incomeOnly,
+    adjustmentsOnly,
+    billOnly,
+    linkedBillId,
+    categoryId,
+    spendLabel,
+    recurringIncomeOnly,
+    oneTimeIncomeOnly,
+  );
 }
 
 class ReportDrilldownRow {

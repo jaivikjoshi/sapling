@@ -27,16 +27,10 @@ void main() {
 
   group('SnapshotBuilder.formatCloseoutStatus', () {
     test('zero streak within budget', () {
-      expect(
-        SnapshotBuilder.formatCloseoutStatus(0, true),
-        'Within budget',
-      );
+      expect(SnapshotBuilder.formatCloseoutStatus(0, true), 'Within budget');
     });
     test('zero streak over budget', () {
-      expect(
-        SnapshotBuilder.formatCloseoutStatus(0, false),
-        'Over budget',
-      );
+      expect(SnapshotBuilder.formatCloseoutStatus(0, false), 'Over budget');
     });
     test('1 day streak within budget', () {
       expect(
@@ -56,11 +50,13 @@ void main() {
     test('builds snapshot with allowance and streak', () {
       final allowance = PaycheckAllowanceResult(
         balance: 1000,
-        allowanceToday: 85,
-        bankedAllowance: 10,
+        dailyAllowance: 85,
+        todaySpend: 15,
+        remainingToday: 70,
         behindAmount: 0,
         projectedIncome: 3000,
         projectedBills: 500,
+        spendablePool: 1275,
         daysLeft: 15,
         cycleWindow: CycleWindow(
           start: DateTime(2025, 6, 1),
@@ -76,10 +72,7 @@ void main() {
       expect(snapshot.behindAmount, 0);
       expect(snapshot.primaryGoalProgress, null);
       expect(snapshot.treeStage, 'leko');
-      expect(
-        snapshot.closeoutStatus,
-        '3 days streak · Within budget',
-      );
+      expect(snapshot.closeoutStatus, '3 days streak · Within budget');
     });
   });
 
@@ -101,7 +94,10 @@ void main() {
       expect(decoded.primaryGoalProgress, s.primaryGoalProgress);
       expect(decoded.treeStage, s.treeStage);
       expect(decoded.closeoutStatus, s.closeoutStatus);
-      expect(decoded.timestamp.toIso8601String(), s.timestamp.toIso8601String());
+      expect(
+        decoded.timestamp.toIso8601String(),
+        s.timestamp.toIso8601String(),
+      );
     });
     test('fromJson null returns null', () {
       expect(DailySnapshot.fromJson(null), null);

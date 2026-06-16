@@ -1,0 +1,21 @@
+{
+  "name": "sapling-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260416.2",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4",
+    "wrangler": "^4.83.0"
+  }
+}

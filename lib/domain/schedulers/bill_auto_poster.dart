@@ -26,6 +26,7 @@ class BillAutoPoster {
   BillAutoPoster(this._billsRepo, this._txnRepo);
 
   /// Posts and advances every autopay bill up to and including [today].
+  /// Only processes bills whose [Bill.autopay] flag is true.
   /// Returns the number of expense transactions created across those bills.
   Future<int> runForDate(DateTime today) async {
     final bills = await _billsRepo.getAll();
@@ -33,14 +34,17 @@ class BillAutoPoster {
     int postedCount = 0;
 
     for (final bill in bills) {
+      if (!bill.autopay) continue;
       postedCount += await _runForBill(bill, todayStart);
     }
     return postedCount;
   }
 
   Future<int> _runForBill(Bill bill, DateTime todayStart) async {
-    final freq =
-        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
+    final freq = enumFromDb<BillFrequency>(
+      bill.frequency,
+      BillFrequency.values,
+    );
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
     var due = DateTime(
@@ -79,28 +83,28 @@ class BillAutoPoster {
     final dateEnd = dateStart.add(const Duration(days: 1));
     final txns = await _txnRepo.getByDateRange(dateStart, dateEnd);
     return txns.any(
-      (t) => t.type == enumToDb(TransactionType.expense) && t.linkedBillId == billId,
+      (t) =>
+          t.type == enumToDb(TransactionType.expense) &&
+          t.linkedBillId == billId,
     );
   }
 
-  Future<void> _postExpense(
-    Bill bill,
-    DateTime date,
-    SpendLabel label,
-  ) async {
+  Future<void> _postExpense(Bill bill, DateTime date, SpendLabel label) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _txnRepo.insert(Transaction(
-      id: id,
-      type: enumToDb(TransactionType.expense),
-      amount: bill.amount,
-      date: date,
-      categoryId: bill.categoryId,
-      label: enumToDb(label),
-      note: 'Bill auto-posted: ${bill.name}',
-      linkedBillId: bill.id,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _txnRepo.insert(
+      Transaction(
+        id: id,
+        type: enumToDb(TransactionType.expense),
+        amount: bill.amount,
+        date: date,
+        categoryId: bill.categoryId,
+        label: enumToDb(label),
+        note: 'Bill auto-posted: ${bill.name}',
+        linkedBillId: bill.id,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
   }
 }
