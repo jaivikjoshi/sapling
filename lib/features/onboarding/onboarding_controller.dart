@@ -247,9 +247,11 @@ final onboardingControllerProvider =
 class OnboardingController extends StateNotifier<OnboardingState> {
   OnboardingController(this._ref) : super(const OnboardingState()) {
     final user = _ref.read(currentUserProvider);
-    final seededName = _ref.read(profileServiceProvider).displayName(user);
-    if (seededName.isNotEmpty) {
-      state = state.copyWith(name: seededName);
+    if (user != null) {
+      final seededName = _ref.read(profileServiceProvider).displayName(user);
+      if (seededName.isNotEmpty) {
+        state = state.copyWith(name: seededName);
+      }
     }
   }
 

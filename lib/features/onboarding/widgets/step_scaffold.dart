@@ -55,7 +55,7 @@ class StepScaffold extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
+                  padding: const EdgeInsets.fromLTRB(22, 10, 22, 0),
                   child: Row(
                     children: [
                       if (onBack != null)
@@ -71,15 +71,16 @@ class StepScaffold extends ConsumerWidget {
                         style: const TextStyle(
                           color: LekoColors.onboardingTextSecondary,
                           fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(999),
                     child: LinearProgressIndicator(
@@ -92,9 +93,9 @@ class StepScaffold extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -108,7 +109,7 @@ class StepScaffold extends ConsumerWidget {
                 if (subtitle != null) ...[
                   const SizedBox(height: 12),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: Text(
                       subtitle!,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -118,114 +119,97 @@ class StepScaffold extends ConsumerWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 28),
+                const SizedBox(height: 20),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: child,
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: LekoColors.surface,
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: LekoColors.divider),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x120F172A),
-                          blurRadius: 18,
-                          offset: Offset(0, 8),
+                  padding: const EdgeInsets.fromLTRB(28, 8, 28, 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (error != null) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFFC75D53,
+                            ).withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(
+                                0xFFC75D53,
+                              ).withValues(alpha: 0.22),
+                            ),
+                          ),
+                          child: Text(
+                            error,
+                            style: const TextStyle(
+                              color: Color(0xFF9D4038),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              height: 1.35,
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (error != null) ...[
-                            Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFC75D53,
-                                ).withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color(
-                                    0xFFC75D53,
-                                  ).withValues(alpha: 0.22),
-                                ),
-                              ),
-                              child: Text(
-                                error,
-                                style: const TextStyle(
-                                  color: Color(0xFFF2B6AE),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.35,
-                                ),
-                              ),
-                            ),
-                          ],
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: LekoColors.onboardingButton,
-                              foregroundColor: LekoColors.onboardingButtonText,
-                              disabledBackgroundColor: LekoColors
-                                  .onboardingButton
-                                  .withValues(alpha: 0.28),
-                              disabledForegroundColor: LekoColors
-                                  .onboardingButtonText
-                                  .withValues(alpha: 0.55),
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                            ),
-                            onPressed: canProceed && !isLoading ? onNext : null,
-                            child:
-                                isLoading
-                                    ? const SizedBox(
-                                      height: 24,
-                                      width: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: LekoColors.onboardingButtonText,
-                                      ),
-                                    )
-                                    : Text(
-                                      nextLabel,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: LekoColors.onboardingButton,
+                          foregroundColor: LekoColors.onboardingButtonText,
+                          disabledBackgroundColor: LekoColors.onboardingButton
+                              .withValues(alpha: 0.28),
+                          disabledForegroundColor: LekoColors
+                              .onboardingButtonText
+                              .withValues(alpha: 0.55),
+                          padding: const EdgeInsets.symmetric(vertical: 17),
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
                           ),
-                          if (secondaryLabel != null &&
-                              onSecondary != null) ...[
-                            const SizedBox(height: 8),
-                            TextButton(
-                              style: TextButton.styleFrom(
-                                foregroundColor: LekoColors.textSecondary,
-                              ),
-                              onPressed: onSecondary,
-                              child: Text(
-                                secondaryLabel!,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                        ),
+                        onPressed: canProceed && !isLoading ? onNext : null,
+                        child:
+                            isLoading
+                                ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: LekoColors.onboardingButtonText,
+                                  ),
+                                )
+                                : Text(
+                                  nextLabel,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.2,
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ],
-                        ],
                       ),
-                    ),
+                      if (secondaryLabel != null && onSecondary != null) ...[
+                        const SizedBox(height: 8),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: LekoColors.textSecondary,
+                          ),
+                          onPressed: onSecondary,
+                          child: Text(
+                            secondaryLabel!,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],

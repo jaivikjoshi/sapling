@@ -1022,11 +1022,18 @@ class _NotificationsStep extends ConsumerWidget {
   }
 }
 
-class _RecapStep extends ConsumerWidget {
+class _RecapStep extends ConsumerStatefulWidget {
   const _RecapStep();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_RecapStep> createState() => _RecapStepState();
+}
+
+class _RecapStepState extends ConsumerState<_RecapStep> {
+  bool _opening = false;
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
 
@@ -1040,13 +1047,20 @@ class _RecapStep extends ConsumerWidget {
           'Leko has enough context now to guide you calmly from the moment you land on Home.',
       onBack: controller.back,
       onNext: () async {
+        if (_opening) return;
+        setState(() => _opening = true);
         final success = await controller.complete();
         if (success && context.mounted) {
           context.go('/home');
+          return;
+        }
+        if (mounted) {
+          setState(() => _opening = false);
         }
       },
       nextLabel: 'Open Leko',
-      isLoading: state.isSubmitting,
+      canProceed: !_opening,
+      isLoading: state.isSubmitting || _opening,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1754,15 +1768,22 @@ class _NameIntroCard extends StatelessWidget {
     final previewName = name.trim().isEmpty ? 'there' : _firstName(name);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF163339), Color(0xFF102023)],
+          colors: [Color(0xFF173C42), Color(0xFF102529)],
         ),
-        border: Border.all(color: _OnboardingPalette.outline),
+        border: Border.all(color: Colors.white24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x22132440),
+            blurRadius: 22,
+            offset: Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1776,16 +1797,16 @@ class _NameIntroCard extends StatelessWidget {
             ),
             child: const Icon(
               Icons.waving_hand_rounded,
-              color: _OnboardingPalette.tealSoft,
+              color: Color(0xFFBFE7D8),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Text(
             'Nice to meet you, $previewName.',
             style: const TextStyle(
-              color: _OnboardingPalette.textPrimary,
-              fontSize: 28,
-              height: 1.08,
+              color: Color(0xFFF7F5F0),
+              fontSize: 26,
+              height: 1.12,
               fontWeight: FontWeight.w700,
               letterSpacing: 0,
             ),
@@ -1794,7 +1815,7 @@ class _NameIntroCard extends StatelessWidget {
           Text(
             'We’ll use your name where it makes Leko feel warmer and more personal.',
             style: TextStyle(
-              color: _OnboardingPalette.textSecondary.withValues(alpha: 0.92),
+              color: const Color(0xFFDCE9E5).withValues(alpha: 0.90),
               fontSize: 15,
               height: 1.45,
             ),

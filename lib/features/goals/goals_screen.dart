@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/bills_providers.dart';
@@ -19,7 +20,9 @@ import '../../domain/services/goal_feasibility_service.dart';
 import '../../domain/services/projection_service.dart';
 import 'goal_form_sheet.dart';
 
-final goalInsightsProvider = FutureProvider<Map<String, GoalInsight>>((ref) async {
+final goalInsightsProvider = FutureProvider<Map<String, GoalInsight>>((
+  ref,
+) async {
   final goals = ref.watch(goalsStreamProvider).valueOrNull ?? const <Goal>[];
   final settings = ref.watch(settingsStreamProvider).valueOrNull;
 
@@ -70,7 +73,9 @@ final goalInsightsProvider = FutureProvider<Map<String, GoalInsight>>((ref) asyn
       schedules: schedules,
     );
     final confirmedIncomeInWindow = incomeTxns
-        .where((t) => !t.date.isBefore(todayStart) && t.date.isBefore(horizonEnd))
+        .where(
+          (t) => !t.date.isBefore(todayStart) && t.date.isBefore(horizonEnd),
+        )
         .fold<double>(0, (sum, t) => sum + t.amount);
     final futureIncome = grossProjectedIncome - confirmedIncomeInWindow;
 
@@ -94,21 +99,23 @@ final goalInsightsProvider = FutureProvider<Map<String, GoalInsight>>((ref) asyn
       savingStyleMultiplier: savingStyle.multiplier,
     );
 
-    final currentTowardGoal = balance <= 0
-        ? 0.0
-        : math.min(balance, goal.targetAmount).toDouble();
+    final currentTowardGoal =
+        balance <= 0 ? 0.0 : math.min(balance, goal.targetAmount).toDouble();
     final remaining = math.max(0.0, goal.targetAmount - currentTowardGoal);
-    final progress = goal.targetAmount <= 0
-        ? 0.0
-        : (currentTowardGoal / goal.targetAmount).clamp(0.0, 1.0);
+    final progress =
+        goal.targetAmount <= 0
+            ? 0.0
+            : (currentTowardGoal / goal.targetAmount).clamp(0.0, 1.0);
     final dailyPaceNeeded = daysToGoal > 0 ? remaining / daysToGoal : remaining;
-    final ratio = feasibility.need <= 0
-        ? 2.0
-        : feasibility.freeAfterObligations / feasibility.need;
+    final ratio =
+        feasibility.need <= 0
+            ? 2.0
+            : feasibility.freeAfterObligations / feasibility.need;
 
-    final status = !feasibility.isFeasible
-        ? GoalRealism.unrealistic
-        : ratio < 1.15
+    final status =
+        !feasibility.isFeasible
+            ? GoalRealism.unrealistic
+            : ratio < 1.15
             ? GoalRealism.tight
             : GoalRealism.onTrack;
 
@@ -137,39 +144,65 @@ enum _GoalFilter { all, active, nearTarget, completed }
 
 class _GoalsScreenState extends ConsumerState<GoalsScreen> {
   _GoalFilter _filter = _GoalFilter.active;
+  bool _handledAddIntent = false;
 
   @override
   Widget build(BuildContext context) {
     final goalsAsync = ref.watch(goalsStreamProvider);
     final insightsAsync = ref.watch(goalInsightsProvider);
+    final shouldOpenAdd =
+        GoRouterState.of(context).uri.queryParameters['add'] == '1';
+    if (shouldOpenAdd && !_handledAddIntent) {
+      _handledAddIntent = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.go('/goals');
+        _showForm(context);
+      });
+    } else if (!shouldOpenAdd) {
+      _handledAddIntent = false;
+    }
 
     return Scaffold(
       backgroundColor: _GoalsReferencePalette.background,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 78),
-        child: _AddGoalFab(
-          onTap: () => _showForm(context),
-        ),
+        child: _AddGoalFab(onTap: () => _showForm(context)),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
         bottom: false,
         child: goalsAsync.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: _GoalsReferencePalette.accent),
-          ),
-          error: (e, _) => Center(
-            child: Text(
-              'Unable to load goals.\n$e',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: _GoalsReferencePalette.textSecondary),
-            ),
-          ),
+          loading:
+              () => const Center(
+                child: CircularProgressIndicator(
+                  color: _GoalsReferencePalette.accent,
+                ),
+              ),
+          error:
+              (e, _) => Center(
+                child: Text(
+                  'Unable to load goals.\n$e',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: _GoalsReferencePalette.textSecondary,
+                  ),
+                ),
+              ),
           data: (goals) {
-            final insights = insightsAsync.valueOrNull ?? const <String, GoalInsight>{};
+            final insights =
+                insightsAsync.valueOrNull ?? const <String, GoalInsight>{};
             final sortedGoals = [...goals]..sort((a, b) {
-              final aDate = DateTime(a.targetDate.year, a.targetDate.month, a.targetDate.day);
-              final bDate = DateTime(b.targetDate.year, b.targetDate.month, b.targetDate.day);
+              final aDate = DateTime(
+                a.targetDate.year,
+                a.targetDate.month,
+                a.targetDate.day,
+              );
+              final bDate = DateTime(
+                b.targetDate.year,
+                b.targetDate.month,
+                b.targetDate.day,
+              );
               return aDate.compareTo(bDate);
             });
             final filteredGoals = _applyGoalFilter(sortedGoals, insights);
@@ -178,9 +211,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
             return ListView(
               padding: const EdgeInsets.fromLTRB(24, 14, 24, 136),
               children: [
-                _GoalsReferenceHeader(
-                  onSearch: () {},
-                ),
+                _GoalsReferenceHeader(onSearch: () {}),
                 const SizedBox(height: 22),
                 _GoalsSummaryCard(summary: summary),
                 const SizedBox(height: 16),
@@ -200,7 +231,8 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
                           insight: insights[goal.id],
                           onTap: () => _openDetail(context, goal.id),
                         ),
-                        if (goal != filteredGoals.last) const SizedBox(height: 16),
+                        if (goal != filteredGoals.last)
+                          const SizedBox(height: 16),
                       ],
                     ],
                   ),
@@ -216,16 +248,18 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     List<Goal> goals,
     Map<String, GoalInsight> insights,
   ) {
-    return goals.where((goal) {
-      final insight = insights[goal.id];
-      final progress = insight?.progress ?? 0.0;
-      return switch (_filter) {
-        _GoalFilter.all => true,
-        _GoalFilter.active => progress < 1.0,
-        _GoalFilter.nearTarget => progress >= 0.45 && progress < 1.0,
-        _GoalFilter.completed => progress >= 1.0,
-      };
-    }).toList(growable: false);
+    return goals
+        .where((goal) {
+          final insight = insights[goal.id];
+          final progress = insight?.progress ?? 0.0;
+          return switch (_filter) {
+            _GoalFilter.all => true,
+            _GoalFilter.active => progress < 1.0,
+            _GoalFilter.nearTarget => progress >= 0.45 && progress < 1.0,
+            _GoalFilter.completed => progress >= 1.0,
+          };
+        })
+        .toList(growable: false);
   }
 
   _GoalsSummaryData _buildGoalsSummary(
@@ -236,12 +270,14 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
       final insight = insights[goal.id];
       return sum + (insight?.currentTowardGoal ?? 0.0);
     });
-    final activeCount = goals
-        .where((goal) => (insights[goal.id]?.progress ?? 0.0) < 1.0)
-        .length;
-    final halfwayCount = goals
-        .where((goal) => (insights[goal.id]?.progress ?? 0.0) >= 0.5)
-        .length;
+    final activeCount =
+        goals
+            .where((goal) => (insights[goal.id]?.progress ?? 0.0) < 1.0)
+            .length;
+    final halfwayCount =
+        goals
+            .where((goal) => (insights[goal.id]?.progress ?? 0.0) >= 0.5)
+            .length;
 
     return _GoalsSummaryData(
       savedAcrossGoals: savedAcrossGoals,
@@ -306,10 +342,7 @@ class _GoalsReferenceHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        _GoalsCircleButton(
-          icon: Icons.search_rounded,
-          onTap: onSearch,
-        ),
+        _GoalsCircleButton(icon: Icons.search_rounded, onTap: onSearch),
       ],
     );
   }
@@ -405,10 +438,7 @@ class _GoalsSummaryCard extends StatelessWidget {
 }
 
 class _GoalsFilterPills extends StatelessWidget {
-  const _GoalsFilterPills({
-    required this.selected,
-    required this.onSelected,
-  });
+  const _GoalsFilterPills({required this.selected, required this.onSelected});
 
   final _GoalFilter selected;
   final ValueChanged<_GoalFilter> onSelected;
@@ -482,7 +512,10 @@ class _FilterPill extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? Colors.white : _GoalsReferencePalette.textSecondary,
+              color:
+                  selected
+                      ? Colors.white
+                      : _GoalsReferencePalette.textSecondary,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -670,10 +703,7 @@ class _GoalsReferenceCard extends StatelessWidget {
 }
 
 class _AmountInsetCard extends StatelessWidget {
-  const _AmountInsetCard({
-    required this.label,
-    required this.amount,
-  });
+  const _AmountInsetCard({required this.label, required this.amount});
 
   final String label;
   final String amount;
@@ -742,10 +772,7 @@ class _GoalsEmptyStateCard extends StatelessWidget {
 }
 
 class _GoalsCircleButton extends StatelessWidget {
-  const _GoalsCircleButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _GoalsCircleButton({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;
@@ -898,11 +925,7 @@ class _GoalsBackdrop extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF071214),
-            Color(0xFF0B181B),
-            Color(0xFF0D1718),
-          ],
+          colors: [Color(0xFF071214), Color(0xFF0B181B), Color(0xFF0D1718)],
         ),
       ),
       child: Stack(
@@ -1018,7 +1041,11 @@ class _AddGoalButton extends StatelessWidget {
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.add_rounded, color: _GoalsPalette.textPrimary, size: 18),
+              Icon(
+                Icons.add_rounded,
+                color: _GoalsPalette.textPrimary,
+                size: 18,
+              ),
               SizedBox(width: 6),
               Text(
                 'New',
@@ -1129,10 +1156,7 @@ class _PrimaryGoalSection extends ConsumerWidget {
                     color: _GoalsPalette.gold,
                   ),
                   const Spacer(),
-                  _HeroActionButton(
-                    icon: Icons.edit_outlined,
-                    onTap: onEdit,
-                  ),
+                  _HeroActionButton(icon: Icons.edit_outlined, onTap: onEdit),
                 ],
               ),
               const SizedBox(height: 18),
@@ -1210,7 +1234,9 @@ class _PrimaryGoalSection extends ConsumerWidget {
                   Expanded(
                     child: _InsightBlock(
                       label: 'Remaining',
-                      value: formatCurrency(insight?.remainingAmount ?? goal.targetAmount),
+                      value: formatCurrency(
+                        insight?.remainingAmount ?? goal.targetAmount,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1224,7 +1250,8 @@ class _PrimaryGoalSection extends ConsumerWidget {
                   Expanded(
                     child: _InsightBlock(
                       label: 'Pace needed',
-                      value: '${formatCurrency(insight?.dailyPaceNeeded ?? 0)}/day',
+                      value:
+                          '${formatCurrency(insight?.dailyPaceNeeded ?? 0)}/day',
                       alignEnd: true,
                     ),
                   ),
@@ -1241,7 +1268,8 @@ class _PrimaryGoalSection extends ConsumerWidget {
                 const SizedBox(height: 16),
                 const _QuietNote(
                   icon: Icons.home_filled,
-                  text: 'Home will use this goal when you switch into goal planning mode.',
+                  text:
+                      'Home will use this goal when you switch into goal planning mode.',
                 ),
               ],
             ],
@@ -1392,7 +1420,10 @@ class _ReorderableGoalsSectionState
     final service = ref.read(goalsServiceProvider);
     for (var i = 0; i < _goals.length; i++) {
       final goal = _goals[i];
-      final style = enumFromDb<SavingStyle>(goal.savingStyle, SavingStyle.values);
+      final style = enumFromDb<SavingStyle>(
+        goal.savingStyle,
+        SavingStyle.values,
+      );
       await service.update(
         id: goal.id,
         name: goal.name,
@@ -1572,18 +1603,22 @@ class _GoalListCard extends ConsumerWidget {
                           await service.archive(goal.id);
                       }
                     },
-                    itemBuilder: (_) => [
-                      if (!isPrimary)
-                        const PopupMenuItem(
-                          value: 'primary',
-                          child: Text('Set as primary'),
-                        ),
-                      const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                      const PopupMenuItem(
-                        value: 'archive',
-                        child: Text('Archive'),
-                      ),
-                    ],
+                    itemBuilder:
+                        (_) => [
+                          if (!isPrimary)
+                            const PopupMenuItem(
+                              value: 'primary',
+                              child: Text('Set as primary'),
+                            ),
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'archive',
+                            child: Text('Archive'),
+                          ),
+                        ],
                   ),
                 ],
               ),
@@ -1601,10 +1636,18 @@ class _GoalListCard extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: isPrimary ? null : () async => service.setPrimaryGoal(goal.id),
+                    onPressed:
+                        isPrimary
+                            ? null
+                            : () async => service.setPrimaryGoal(goal.id),
                     icon: Icon(
-                      isPrimary ? Icons.star_rounded : Icons.star_outline_rounded,
-                      color: isPrimary ? _GoalsPalette.gold : _GoalsPalette.textMuted,
+                      isPrimary
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
+                      color:
+                          isPrimary
+                              ? _GoalsPalette.gold
+                              : _GoalsPalette.textMuted,
                       size: 20,
                     ),
                     tooltip: isPrimary ? 'Primary goal' : 'Set as primary',
@@ -1627,7 +1670,9 @@ class _GoalListCard extends ConsumerWidget {
                   Expanded(
                     child: _CompactInfo(
                       label: 'Remaining',
-                      value: formatCurrency(insight?.remainingAmount ?? goal.targetAmount),
+                      value: formatCurrency(
+                        insight?.remainingAmount ?? goal.targetAmount,
+                      ),
                     ),
                   ),
                   Expanded(
@@ -1639,7 +1684,8 @@ class _GoalListCard extends ConsumerWidget {
                   Expanded(
                     child: _CompactInfo(
                       label: 'Pace',
-                      value: '${formatCurrency(insight?.dailyPaceNeeded ?? 0)}/day',
+                      value:
+                          '${formatCurrency(insight?.dailyPaceNeeded ?? 0)}/day',
                       alignEnd: true,
                     ),
                   ),
@@ -1728,7 +1774,10 @@ class _EmptyGoalsState extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: _GoalsPalette.teal,
                   foregroundColor: _GoalsPalette.textPrimary,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -1748,11 +1797,7 @@ class _EmptyGoalsState extends StatelessWidget {
 }
 
 class _Badge extends StatelessWidget {
-  const _Badge({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
+  const _Badge({required this.icon, required this.label, required this.color});
 
   final IconData icon;
   final String label;
@@ -1787,10 +1832,7 @@ class _Badge extends StatelessWidget {
 }
 
 class _HeroActionButton extends StatelessWidget {
-  const _HeroActionButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _HeroActionButton({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;
@@ -2012,34 +2054,34 @@ double _computeBaselineDailySpend({
 }
 
 String _savingStyleLabel(SavingStyle style) => switch (style) {
-      SavingStyle.easy => 'Easy',
-      SavingStyle.natural => 'Natural',
-      SavingStyle.aggressive => 'Aggressive',
-    };
+  SavingStyle.easy => 'Easy',
+  SavingStyle.natural => 'Natural',
+  SavingStyle.aggressive => 'Aggressive',
+};
 
 String _statusLabel(GoalRealism status) => switch (status) {
-      GoalRealism.onTrack => 'On track',
-      GoalRealism.tight => 'Tight',
-      GoalRealism.unrealistic => 'Unrealistic',
-    };
+  GoalRealism.onTrack => 'On track',
+  GoalRealism.tight => 'Tight',
+  GoalRealism.unrealistic => 'Unrealistic',
+};
 
 IconData _statusIcon(GoalRealism status) => switch (status) {
-      GoalRealism.onTrack => Icons.check_circle_rounded,
-      GoalRealism.tight => Icons.timelapse_rounded,
-      GoalRealism.unrealistic => Icons.warning_amber_rounded,
-    };
+  GoalRealism.onTrack => Icons.check_circle_rounded,
+  GoalRealism.tight => Icons.timelapse_rounded,
+  GoalRealism.unrealistic => Icons.warning_amber_rounded,
+};
 
 Color _statusColor(GoalRealism status) => switch (status) {
-      GoalRealism.onTrack => _GoalsPalette.teal,
-      GoalRealism.tight => _GoalsPalette.gold,
-      GoalRealism.unrealistic => _GoalsPalette.alert,
-    };
+  GoalRealism.onTrack => _GoalsPalette.teal,
+  GoalRealism.tight => _GoalsPalette.gold,
+  GoalRealism.unrealistic => _GoalsPalette.alert,
+};
 
 Color _styleColor(SavingStyle style) => switch (style) {
-      SavingStyle.easy => const Color(0xFF73D1BE),
-      SavingStyle.natural => const Color(0xFFE0B980),
-      SavingStyle.aggressive => const Color(0xFFE08E82),
-    };
+  SavingStyle.easy => const Color(0xFF73D1BE),
+  SavingStyle.natural => const Color(0xFFE0B980),
+  SavingStyle.aggressive => const Color(0xFFE08E82),
+};
 
 abstract final class _GoalsPalette {
   static const background = Color(0xFF071214);
@@ -2075,12 +2117,17 @@ class GoalDetailScreen extends ConsumerWidget {
         title: const Text('Goal'),
       ),
       body: goalsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: _GoalsPalette.teal),
-        ),
-        error: (e, _) => Center(
-          child: Text('Error: $e', style: const TextStyle(color: _GoalsPalette.textSecondary)),
-        ),
+        loading:
+            () => const Center(
+              child: CircularProgressIndicator(color: _GoalsPalette.teal),
+            ),
+        error:
+            (e, _) => Center(
+              child: Text(
+                'Error: $e',
+                style: const TextStyle(color: _GoalsPalette.textSecondary),
+              ),
+            ),
         data: (goals) {
           Goal? goal;
           for (final item in goals) {

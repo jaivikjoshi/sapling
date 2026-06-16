@@ -59,7 +59,7 @@ class HomeScreen extends ConsumerWidget {
             _QuickActionsRow(
               onAddExpense: () => context.push('/add-expense'),
               onAddIncome: () => context.push('/add-income'),
-              onAddGoal: () => context.go('/goals'),
+              onAddGoal: () => context.go('/goals?add=1'),
             ),
             const SizedBox(height: 18),
             const _WeeklySpendingCard(),
@@ -348,7 +348,7 @@ class _QuickActionsRow extends StatelessWidget {
       children: [
         Expanded(
           child: _ActionCard(
-            label: 'Add\nexpense',
+            label: 'Expense',
             icon: Icons.add_rounded,
             onTap: onAddExpense,
           ),
@@ -356,7 +356,7 @@ class _QuickActionsRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _ActionCard(
-            label: 'Add\nincome',
+            label: 'Income',
             icon: Icons.payments_outlined,
             background: _HomePalette.incomeCard,
             iconAccent: _HomePalette.incomeAccent,
@@ -366,7 +366,7 @@ class _QuickActionsRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _ActionCard(
-            label: 'Add\ngoal',
+            label: 'Goal',
             icon: Icons.gps_fixed_rounded,
             background: _HomePalette.mintCard,
             iconAccent: _HomePalette.mintAccent,
@@ -401,8 +401,8 @@ class _ActionCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(22),
         child: Ink(
-          height: 88,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 86,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
             color: background,
             borderRadius: BorderRadius.circular(22),
@@ -415,27 +415,29 @@ class _ActionCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: _HomePalette.iconCircle,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(icon, color: iconAccent, size: 17),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: _HomePalette.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    height: 1.2,
-                  ),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: _HomePalette.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
                 ),
               ),
             ],
