@@ -41,7 +41,7 @@ class SupabaseDailyCloseoutsRepository implements DailyCloseoutsRepository {
         .maybeSingle();
     return res == null
         ? null
-        : dailyCloseoutFromSupabase(res as Map<String, dynamic>);
+        : dailyCloseoutFromSupabase(res);
   }
 
   @override

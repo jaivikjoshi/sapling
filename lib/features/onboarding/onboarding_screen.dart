@@ -1083,56 +1083,6 @@ class _RecapStep extends ConsumerWidget {
   }
 }
 
-class _WarmBullet extends StatelessWidget {
-  const _WarmBullet({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          margin: const EdgeInsets.only(top: 6),
-          decoration: const BoxDecoration(
-            color: _OnboardingPalette.tealSoft,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: _OnboardingPalette.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  color: _OnboardingPalette.textSecondary,
-                  fontSize: 14,
-                  height: 1.45,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _NotificationArtCard extends StatelessWidget {
   const _NotificationArtCard();
 

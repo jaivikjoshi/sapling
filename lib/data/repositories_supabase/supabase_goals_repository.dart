@@ -64,7 +64,7 @@ class SupabaseGoalsRepository implements GoalsRepository {
         .eq('user_id', _userId)
         .maybeSingle();
     if (res == null) throw Exception('Goal not found: $id');
-    return goalFromSupabase(res as Map<String, dynamic>);
+    return goalFromSupabase(res);
   }
 
   @override

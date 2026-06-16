@@ -49,13 +49,13 @@ void main() {
 
   tearDown(() => db.close());
 
-  Future<void> _insert(TransactionsCompanion c) =>
+  Future<void> insert(TransactionsCompanion c) =>
       db.into(db.transactions).insert(c);
 
   group('monthlySummary', () {
     test('aggregates income expense adjustment correctly', () async {
       final now = DateTime.now();
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 't1',
           type: 'income',
@@ -65,7 +65,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 't2',
           type: 'expense',
@@ -76,7 +76,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 't3',
           type: 'expense',
@@ -87,7 +87,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 't4',
           type: 'adjustment',
@@ -107,7 +107,7 @@ void main() {
 
     test('only includes transactions in month (date bucketing)', () async {
       final now = DateTime.now();
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'feb',
           type: 'income',
@@ -117,7 +117,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'mar',
           type: 'income',
@@ -127,7 +127,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'apr',
           type: 'income',
@@ -154,7 +154,7 @@ void main() {
   group('annualSummary', () {
     test('aggregates full year', () async {
       final now = DateTime.now();
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'y1',
           type: 'income',
@@ -164,7 +164,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'y2',
           type: 'expense',
@@ -175,7 +175,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'y3',
           type: 'adjustment',
@@ -196,7 +196,7 @@ void main() {
 
     test('excludes other years', () async {
       final now = DateTime.now();
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'prev',
           type: 'income',
@@ -206,7 +206,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'curr',
           type: 'income',
@@ -225,7 +225,7 @@ void main() {
   group('billsPaidInPeriod', () {
     test('counts only expenses with linkedBillId', () async {
       final now = DateTime.now();
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'e1',
           type: 'expense',
@@ -237,7 +237,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'e2',
           type: 'expense',
@@ -248,7 +248,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'e3',
           type: 'expense',
@@ -271,7 +271,7 @@ void main() {
 
     test('bills paid only in period', () async {
       final now = DateTime.now();
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'feb',
           type: 'expense',
@@ -282,7 +282,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'mar',
           type: 'expense',
@@ -306,7 +306,7 @@ void main() {
   group('categoryBreakdown', () {
     test('sums expenses by category for month', () async {
       final now = DateTime.now();
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'a1',
           type: 'expense',
@@ -317,7 +317,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'a2',
           type: 'expense',
@@ -328,7 +328,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      await _insert(
+      await insert(
         TransactionsCompanion.insert(
           id: 'a3',
           type: 'expense',

@@ -34,20 +34,24 @@ class DriftTransactionsRepository implements TransactionsRepository {
         .write(t.toCompanion(true));
   }
 
+  @override
   Future<void> deleteById(String id) {
     return (_db.delete(_db.transactions)..where((t) => t.id.equals(id))).go();
   }
 
+  @override
   Future<Transaction> getById(String id) {
     return (_db.select(_db.transactions)..where((t) => t.id.equals(id)))
         .getSingle();
   }
 
+  @override
   Future<Transaction?> getByIdOrNull(String id) async {
     return (_db.select(_db.transactions)..where((t) => t.id.equals(id)))
         .getSingleOrNull();
   }
 
+  @override
   Stream<List<Transaction>> watchAll({int? limit}) {
     final q = _db.select(_db.transactions)
       ..orderBy([(t) => OrderingTerm.desc(t.date)]);
@@ -55,6 +59,7 @@ class DriftTransactionsRepository implements TransactionsRepository {
     return q.watch();
   }
 
+  @override
   Stream<List<Transaction>> watchByDateRange(DateTime start, DateTime end) {
     return (_db.select(_db.transactions)
           ..where((t) => t.date.isBiggerOrEqualValue(start) & t.date.isSmallerThanValue(end))
@@ -62,6 +67,7 @@ class DriftTransactionsRepository implements TransactionsRepository {
         .watch();
   }
 
+  @override
   Future<List<Transaction>> getByDateRange(DateTime start, DateTime end) {
     return (_db.select(_db.transactions)
           ..where((t) =>
@@ -71,11 +77,13 @@ class DriftTransactionsRepository implements TransactionsRepository {
         .get();
   }
 
+  @override
   Future<List<Transaction>> getAll() {
     return _db.select(_db.transactions).get();
   }
 
   /// Balance as of end of day before [endExclusive] (all transactions with date < endExclusive).
+  @override
   Future<double> computeBalanceUpTo(DateTime endExclusive) async {
     final rows = await (_db.select(_db.transactions)
           ..where((t) => t.date.isSmallerThanValue(endExclusive)))
@@ -94,6 +102,7 @@ class DriftTransactionsRepository implements TransactionsRepository {
     return balance;
   }
 
+  @override
   Future<double> computeBalance() async {
     final rows = await _db.select(_db.transactions).get();
     double balance = 0;
@@ -110,6 +119,7 @@ class DriftTransactionsRepository implements TransactionsRepository {
     return balance;
   }
 
+  @override
   Stream<double> watchBalance() {
     return _db.select(_db.transactions).watch().map((rows) {
       double balance = 0;

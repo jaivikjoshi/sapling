@@ -409,43 +409,6 @@ class _FeasibilityWarning extends StatelessWidget {
   }
 }
 
-// ── Shared info row ──
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(
-                    color: LekoColors.background.withValues(alpha: 0.7))),
-        Flexible(
-          child: Text(value,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: color, fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis),
-        ),
-      ],
-    );
-  }
-}
-
 class _MiniStatBlock extends StatelessWidget {
   const _MiniStatBlock({
     required this.label,

@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -38,16 +37,6 @@ void main() {
   });
 
   tearDown(() => db.close());
-
-  Future<void> _insert(DateTime date, String result) async {
-    final now = DateTime.now();
-    await db.into(db.dailyCloseouts).insert(DailyCloseoutsCompanion.insert(
-      id: '${date.millisecondsSinceEpoch}',
-      date: CloseoutService.dateBucket(date),
-      result: result,
-      createdAt: now,
-    ));
-  }
 
   group('dateBucket', () {
     test('strips time to midnight local', () {

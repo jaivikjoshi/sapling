@@ -211,8 +211,9 @@ class LeafActionExecutor {
         if (category.name.trim().toLowerCase() == target) return category;
       }
       for (final category in categories) {
-        if (category.name.trim().toLowerCase().contains(target))
+        if (category.name.trim().toLowerCase().contains(target)) {
           return category;
+        }
       }
     }
 

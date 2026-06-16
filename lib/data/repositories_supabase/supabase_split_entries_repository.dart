@@ -46,7 +46,7 @@ class SupabaseSplitEntriesRepository implements SplitEntriesRepository {
         .eq('id', id)
         .eq('user_id', _userId)
         .maybeSingle();
-    return res == null ? null : splitEntryFromSupabase(res as Map<String, dynamic>);
+    return res == null ? null : splitEntryFromSupabase(res);
   }
 
   @override
@@ -104,6 +104,6 @@ class SupabaseSplitEntriesRepository implements SplitEntriesRepository {
         .eq('user_id', _userId)
         .eq('link_to_expense_transaction_id', expenseId)
         .maybeSingle();
-    return res == null ? null : splitEntryFromSupabase(res as Map<String, dynamic>);
+    return res == null ? null : splitEntryFromSupabase(res);
   }
 }

@@ -1087,8 +1087,9 @@ class ReportsService {
   int _elapsedDays(ReportPeriodOption period) {
     final now = DateTime.now();
     if (!now.isAfter(period.start)) return 0;
-    if (!now.isBefore(period.end))
+    if (!now.isBefore(period.end)) {
       return _periodLengthDays(period.start, period.end);
+    }
 
     return _periodLengthDays(
       period.start,

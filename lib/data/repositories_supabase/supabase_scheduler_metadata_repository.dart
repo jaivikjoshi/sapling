@@ -16,7 +16,7 @@ class SupabaseSchedulerMetadataRepository implements SchedulerMetadataRepository
         .eq('key', key)
         .eq('user_id', _userId)
         .maybeSingle();
-    return res == null ? null : (res as Map<String, dynamic>)['value'] as String?;
+    return res == null ? null : (res)['value'] as String?;
   }
 
   @override

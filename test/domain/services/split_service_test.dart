@@ -1,9 +1,7 @@
-import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:leko/data/db/leko_database.dart';
-import 'package:leko/data/repositories/persons_repository.dart';
 import 'package:leko/data/repositories/persons_repository.dart';
 import 'package:leko/data/repositories/split_entries_repository.dart';
 import 'package:leko/data/repositories/split_shares_repository.dart';

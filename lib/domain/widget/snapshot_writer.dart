@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:home_widget/home_widget.dart';
 
 import '../../core/utils/enum_serialization.dart';
-import '../../core/utils/enum_serialization.dart';
 import '../../data/repositories/goals_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../models/daily_snapshot.dart';
@@ -53,10 +52,8 @@ class SnapshotWriter {
       }
 
       final result = await _allowanceEngine.computePaycheckMode(settings: userSettings);
-      if (result != null) {
-        await _write(SnapshotBuilder.fromPaycheck(result, streak));
-      }
-    } catch (_) {}
+      await _write(SnapshotBuilder.fromPaycheck(result, streak));
+        } catch (_) {}
   }
 
   Future<void> _write(DailySnapshot snapshot) async {
