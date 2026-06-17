@@ -37,7 +37,7 @@ class CloseoutNotificationService {
       requestSoundPermission: false,
     );
     await _plugin.initialize(
-      InitializationSettings(android: android, iOS: ios),
+      InitializationSettings(android: android, iOS: ios, macOS: ios),
       onDidReceiveNotificationResponse: _onResponse,
     );
   }

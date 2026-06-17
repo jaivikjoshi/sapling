@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,7 +53,9 @@ void main() async {
   await _handleAuthDeepLink();
 
   await CloseoutNotificationService.instance.init();
-  await HomeWidget.setAppGroupId('group.com.leko.app');
+  if (Platform.isIOS || Platform.isAndroid) {
+    await HomeWidget.setAppGroupId('group.com.leko.app');
+  }
 
   runApp(const ProviderScope(child: LekoApp()));
 }

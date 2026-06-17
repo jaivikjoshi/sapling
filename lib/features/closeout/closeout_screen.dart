@@ -19,23 +19,25 @@ class CloseoutScreen extends ConsumerWidget {
         children: [
           streakAsync.when(
             data: (streak) => _StreakCard(streak: streak),
-            loading: () => const Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            ),
-            error: (e, _) => Text(
-              'Error: $e',
-              style: TextStyle(color: LekoColors.error),
-            ),
+            loading:
+                () => const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+            error:
+                (e, _) => Text(
+                  'Error: $e',
+                  style: TextStyle(color: LekoColors.error),
+                ),
           ),
           const SizedBox(height: 24),
           Text(
             'Your streak is based on days you stayed within your daily budget (from what you logged).',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: LekoColors.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: LekoColors.textSecondary),
           ),
         ],
       ),
@@ -57,13 +59,19 @@ class _StreakCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.local_fire_department, color: LekoColors.labelOrange),
+                Icon(
+                  Icons.local_fire_department,
+                  color: LekoColors.labelOrange,
+                ),
                 const SizedBox(width: 8),
-                Text(
-                  '${streak.currentStreak} day streak',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                Expanded(
+                  child: Text(
+                    '${streak.currentStreak} day streak',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -73,9 +81,10 @@ class _StreakCard extends StatelessWidget {
                   ? "Today: within budget"
                   : "Today: over budget",
               style: TextStyle(
-                color: streak.todayWithinBudget
-                    ? LekoColors.labelGreen
-                    : LekoColors.labelRed,
+                color:
+                    streak.todayWithinBudget
+                        ? LekoColors.labelGreen
+                        : LekoColors.labelRed,
                 fontWeight: FontWeight.w500,
               ),
             ),

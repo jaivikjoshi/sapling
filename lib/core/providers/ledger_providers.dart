@@ -10,11 +10,11 @@ import 'auth_providers.dart';
 import 'db_provider.dart';
 
 final transactionsRepositoryProvider = Provider<TransactionsRepository>((ref) {
-  final client = ref.watch(supabaseClientProvider);
   final userId = ref.watch(currentUserProvider)?.id;
   if (userId == null) {
     return DriftTransactionsRepository(ref.watch(databaseProvider));
   }
+  final client = ref.watch(supabaseClientProvider);
   return SupabaseTransactionsRepository(client, userId);
 });
 
@@ -37,8 +37,7 @@ final balanceStreamProvider = StreamProvider<double>((ref) {
   return ref.watch(ledgerServiceProvider).watchBalance();
 });
 
-final recentTransactionsProvider =
-    StreamProvider<List<Transaction>>((ref) {
+final recentTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
   return ref.watch(ledgerServiceProvider).watchRecent(limit: 50);
 });
 
