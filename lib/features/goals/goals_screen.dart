@@ -326,7 +326,7 @@ class _GoalsReferenceHeader extends StatelessWidget {
                   color: _GoalsReferencePalette.textPrimary,
                   fontSize: 30,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -1.1,
+                  letterSpacing: 0,
                 ),
               ),
               SizedBox(height: 4),
@@ -419,7 +419,7 @@ class _GoalsSummaryCard extends StatelessWidget {
               color: _GoalsReferencePalette.textPrimary,
               fontSize: 34,
               fontWeight: FontWeight.w700,
-              letterSpacing: -1.4,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 12),
@@ -742,9 +742,7 @@ class _SavingsSparklinePainter extends CustomPainter {
           ..style = PaintingStyle.stroke;
     final fill =
         Paint()
-          ..shader = const LinearGradient(
-            colors: [Color(0xFF3B9797), Color(0xFF7ED7C1)],
-          ).createShader(Offset.zero & size)
+          ..color = const Color(0xFF3B9797)
           ..strokeWidth = 4
           ..strokeCap = StrokeCap.round
           ..style = PaintingStyle.stroke;
@@ -811,7 +809,7 @@ class _AmountInsetCard extends StatelessWidget {
               color: _GoalsReferencePalette.textPrimary,
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.8,
+              letterSpacing: 0,
             ),
           ),
         ],
@@ -998,53 +996,9 @@ class _GoalsBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF071214), Color(0xFF0B181B), Color(0xFF0D1718)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -70,
-            right: -30,
-            child: _GlowOrb(
-              size: 220,
-              color: _GoalsPalette.teal.withValues(alpha: 0.12),
-            ),
-          ),
-          Positioned(
-            top: 180,
-            left: -50,
-            child: _GlowOrb(
-              size: 170,
-              color: _GoalsPalette.gold.withValues(alpha: 0.06),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GlowOrb extends StatelessWidget {
-  const _GlowOrb({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color, Colors.transparent]),
-      ),
+    return const ColoredBox(
+      color: _GoalsPalette.background,
+      child: SizedBox.expand(),
     );
   }
 }
@@ -1075,7 +1029,7 @@ class _GoalsHeader extends StatelessWidget {
                   color: _GoalsPalette.textPrimary,
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -1.2,
+                  letterSpacing: 0,
                 ),
               ),
               const SizedBox(height: 6),
@@ -1158,7 +1112,7 @@ class _SectionLabel extends StatelessWidget {
             color: _GoalsPalette.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
+            letterSpacing: 0,
           ),
         ),
         const SizedBox(height: 4),
@@ -1202,12 +1156,8 @@ class _PrimaryGoalSection extends ConsumerWidget {
         child: Ink(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
+            color: _GoalsPalette.surface,
             borderRadius: BorderRadius.circular(34),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF143136), Color(0xFF0E2024)],
-            ),
             border: Border.all(color: _GoalsPalette.outline),
             boxShadow: [
               BoxShadow(
@@ -1244,7 +1194,7 @@ class _PrimaryGoalSection extends ConsumerWidget {
                   color: _GoalsPalette.textPrimary,
                   fontSize: 30,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -1.0,
+                  letterSpacing: 0,
                   height: 1.05,
                 ),
               ),
@@ -1258,7 +1208,7 @@ class _PrimaryGoalSection extends ConsumerWidget {
                       color: _GoalsPalette.textPrimary,
                       fontSize: 34,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: -1.4,
+                      letterSpacing: 0,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1625,7 +1575,7 @@ class _GoalListCard extends ConsumerWidget {
                                   color: _GoalsPalette.textPrimary,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.4,
+                                  letterSpacing: 0,
                                 ),
                               ),
                             ),
@@ -1833,7 +1783,7 @@ class _EmptyGoalsState extends StatelessWidget {
                   color: _GoalsPalette.textPrimary,
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -0.8,
+                  letterSpacing: 0,
                 ),
               ),
               const SizedBox(height: 10),
@@ -2239,7 +2189,7 @@ class GoalDetailScreen extends ConsumerWidget {
                   color: _GoalsPalette.textPrimary,
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -1.0,
+                  letterSpacing: 0,
                 ),
               ),
               if (isPrimary) ...[

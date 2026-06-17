@@ -71,7 +71,7 @@ void main() {
       (tester) async {
         final routes = <String, String>{
           '/goals': 'Goals',
-          '/leaf': 'Ask Leko',
+          '/leaf': 'Leaf',
           '/reports': 'Reports',
           '/settings': 'Settings',
           '/bills': 'Bills',

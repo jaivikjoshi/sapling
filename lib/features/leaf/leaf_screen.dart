@@ -6,13 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/providers/integration_providers.dart';
 import '../../core/providers/leaf_providers.dart';
 import '../../core/utils/currency_formatter.dart';
-import '../../domain/models/enums.dart';
-import 'leaf_assistant_responses.dart';
+import '../../core/widgets/leko_mark.dart';
 import 'leaf_context.dart';
 import 'leaf_models.dart';
 
@@ -203,9 +201,7 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
                           ),
                           const SizedBox(height: 22),
                           _SafeToSpendCard(contextData: ctx),
-                          const SizedBox(height: 18),
-                          _ContextChipRow(contextData: ctx),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           _SuggestedPrompts(
                             prompts: convo.suggestedPrompts,
                             onTap: (prompt) {
@@ -215,9 +211,7 @@ class _LeafScreenState extends ConsumerState<LeafScreen> {
                               _scrollToEnd();
                             },
                           ),
-                          const SizedBox(height: 26),
-                          const _SectionLabel('Conversation'),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 18),
                         ]),
                       ),
                     ),
@@ -350,14 +344,30 @@ class _LeafHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Ask Leko',
-                style: TextStyle(
-                  color: _LeafPalette.textPrimary,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -1.1,
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: _LeafPalette.navyDeep,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: LekoMark(size: 22, color: Color(0xFFB4B6B7)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'Leaf',
+                    style: TextStyle(
+                      color: _LeafPalette.textPrimary,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -438,8 +448,6 @@ class _SafeToSpendCard extends StatelessWidget {
         remaining != null ? formatCurrency(remaining.abs()) : '—';
 
     final subtitle = _safeToSpendSubtitle(contextData);
-    final bill = contextData.nextBill;
-    final goalName = _goalFocusLabel(contextData);
 
     return Container(
       width: double.infinity,
@@ -467,7 +475,7 @@ class _SafeToSpendCard extends StatelessWidget {
                     color: _LeafPalette.summaryMuted,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.9,
+                    letterSpacing: 0.8,
                   ),
                 ),
               ),
@@ -478,10 +486,8 @@ class _SafeToSpendCard extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
-                  Icons.auto_awesome_rounded,
-                  color: Colors.white,
-                  size: 18,
+                child: const Center(
+                  child: LekoMark(size: 22, color: Colors.white),
                 ),
               ),
             ],
@@ -511,7 +517,7 @@ class _SafeToSpendCard extends StatelessWidget {
                     color: Colors.white,
                     fontSize: 40,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: -1.8,
+                    letterSpacing: 0,
                   ),
                 ),
               ),
@@ -552,32 +558,6 @@ class _SafeToSpendCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: _HeroMiniPanel(
-                  label: 'Next bill',
-                  value:
-                      bill == null
-                          ? 'You\'re clear'
-                          : '${bill.name} · ${formatCurrency(bill.amount)}',
-                  hint:
-                      bill == null
-                          ? 'No upcoming bill'
-                          : DateFormat.MMMd().format(bill.nextDueDate),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _HeroMiniPanel(
-                  label: 'Goal focus',
-                  value: goalName,
-                  hint: _goalHint(contextData),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -587,215 +567,12 @@ class _SafeToSpendCard extends StatelessWidget {
 String _safeToSpendSubtitle(LeafContext ctx) {
   final left = ctx.remainingToday;
   final daily = ctx.dailyAllowance;
-  if (left == null || daily == null) return 'Syncing today\'s allowance…';
+  if (left == null || daily == null) return 'Syncing today\'s allowance';
   if (left >= 0) {
     final pct = daily > 0 ? (left / daily * 100).round() : 0;
-    return '$pct% of today\'s allowance still available';
+    return '$pct% left today';
   }
-  return 'Pace slightly ahead — ease off to rebalance';
-}
-
-String _goalFocusLabel(LeafContext ctx) {
-  if (ctx.allowanceMode == AllowanceMode.goal && ctx.goal != null) {
-    return ctx.goal!.goal.name;
-  }
-  if (ctx.primaryGoal != null) return ctx.primaryGoal!.name;
-  return 'No primary focus';
-}
-
-String _goalHint(LeafContext ctx) {
-  if (ctx.allowanceMode == AllowanceMode.goal && ctx.goal != null) {
-    return 'Goal-led cycle';
-  }
-  if (ctx.primaryGoal != null) return 'Starred goal';
-  return 'Pick one in Goals';
-}
-
-class _HeroMiniPanel extends StatelessWidget {
-  const _HeroMiniPanel({
-    required this.label,
-    required this.value,
-    required this.hint,
-  });
-
-  final String label;
-  final String value;
-  final String hint;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: _LeafPalette.summaryMuted,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.2,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            hint,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _LeafPalette.summaryMuted,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A compact row that shows contextual references ("latest move", "bills
-/// ahead") as quiet chips — replaces the old 4-box dashboard grid.
-class _ContextChipRow extends StatelessWidget {
-  const _ContextChipRow({required this.contextData});
-
-  final LeafContext contextData;
-
-  @override
-  Widget build(BuildContext context) {
-    final latestMove = leafInsightActivitySubtitle(contextData);
-    final billsAhead = leafInsightBillsSubtitle(contextData);
-
-    return Row(
-      children: [
-        Expanded(
-          child: _ReferenceChip(
-            icon: Icons.swap_horiz_rounded,
-            label: 'Latest move',
-            value: latestMove,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _ReferenceChip(
-            icon: Icons.receipt_long_outlined,
-            label: 'Bills ahead',
-            value: billsAhead,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ReferenceChip extends StatelessWidget {
-  const _ReferenceChip({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      decoration: BoxDecoration(
-        color: _LeafPalette.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _LeafPalette.outline),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: _LeafPalette.mintSoft,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 16, color: _LeafPalette.mint),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: _LeafPalette.textMuted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _LeafPalette.textPrimary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: _LeafPalette.textMuted,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.4,
-          ),
-        ),
-        const SizedBox(width: 10),
-        const Expanded(
-          child: Divider(color: _LeafPalette.outline, thickness: 1, height: 1),
-        ),
-      ],
-    );
-  }
+  return 'Over pace today';
 }
 
 class _SuggestedPrompts extends StatelessWidget {
@@ -1114,17 +891,7 @@ class _ComposerBar extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.fromLTRB(20, 14, 20, bottomPadding),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              _LeafPalette.background.withValues(alpha: 0.0),
-              _LeafPalette.background.withValues(alpha: 0.92),
-              _LeafPalette.background,
-            ],
-          ),
-        ),
+        decoration: const BoxDecoration(color: _LeafPalette.background),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

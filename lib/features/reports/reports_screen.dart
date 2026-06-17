@@ -852,7 +852,7 @@ class _MiniStatCard extends StatelessWidget {
               color: _ReportsPalette.textPrimary,
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.7,
+              letterSpacing: 0,
             ),
           ),
         ],
@@ -945,12 +945,8 @@ class _HeroCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
       decoration: BoxDecoration(
+        color: _ReportsPalette.surface,
         borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF122428), Color(0xFF0B171A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
         border: Border.all(color: _ReportsPalette.outlineStrong),
         boxShadow: [
           BoxShadow(
@@ -998,7 +994,7 @@ class _HeroCard extends StatelessWidget {
               color: _ReportsPalette.textPrimary,
               fontSize: 38,
               fontWeight: FontWeight.w700,
-              letterSpacing: -1.2,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 16),
@@ -1629,7 +1625,7 @@ class _SectionCard extends StatelessWidget {
                         color: _ReportsPalette.textPrimary,
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: -0.4,
+                        letterSpacing: 0,
                       ),
                     ),
                   ],
@@ -2025,56 +2021,9 @@ class _ReportsBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(color: _ReportsPalette.background),
-        const Positioned(
-          top: -80,
-          left: -40,
-          child: _Orb(size: 220, color: Color(0x221B7D74)),
-        ),
-        const Positioned(
-          top: 220,
-          right: -70,
-          child: _Orb(size: 240, color: Color(0x16E0B980)),
-        ),
-        Positioned.fill(
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.02),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.12),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Orb extends StatelessWidget {
-  const _Orb({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color, Colors.transparent]),
-      ),
+    return const ColoredBox(
+      color: _ReportsPalette.background,
+      child: SizedBox.expand(),
     );
   }
 }

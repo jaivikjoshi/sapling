@@ -114,7 +114,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             color: _Tok.textTitle,
             fontWeight: FontWeight.w700,
             fontSize: 18,
-            letterSpacing: -0.3,
+            letterSpacing: 0,
           ),
         ),
       ),
@@ -339,7 +339,7 @@ class _AmountHeroCard extends StatelessWidget {
               fontSize: 48,
               fontWeight: FontWeight.w700,
               color: Color(0xFF1F2E33),
-              letterSpacing: -1.5,
+              letterSpacing: 0,
             ),
             decoration: const InputDecoration(
               prefixIcon: Padding(
@@ -359,7 +359,7 @@ class _AmountHeroCard extends StatelessWidget {
                 fontSize: 48,
                 fontWeight: FontWeight.w500,
                 color: _Tok.textPlaceholder,
-                letterSpacing: -1.5,
+                letterSpacing: 0,
               ),
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,

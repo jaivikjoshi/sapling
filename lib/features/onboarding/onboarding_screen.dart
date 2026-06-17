@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/widgets/leko_mark.dart';
 import '../../domain/models/enums.dart';
 import 'onboarding_controller.dart';
 import 'widgets/step_scaffold.dart';
@@ -188,9 +189,8 @@ class _IntentStep extends ConsumerWidget {
 
     return StepScaffold(
       step: OnboardingStep.intent,
-      title: 'What are you here for right now?',
-      subtitle:
-          'This helps Leko frame your setup with the right tone and defaults.',
+      title: 'What should Leko focus on?',
+      subtitle: 'Choose the setup style that fits your money right now.',
       onBack: controller.back,
       onNext: () => controller.next(),
       canProceed: state.intent != null,
@@ -223,8 +223,7 @@ class _CurrencyStep extends ConsumerWidget {
     return StepScaffold(
       step: OnboardingStep.currency,
       title: 'Which currency should Leko use?',
-      subtitle:
-          'You can change this later, but picking it now keeps every amount consistent from the start.',
+      subtitle: 'All balances, budgets, goals, and charts will use this.',
       onBack: controller.back,
       onNext: () => controller.next(),
       canProceed: state.baseCurrency != null,
@@ -287,8 +286,7 @@ class _BalanceStepState extends ConsumerState<_BalanceStep> {
     return StepScaffold(
       step: OnboardingStep.balance,
       title: 'What’s in chequing right now?',
-      subtitle:
-          'This gives Leko the starting point it needs to make today’s guidance feel grounded immediately.',
+      subtitle: 'Use your current available chequing balance.',
       onBack: controller.back,
       onNext: () => controller.next(),
       child: SingleChildScrollView(
@@ -308,8 +306,7 @@ class _BalanceStepState extends ConsumerState<_BalanceStep> {
             const SizedBox(height: 18),
             const _QuietHelperCard(
               icon: Icons.shield_moon_rounded,
-              text:
-                  'You’re not locking yourself in. This just helps your first spend plan feel realistic instead of blank.',
+              text: 'You can update this anytime.',
             ),
           ],
         ),
@@ -355,8 +352,7 @@ class _GoalStepState extends ConsumerState<_GoalStep> {
     return StepScaffold(
       step: OnboardingStep.goal,
       title: 'Create your first goal',
-      subtitle:
-          'This can be simple. If you add one now, Leko will use it as your main goal for planning.',
+      subtitle: 'Optional, but it makes your plan more useful.',
       onBack: controller.back,
       onNext: () => controller.next(),
       secondaryLabel: 'Skip for now',
@@ -503,9 +499,8 @@ class _IncomeStepState extends ConsumerState<_IncomeStep> {
 
     return StepScaffold(
       step: OnboardingStep.income,
-      title: 'Add income to shape your rhythm',
-      subtitle:
-          'Recurring income helps Leko plan around payday. A one-time income can still give your starting balance a boost.',
+      title: 'Add income',
+      subtitle: 'Set paydays now or add deposits manually later.',
       onBack: controller.back,
       onNext: () => controller.next(),
       secondaryLabel: 'Skip for now',
@@ -670,8 +665,7 @@ class _RolloverStep extends ConsumerWidget {
     return StepScaffold(
       step: OnboardingStep.rollover,
       title: 'How should Leko reset your allowance?',
-      subtitle:
-          'Choose the rhythm that should guide your day-to-day spending ceiling.',
+      subtitle: 'Choose the rhythm for daily spending guidance.',
       onBack: controller.back,
       onNext: () => controller.next(),
       child: SingleChildScrollView(
@@ -1473,7 +1467,7 @@ class _AmountEntryCard extends StatelessWidget {
           const SizedBox(height: 12),
           DecoratedBox(
             decoration: BoxDecoration(
-              color: const Color(0xFF0C181A),
+              color: const Color(0xFFF7F9FA),
               borderRadius: BorderRadius.circular(22),
               border: Border.all(
                 color: _OnboardingPalette.tealSoft.withValues(alpha: 0.22),
@@ -1495,7 +1489,7 @@ class _AmountEntryCard extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: const TextStyle(
-                  color: Color(0xFF94A8A5),
+                  color: _OnboardingPalette.textMuted,
                   fontSize: 34,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0,
@@ -1733,9 +1727,9 @@ class _QuietHelperCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: _OnboardingPalette.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+        border: Border.all(color: _OnboardingPalette.outline),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1770,13 +1764,9 @@ class _NameIntroCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
+        color: const Color(0xFF013333),
         borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF173C42), Color(0xFF102529)],
-        ),
-        border: Border.all(color: Colors.white24),
+        border: Border.all(color: const Color(0x1FB4B6B7)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x22132440),
@@ -1795,9 +1785,8 @@ class _NameIntroCard extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
-              Icons.waving_hand_rounded,
-              color: Color(0xFFBFE7D8),
+            child: const Center(
+              child: LekoMark(size: 28, color: Color(0xFFB4B6B7)),
             ),
           ),
           const SizedBox(height: 20),
@@ -1813,7 +1802,7 @@ class _NameIntroCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'We’ll use your name where it makes Leko feel warmer and more personal.',
+            'Your setup starts with the basics.',
             style: TextStyle(
               color: const Color(0xFFDCE9E5).withValues(alpha: 0.90),
               fontSize: 15,
@@ -2110,7 +2099,7 @@ abstract final class _OnboardingPalette {
   static const surface = Color(0xFFFFFFFF);
   static const surfaceSelected = Color(0xFFEAF6F2);
   static const outline = Color(0xFFECEAE5);
-  static const teal = Color(0xFF2E8F88);
+  static const teal = Color(0xFF1B3B42);
   static const tealSoft = Color(0xFF3B9797);
   static const textPrimary = Color(0xFF1A1A1A);
   static const textSecondary = Color(0xFF7D8C94);

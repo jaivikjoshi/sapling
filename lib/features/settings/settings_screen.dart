@@ -501,7 +501,7 @@ class _PrototypeSettingsHeader extends StatelessWidget {
                   color: _SettingsReferencePalette.textPrimary,
                   fontSize: 30,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -1.1,
+                  letterSpacing: 0,
                 ),
               ),
               SizedBox(height: 4),
@@ -606,7 +606,7 @@ class _PrototypeProfileCard extends StatelessWidget {
                     color: _SettingsReferencePalette.textPrimary,
                     fontSize: 19,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: -0.4,
+                    letterSpacing: 0,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1444,7 +1444,7 @@ class _Header extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             color: _SettingsPalette.textPrimary,
             fontWeight: FontWeight.w700,
-            letterSpacing: -1.1,
+            letterSpacing: 0,
           ),
         ),
         const SizedBox(height: 6),
@@ -1487,12 +1487,8 @@ class _ProfileHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
+        color: _SettingsPalette.surface,
         borderRadius: BorderRadius.circular(34),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF121516), Color(0xFF1A2123)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
         border: Border.all(color: _SettingsPalette.outlineStrong),
         boxShadow: [
           BoxShadow(
@@ -1541,11 +1537,7 @@ class _ProfileHero extends StatelessWidget {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1A2B2C), Color(0xFF0E1719)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: _SettingsPalette.surfaceSoft,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.08),
@@ -1573,7 +1565,7 @@ class _ProfileHero extends StatelessWidget {
                         color: _SettingsPalette.textPrimary,
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: -0.9,
+                        letterSpacing: 0,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1711,7 +1703,7 @@ class _SectionTitle extends StatelessWidget {
             color: _SettingsPalette.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            letterSpacing: -0.2,
+            letterSpacing: 0,
           ),
         ),
         const SizedBox(height: 4),
@@ -2088,56 +2080,9 @@ class _SettingsBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(color: _SettingsPalette.background),
-        const Positioned(
-          top: -120,
-          right: -80,
-          child: _BackdropOrb(size: 280, color: Color(0x1635A69D)),
-        ),
-        const Positioned(
-          top: 260,
-          left: -90,
-          child: _BackdropOrb(size: 220, color: Color(0x0EE3BC88)),
-        ),
-        Positioned.fill(
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.02),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.12),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BackdropOrb extends StatelessWidget {
-  const _BackdropOrb({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color, Colors.transparent]),
-      ),
+    return const ColoredBox(
+      color: _SettingsPalette.background,
+      child: SizedBox.expand(),
     );
   }
 }
