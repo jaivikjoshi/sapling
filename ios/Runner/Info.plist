@@ -33,7 +33,9 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Leko attaches photos from your library so Leko can read receipts or statements you share.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Leko does not record audio. This permission is only requested by the camera picker on some devices.</string>
+	<string>Leko uses the microphone when you choose Leaf voice input to turn your spoken request into text.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Leko uses speech recognition when you choose Leaf voice input so your spoken request can follow the same flow as typed chat.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

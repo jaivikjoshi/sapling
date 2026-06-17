@@ -68,193 +68,201 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           opacity: _fadeIn,
           child: SlideTransition(
             position: _slideUp,
-            child: Column(
-              children: [
-                // ── Hero Art Area ──
-                Expanded(
-                  flex: 5,
-                  child: Stack(
-                    children: [
-                      // Background atmospheric glow
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              center: const Alignment(0, -0.2),
-                              radius: 0.9,
-                              colors: [
-                                const Color(0xFF1A3A3A).withValues(alpha: 0.6),
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
-                        ),
+            child: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isShort = constraints.maxHeight < 720;
+                  final heroHeight = (constraints.maxHeight * 0.44).clamp(
+                    210.0,
+                    360.0,
+                  );
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(28, 8, 28, bottomPad + 18),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight - bottomPad - 26,
                       ),
-                      // Hero image
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 60, left: 40, right: 40),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
-                            child: Image.asset(
-                              'assets/images/welcome_hero.png',
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Subtle bottom fade to merge into CTA area
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: 80,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                _bgBottom.withValues(alpha: 0.95),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ── CTA Area ──
-                Expanded(
-                  flex: 4,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(28, 0, 28, bottomPad + 16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Brand wordmark
-                        const Text(
-                          'leko',
-                          style: TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 36,
-                            fontWeight: FontWeight.w700,
-                            color: _headline,
-                            letterSpacing: -0.8,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        // Headline
-                        Text(
-                          'Where budgeting\nstarts to feel alive.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w400,
-                            color: _subtext,
-                            height: 1.4,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        const SizedBox(height: 36),
-
-                        // Primary CTA — Continue with Apple
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: FilledButton(
-                            onPressed: () => context.go('/welcome/signup'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: _primaryBtn,
-                              foregroundColor: _primaryBtnText,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(28),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SizedBox(
+                            height: isShort ? 190 : heroHeight,
+                            child: Stack(
                               children: [
-                                Icon(Icons.apple, size: 22, color: _primaryBtnText),
-                                const SizedBox(width: 10),
-                                const Text(
-                                  'Continue with Apple',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: -0.2,
+                                Positioned.fill(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          const Color(
+                                            0xFF1A3A3A,
+                                          ).withValues(alpha: 0.35),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      top: isShort ? 8 : 22,
+                                      left: 18,
+                                      right: 18,
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(28),
+                                      child: Image.asset(
+                                        'assets/images/welcome_hero.png',
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Secondary CTA — Continue with Email
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: OutlinedButton(
-                            onPressed: () => context.go('/welcome/signup'),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: _secondaryBtn.withValues(alpha: 0.5),
-                              foregroundColor: _secondaryBtnText,
-                              side: BorderSide(
-                                color: _secondaryBtnBorder.withValues(alpha: 0.6),
-                                width: 1,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(28),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: const Text(
-                              'Continue with email',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.2,
-                              ),
+                          Padding(
+                            padding: EdgeInsets.only(top: isShort ? 12 : 20),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  'leko',
+                                  style: TextStyle(
+                                    fontFamily: 'Georgia',
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w700,
+                                    color: _headline,
+                                    letterSpacing: 0,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                const Text(
+                                  'Where budgeting\nstarts to feel alive.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w400,
+                                    color: _subtext,
+                                    height: 1.4,
+                                    letterSpacing: 0,
+                                  ),
+                                ),
+                                SizedBox(height: isShort ? 22 : 36),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: FilledButton(
+                                    onPressed:
+                                        () => context.go('/welcome/signup'),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: _primaryBtn,
+                                      foregroundColor: _primaryBtnText,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(28),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.apple,
+                                          size: 22,
+                                          color: _primaryBtnText,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        const Flexible(
+                                          child: Text(
+                                            'Continue with Apple',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: 0,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: OutlinedButton(
+                                    onPressed:
+                                        () => context.go('/welcome/signup'),
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: _secondaryBtn.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      foregroundColor: _secondaryBtnText,
+                                      side: BorderSide(
+                                        color: _secondaryBtnBorder.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                        width: 1,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(28),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: const Text(
+                                      'Continue with email',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                Wrap(
+                                  alignment: WrapAlignment.center,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    const Text(
+                                      'Already have an account? ',
+                                      style: TextStyle(
+                                        color: _linkText,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => context.go('/welcome/login'),
+                                      child: const Text(
+                                        'Log in',
+                                        style: TextStyle(
+                                          color: _gold,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          decoration: TextDecoration.underline,
+                                          decorationColor: _gold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Tertiary — Already have an account?
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Already have an account?  ',
-                              style: TextStyle(
-                                color: _linkText,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => context.go('/welcome/login'),
-                              child: const Text(
-                                'Log in',
-                                style: TextStyle(
-                                  color: _gold,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  decoration: TextDecoration.underline,
-                                  decorationColor: _gold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
           ),
         ),

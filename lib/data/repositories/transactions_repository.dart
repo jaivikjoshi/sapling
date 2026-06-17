@@ -30,24 +30,28 @@ class DriftTransactionsRepository implements TransactionsRepository {
 
   @override
   Future<void> updateById(String id, Transaction t) {
-    return (_db.update(_db.transactions)..where((row) => row.id.equals(id)))
-        .write(t.toCompanion(true));
+    return (_db.update(_db.transactions)
+      ..where((row) => row.id.equals(id))).write(t.toCompanion(true));
   }
 
+  @override
   Future<void> deleteById(String id) {
     return (_db.delete(_db.transactions)..where((t) => t.id.equals(id))).go();
   }
 
+  @override
   Future<Transaction> getById(String id) {
-    return (_db.select(_db.transactions)..where((t) => t.id.equals(id)))
-        .getSingle();
+    return (_db.select(_db.transactions)
+      ..where((t) => t.id.equals(id))).getSingle();
   }
 
+  @override
   Future<Transaction?> getByIdOrNull(String id) async {
-    return (_db.select(_db.transactions)..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    return (_db.select(_db.transactions)
+      ..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
+  @override
   Stream<List<Transaction>> watchAll({int? limit}) {
     final q = _db.select(_db.transactions)
       ..orderBy([(t) => OrderingTerm.desc(t.date)]);
@@ -55,31 +59,41 @@ class DriftTransactionsRepository implements TransactionsRepository {
     return q.watch();
   }
 
+  @override
   Stream<List<Transaction>> watchByDateRange(DateTime start, DateTime end) {
     return (_db.select(_db.transactions)
-          ..where((t) => t.date.isBiggerOrEqualValue(start) & t.date.isSmallerThanValue(end))
+          ..where(
+            (t) =>
+                t.date.isBiggerOrEqualValue(start) &
+                t.date.isSmallerThanValue(end),
+          )
           ..orderBy([(t) => OrderingTerm.desc(t.date)]))
         .watch();
   }
 
+  @override
   Future<List<Transaction>> getByDateRange(DateTime start, DateTime end) {
     return (_db.select(_db.transactions)
-          ..where((t) =>
-              t.date.isBiggerOrEqualValue(start) &
-              t.date.isSmallerThanValue(end))
+          ..where(
+            (t) =>
+                t.date.isBiggerOrEqualValue(start) &
+                t.date.isSmallerThanValue(end),
+          )
           ..orderBy([(t) => OrderingTerm.asc(t.date)]))
         .get();
   }
 
+  @override
   Future<List<Transaction>> getAll() {
     return _db.select(_db.transactions).get();
   }
 
   /// Balance as of end of day before [endExclusive] (all transactions with date < endExclusive).
+  @override
   Future<double> computeBalanceUpTo(DateTime endExclusive) async {
-    final rows = await (_db.select(_db.transactions)
-          ..where((t) => t.date.isSmallerThanValue(endExclusive)))
-        .get();
+    final rows =
+        await (_db.select(_db.transactions)
+          ..where((t) => t.date.isSmallerThanValue(endExclusive))).get();
     double balance = 0;
     for (final row in rows) {
       switch (row.type) {
@@ -94,8 +108,12 @@ class DriftTransactionsRepository implements TransactionsRepository {
     return balance;
   }
 
+  @override
   Future<double> computeBalance() async {
-    final rows = await _db.select(_db.transactions).get();
+    final now = DateTime.now();
+    final rows =
+        await (_db.select(_db.transactions)
+          ..where((t) => t.date.isSmallerOrEqualValue(now))).get();
     double balance = 0;
     for (final row in rows) {
       switch (row.type) {
@@ -110,10 +128,12 @@ class DriftTransactionsRepository implements TransactionsRepository {
     return balance;
   }
 
+  @override
   Stream<double> watchBalance() {
     return _db.select(_db.transactions).watch().map((rows) {
+      final now = DateTime.now();
       double balance = 0;
-      for (final row in rows) {
+      for (final row in rows.where((row) => !row.date.isAfter(now))) {
         switch (row.type) {
           case 'income':
             balance += row.amount;

@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../db/leko_database.dart';
@@ -38,7 +37,7 @@ class SupabaseCategoriesRepository implements CategoriesRepository {
   Future<Category> getById(String id) async {
     final res = await _client.from('categories').select().eq('id', id).maybeSingle();
     if (res == null) throw Exception('Category not found: $id');
-    return categoryFromSupabase(res as Map<String, dynamic>);
+    return categoryFromSupabase(res);
   }
 
   @override

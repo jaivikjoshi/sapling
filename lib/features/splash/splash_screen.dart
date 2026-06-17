@@ -7,19 +7,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_providers.dart';
 import '../../core/providers/settings_providers.dart';
 import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
-import '../../domain/models/settings_model.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});

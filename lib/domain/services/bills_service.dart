@@ -213,7 +213,10 @@ class BillsService {
     return null;
   }
 
-  Future<Transaction?> _findLinkedExpenseOnDay(String billId, DateTime day) async {
+  Future<Transaction?> _findLinkedExpenseOnDay(
+    String billId,
+    DateTime day,
+  ) async {
     final dayStart = DateTime(day.year, day.month, day.day);
     final dayEnd = dayStart.add(const Duration(days: 1));
     final dayTxns = await _txnRepo.getByDateRange(dayStart, dayEnd);

@@ -17,6 +17,7 @@ class DriftCategoriesRepository implements CategoriesRepository {
 
   DriftCategoriesRepository(this._db);
 
+  @override
   Stream<List<Category>> watchAll() {
     return (_db.select(_db.categories)
           ..orderBy([
@@ -26,15 +27,18 @@ class DriftCategoriesRepository implements CategoriesRepository {
         .watch();
   }
 
+  @override
   Future<List<Category>> getAll() {
     return _db.select(_db.categories).get();
   }
 
+  @override
   Future<Category> getById(String id) {
     return (_db.select(_db.categories)..where((t) => t.id.equals(id)))
         .getSingle();
   }
 
+  @override
   Future<bool> nameExists(String name, {String? excludeId}) async {
     final q = _db.select(_db.categories)
       ..where((t) => t.name.equals(name));
@@ -45,15 +49,18 @@ class DriftCategoriesRepository implements CategoriesRepository {
     return results.isNotEmpty;
   }
 
+  @override
   Future<void> insert(CategoriesCompanion companion) {
     return _db.into(_db.categories).insert(companion);
   }
 
+  @override
   Future<void> updateById(String id, CategoriesCompanion companion) {
     return (_db.update(_db.categories)..where((t) => t.id.equals(id)))
         .write(companion);
   }
 
+  @override
   Future<void> deleteById(String id) {
     return (_db.delete(_db.categories)..where((t) => t.id.equals(id))).go();
   }

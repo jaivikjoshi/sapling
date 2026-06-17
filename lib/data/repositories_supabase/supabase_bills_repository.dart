@@ -47,7 +47,7 @@ class SupabaseBillsRepository implements BillsRepository {
         .eq('user_id', _userId)
         .maybeSingle();
     if (res == null) throw Exception('Bill not found: $id');
-    return billFromSupabase(res as Map<String, dynamic>);
+    return billFromSupabase(res);
   }
 
   @override

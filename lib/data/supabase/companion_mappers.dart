@@ -1,5 +1,3 @@
-import 'package:drift/drift.dart';
-
 import '../db/leko_database.dart';
 
 /// Converts Drift Companions to Supabase (snake_case) maps for insert/update.
@@ -11,19 +9,24 @@ Map<String, dynamic> billsCompanionToSupabase(BillsCompanion c, String userId) {
   if (c.name.present) m['name'] = c.name.value;
   if (c.amount.present) m['amount'] = c.amount.value;
   if (c.frequency.present) m['frequency'] = c.frequency.value;
-  if (c.nextDueDate.present)
+  if (c.nextDueDate.present) {
     m['next_due_date'] = c.nextDueDate.value.toIso8601String();
+  }
   if (c.categoryId.present) m['category_id'] = c.categoryId.value;
   if (c.defaultLabel.present) m['default_label'] = c.defaultLabel.value;
   if (c.autopay.present) m['autopay'] = c.autopay.value;
-  if (c.reminderEnabled.present)
+  if (c.reminderEnabled.present) {
     m['reminder_enabled'] = c.reminderEnabled.value;
-  if (c.reminderLeadTimeDays.present)
+  }
+  if (c.reminderLeadTimeDays.present) {
     m['reminder_lead_time_days'] = c.reminderLeadTimeDays.value;
-  if (c.createdAt.present)
+  }
+  if (c.createdAt.present) {
     m['created_at'] = c.createdAt.value.toIso8601String();
-  if (c.updatedAt.present)
+  }
+  if (c.updatedAt.present) {
     m['updated_at'] = c.updatedAt.value.toIso8601String();
+  }
   return m;
 }
 
@@ -32,15 +35,18 @@ Map<String, dynamic> goalsCompanionToSupabase(GoalsCompanion c, String userId) {
   if (c.id.present) m['id'] = c.id.value;
   if (c.name.present) m['name'] = c.name.value;
   if (c.targetAmount.present) m['target_amount'] = c.targetAmount.value;
-  if (c.targetDate.present)
+  if (c.targetDate.present) {
     m['target_date'] = c.targetDate.value.toIso8601String();
+  }
   if (c.savingStyle.present) m['saving_style'] = c.savingStyle.value;
   if (c.priorityOrder.present) m['priority_order'] = c.priorityOrder.value;
   if (c.isArchived.present) m['is_archived'] = c.isArchived.value;
-  if (c.createdAt.present)
+  if (c.createdAt.present) {
     m['created_at'] = c.createdAt.value.toIso8601String();
-  if (c.updatedAt.present)
+  }
+  if (c.updatedAt.present) {
     m['updated_at'] = c.updatedAt.value.toIso8601String();
+  }
   return m;
 }
 
@@ -52,20 +58,25 @@ Map<String, dynamic> recurringIncomesCompanionToSupabase(
   if (c.id.present) m['id'] = c.id.value;
   if (c.name.present) m['name'] = c.name.value;
   if (c.frequency.present) m['frequency'] = c.frequency.value;
-  if (c.nextPaydayDate.present)
+  if (c.nextPaydayDate.present) {
     m['next_payday_date'] = c.nextPaydayDate.value.toIso8601String();
+  }
   if (c.expectedAmount.present) m['expected_amount'] = c.expectedAmount.value;
   if (c.paydayBehavior.present) m['payday_behavior'] = c.paydayBehavior.value;
-  if (c.isPaydayAnchorEligible.present)
+  if (c.isPaydayAnchorEligible.present) {
     m['is_payday_anchor_eligible'] = c.isPaydayAnchorEligible.value;
+  }
   if (c.isPaydayAnchor.present) m['is_payday_anchor'] = c.isPaydayAnchor.value;
-  if (c.reminderEnabled.present)
+  if (c.reminderEnabled.present) {
     m['reminder_enabled'] = c.reminderEnabled.value;
+  }
   if (c.reminderTime.present) m['reminder_time'] = c.reminderTime.value;
-  if (c.createdAt.present)
+  if (c.createdAt.present) {
     m['created_at'] = c.createdAt.value.toIso8601String();
-  if (c.updatedAt.present)
+  }
+  if (c.updatedAt.present) {
     m['updated_at'] = c.updatedAt.value.toIso8601String();
+  }
   return m;
 }
 
@@ -77,10 +88,12 @@ Map<String, dynamic> personsCompanionToSupabase(
   if (c.id.present) m['id'] = c.id.value;
   if (c.name.present) m['name'] = c.name.value;
   if (c.handle.present) m['handle'] = c.handle.value;
-  if (c.createdAt.present)
+  if (c.createdAt.present) {
     m['created_at'] = c.createdAt.value.toIso8601String();
-  if (c.updatedAt.present)
+  }
+  if (c.updatedAt.present) {
     m['updated_at'] = c.updatedAt.value.toIso8601String();
+  }
   return m;
 }
 
@@ -94,13 +107,16 @@ Map<String, dynamic> splitEntriesCompanionToSupabase(
   if (c.description.present) m['description'] = c.description.value;
   if (c.totalAmount.present) m['total_amount'] = c.totalAmount.value;
   if (c.paidBy.present) m['paid_by'] = c.paidBy.value;
-  if (c.linkToExpenseTransactionId.present)
+  if (c.linkToExpenseTransactionId.present) {
     m['link_to_expense_transaction_id'] = c.linkToExpenseTransactionId.value;
+  }
   if (c.status.present) m['status'] = c.status.value;
-  if (c.createdAt.present)
+  if (c.createdAt.present) {
     m['created_at'] = c.createdAt.value.toIso8601String();
-  if (c.updatedAt.present)
+  }
+  if (c.updatedAt.present) {
     m['updated_at'] = c.updatedAt.value.toIso8601String();
+  }
   return m;
 }
 
@@ -125,8 +141,9 @@ Map<String, dynamic> dailyCloseoutsCompanionToSupabase(
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   }
   if (c.result.present) m['result'] = c.result.value;
-  if (c.createdAt.present)
+  if (c.createdAt.present) {
     m['created_at'] = c.createdAt.value.toIso8601String();
+  }
   return m;
 }
 
@@ -136,12 +153,15 @@ Map<String, dynamic> recoveryPlansCompanionToSupabase(
 ) {
   final m = <String, dynamic>{'user_id': userId};
   if (c.id.present) m['id'] = c.id.value;
-  if (c.createdAt.present)
+  if (c.createdAt.present) {
     m['created_at'] = c.createdAt.value.toIso8601String();
-  if (c.triggerTransactionId.present)
+  }
+  if (c.triggerTransactionId.present) {
     m['trigger_transaction_id'] = c.triggerTransactionId.value;
-  if (c.overspendAmount.present)
+  }
+  if (c.overspendAmount.present) {
     m['overspend_amount'] = c.overspendAmount.value;
+  }
   if (c.planType.present) m['plan_type'] = c.planType.value;
   if (c.parameters.present) m['parameters'] = c.parameters.value;
   if (c.status.present) m['status'] = c.status.value;

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/allowance_providers.dart';
+import '../../core/providers/badge_providers.dart';
 import '../../core/providers/auth_providers.dart';
 import '../../core/providers/bills_providers.dart';
 import '../../core/providers/goals_providers.dart';
@@ -14,21 +15,31 @@ import '../../core/providers/profile_providers.dart';
 import '../../core/providers/settings_providers.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../data/db/leko_database.dart';
+import '../../domain/integrations/product_foundations.dart';
 import '../../domain/models/enums.dart';
 import '../goals/goals_screen.dart' show GoalInsight, goalInsightsProvider;
 import 'widgets/savings_pace_card.dart';
 
-final _currentWeekTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
+final _currentWeekTransactionsProvider = StreamProvider<List<Transaction>>((
+  ref,
+) {
   final now = DateTime.now();
   final start = _startOfWeek(now);
   final end = start.add(const Duration(days: 7));
   return ref.watch(ledgerServiceProvider).watchByDateRange(start, end);
 });
 
-final _previousWeekTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
+final _todayTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
   final now = DateTime.now();
-  final end = _startOfWeek(now);
-  final start = end.subtract(const Duration(days: 7));
+  final start = _startOfDay(now);
+  final end = start.add(const Duration(days: 1));
+  return ref.watch(ledgerServiceProvider).watchByDateRange(start, end);
+});
+
+final _yesterdayTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
+  final today = _startOfDay(DateTime.now());
+  final start = today.subtract(const Duration(days: 1));
+  final end = today;
   return ref.watch(ledgerServiceProvider).watchByDateRange(start, end);
 });
 
@@ -44,34 +55,122 @@ class HomeScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 14, 24, 128),
           children: [
-            _Header(
-              onNotifications: () => context.push('/closeout'),
-            ),
+            _Header(onNotifications: () => context.push('/closeout')),
             const SizedBox(height: 22),
             const _WeeklySummaryCard(),
             const SizedBox(height: 18),
             _QuickActionsRow(
               onAddExpense: () => context.push('/add-expense'),
-              onAddGoal: () => context.go('/goals'),
+              onAddIncome: () => context.push('/add-income'),
+              onAddGoal: () => context.go('/goals?add=1'),
             ),
             const SizedBox(height: 18),
             const SavingsPaceCard(),
             const SizedBox(height: 18),
             const _WeeklySpendingCard(),
             const SizedBox(height: 24),
-            _UpcomingBillsSection(
-              onViewAll: () => context.push('/bills'),
-            ),
+            _UpcomingBillsSection(onViewAll: () => context.push('/bills')),
             const SizedBox(height: 24),
-            _GoalProgressSection(
-              onViewAll: () => context.go('/goals'),
-            ),
+            const _BadgesSection(),
+            const SizedBox(height: 24),
+            _GoalProgressSection(onViewAll: () => context.go('/goals')),
             const SizedBox(height: 24),
             _RecentActivitySection(
               onViewAll: () => context.push('/transactions'),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _BadgesSection extends ConsumerWidget {
+  const _BadgesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final earned = ref.watch(earnedBadgesProvider);
+    final badges = LocalBadgeId.values.take(6).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(
+          title: 'Personal badges',
+          actionLabel: 'Local only',
+          onTap: () {},
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 92,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: badges.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final badge = badges[index];
+              return _BadgePill(
+                label: _badgeLabel(badge),
+                icon: _badgeIcon(badge),
+                earned: earned.contains(badge),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BadgePill extends StatelessWidget {
+  const _BadgePill({
+    required this.label,
+    required this.icon,
+    required this.earned,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool earned;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 132,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: earned ? const Color(0xFFEAF6F2) : Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: earned ? _HomePalette.mintAccent : _HomePalette.line,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color:
+                earned ? _HomePalette.mintAccent : _HomePalette.textSecondary,
+          ),
+          const Spacer(),
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color:
+                  earned
+                      ? _HomePalette.textPrimary
+                      : _HomePalette.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              height: 1.2,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -106,12 +205,12 @@ class _Header extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
               const Text(
-                'Here\'s your week',
+                'Today\'s money',
                 style: TextStyle(
                   color: _HomePalette.textPrimary,
                   fontSize: 30,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -1.1,
+                  letterSpacing: 0,
                 ),
               ),
             ],
@@ -135,47 +234,25 @@ class _WeeklySummaryCard extends ConsumerWidget {
     final mode = ref.watch(effectiveAllowanceModeProvider);
     final paycheck = ref.watch(paycheckAllowanceProvider).valueOrNull;
     final goal = ref.watch(goalAllowanceProvider).valueOrNull;
-    final weekTransactions = ref.watch(_currentWeekTransactionsProvider).valueOrNull ?? const [];
-    final upcomingBills = ref.watch(upcomingBillsProvider).valueOrNull ?? const [];
-    final goals = ref.watch(goalsStreamProvider).valueOrNull ?? const <Goal>[];
-    final settings = ref.watch(settingsStreamProvider).valueOrNull;
-    final insights = ref.watch(goalInsightsProvider).valueOrNull ?? const <String, GoalInsight>{};
-
-    final now = DateTime.now();
-    final weekStart = _startOfWeek(now);
-    final weekEnd = weekStart.add(const Duration(days: 7));
-    final daysRemaining = math.max(weekEnd.difference(now).inDays + 1, 1);
-
+    final upcomingBills =
+        ref.watch(upcomingBillsProvider).valueOrNull ?? const [];
     final allowance = switch (mode) {
       AllowanceMode.paycheck => paycheck?.dailyAllowance,
       AllowanceMode.goal => goal?.dailyAllowance,
     };
+    final remainingToday = switch (mode) {
+      AllowanceMode.paycheck => paycheck?.remainingToday,
+      AllowanceMode.goal => goal?.remainingToday,
+    };
+    final todaySpend = switch (mode) {
+      AllowanceMode.paycheck => paycheck?.todaySpend,
+      AllowanceMode.goal => goal?.todaySpend,
+    };
+    final isOverToday = remainingToday != null && remainingToday < 0;
 
-    final weekAvailable = allowance != null ? allowance * daysRemaining : null;
-    final weekSpend = weekTransactions
-        .where((txn) => txn.type == 'expense')
-        .fold<double>(0, (sum, txn) => sum + txn.amount);
-    final daysElapsed = now.difference(weekStart).inDays + 1;
-    final targetSpend = allowance != null ? allowance * daysElapsed : null;
-    final pacePercent = (targetSpend == null || targetSpend <= 0)
-        ? null
-        : ((targetSpend - weekSpend) / targetSpend * 100);
-
-    final nextBill = [...upcomingBills]..sort((a, b) => a.nextDueDate.compareTo(b.nextDueDate));
+    final nextBill = [...upcomingBills]
+      ..sort((a, b) => a.nextDueDate.compareTo(b.nextDueDate));
     final bill = nextBill.isEmpty ? null : nextBill.first;
-
-    Goal? highlightedGoal;
-    if (settings?.primaryGoalId != null) {
-      for (final item in goals) {
-        if (item.id == settings!.primaryGoalId) {
-          highlightedGoal = item;
-          break;
-        }
-      }
-    }
-    highlightedGoal ??= goals.isNotEmpty ? goals.first : null;
-    final goalInsight =
-        highlightedGoal != null ? insights[highlightedGoal.id] : null;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
@@ -195,10 +272,10 @@ class _WeeklySummaryCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'AVAILABLE THIS WEEK',
-                  style: TextStyle(
+                  isOverToday ? 'OVER TODAY' : 'SAFE TO SPEND TODAY',
+                  style: const TextStyle(
                     color: _HomePalette.summaryMuted,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -223,26 +300,32 @@ class _WeeklySummaryCard extends ConsumerWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            weekAvailable != null ? formatCurrency(weekAvailable) : '--',
+            remainingToday != null
+                ? formatCurrency(remainingToday.abs())
+                : '--',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 40,
               fontWeight: FontWeight.w700,
-              letterSpacing: -1.9,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 10),
           Row(
             children: [
               const Icon(
-                Icons.trending_down_rounded,
+                Icons.today_rounded,
                 size: 18,
                 color: _HomePalette.positive,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  _pacingLabel(pacePercent),
+                  _dailyPacingLabel(
+                    remainingToday: remainingToday,
+                    todaySpend: todaySpend,
+                    dailyAllowance: allowance,
+                  ),
                   style: const TextStyle(
                     color: _HomePalette.positive,
                     fontSize: 13,
@@ -257,23 +340,29 @@ class _WeeklySummaryCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: _SummaryMiniPanel(
-                  title: 'Next bill',
-                  value: bill == null
-                      ? 'No bill due'
-                      : '${bill.name} • ${formatCurrency(bill.amount)}',
-                  subtitle: bill == null
-                      ? 'You\'re clear right now'
-                      : _billDueLabel(bill.nextDueDate),
+                  title: 'Daily budget',
+                  value:
+                      allowance == null
+                          ? 'Not ready'
+                          : formatCurrency(allowance),
+                  subtitle:
+                      todaySpend == null
+                          ? 'Today\'s spend will appear here'
+                          : '${formatCurrency(todaySpend)} spent today',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _SummaryMiniPanel(
-                  title: 'Savings progress',
-                  value: highlightedGoal?.name ?? 'No goal yet',
-                  subtitle: goalInsight == null
-                      ? 'Set a goal to track it here'
-                      : '${(goalInsight.progress * 100).round()}% complete',
+                  title: 'Next bill',
+                  value:
+                      bill == null
+                          ? 'No bill due'
+                          : '${bill.name} • ${formatCurrency(bill.amount)}',
+                  subtitle:
+                      bill == null
+                          ? 'You\'re clear right now'
+                          : _billDueLabel(bill.nextDueDate),
                 ),
               ),
             ],
@@ -323,7 +412,7 @@ class _SummaryMiniPanel extends StatelessWidget {
               color: Colors.white,
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              letterSpacing: -0.3,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 4),
@@ -343,10 +432,12 @@ class _SummaryMiniPanel extends StatelessWidget {
 class _QuickActionsRow extends StatelessWidget {
   const _QuickActionsRow({
     required this.onAddExpense,
+    required this.onAddIncome,
     required this.onAddGoal,
   });
 
   final VoidCallback onAddExpense;
+  final VoidCallback onAddIncome;
   final VoidCallback onAddGoal;
 
   @override
@@ -355,7 +446,7 @@ class _QuickActionsRow extends StatelessWidget {
       children: [
         Expanded(
           child: _ActionCard(
-            label: 'Add\nexpense',
+            label: 'Expense',
             icon: Icons.add_rounded,
             onTap: onAddExpense,
           ),
@@ -363,7 +454,17 @@ class _QuickActionsRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _ActionCard(
-            label: 'Add goal',
+            label: 'Income',
+            icon: Icons.payments_outlined,
+            background: _HomePalette.incomeCard,
+            iconAccent: _HomePalette.incomeAccent,
+            onTap: onAddIncome,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _ActionCard(
+            label: 'Goal',
             icon: Icons.gps_fixed_rounded,
             background: _HomePalette.mintCard,
             iconAccent: _HomePalette.mintAccent,
@@ -398,8 +499,8 @@ class _ActionCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(22),
         child: Ink(
-          height: 88,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 86,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
             color: background,
             borderRadius: BorderRadius.circular(22),
@@ -412,27 +513,29 @@ class _ActionCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: _HomePalette.iconCircle,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(icon, color: iconAccent, size: 17),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: _HomePalette.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    height: 1.2,
-                  ),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: _HomePalette.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
                 ),
               ),
             ],
@@ -448,19 +551,24 @@ class _WeeklySpendingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentWeek = ref.watch(_currentWeekTransactionsProvider).valueOrNull ?? const [];
-    final previousWeek = ref.watch(_previousWeekTransactionsProvider).valueOrNull ?? const [];
+    final currentWeek =
+        ref.watch(_currentWeekTransactionsProvider).valueOrNull ?? const [];
+    final today = ref.watch(_todayTransactionsProvider).valueOrNull ?? const [];
+    final yesterday =
+        ref.watch(_yesterdayTransactionsProvider).valueOrNull ?? const [];
 
-    final currentExpense = currentWeek
+    final currentExpense = today
         .where((txn) => txn.type == 'expense')
         .fold<double>(0, (sum, txn) => sum + txn.amount);
-    final previousExpense = previousWeek
+    final previousExpense = yesterday
         .where((txn) => txn.type == 'expense')
         .fold<double>(0, (sum, txn) => sum + txn.amount);
-    final trend = previousExpense <= 0
-        ? null
-        : ((currentExpense - previousExpense) / previousExpense * 100);
+    final trend =
+        previousExpense <= 0
+            ? null
+            : ((currentExpense - previousExpense) / previousExpense * 100);
     final bars = _weeklySpendBars(currentWeek);
+    final todayIndex = DateTime.now().weekday - 1;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -480,23 +588,37 @@ class _WeeklySpendingCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Expanded(
-                child: Text(
-                  'Spending this week',
-                  style: TextStyle(
-                    color: _HomePalette.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Spending today',
+                      style: TextStyle(
+                        color: _HomePalette.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${formatCurrency(currentExpense)} so far',
+                      style: const TextStyle(
+                        color: _HomePalette.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Text(
                 _trendText(trend),
                 style: TextStyle(
-                  color: trend == null || trend <= 0
-                      ? _HomePalette.positive
-                      : _HomePalette.alert,
-                  fontSize: 11,
+                  color:
+                      trend == null || trend <= 0
+                          ? _HomePalette.positive
+                          : _HomePalette.alert,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -517,10 +639,11 @@ class _WeeklySpendingCard extends ConsumerWidget {
                         width: 10,
                         height: math.max(bars[i] * 0.72, 4),
                         decoration: BoxDecoration(
-                          color: i == 3
-                              ? _HomePalette.summaryCard
-                              : _HomePalette.chartBar,
-                          borderRadius: BorderRadius.circular(10),
+                          color:
+                              i == todayIndex
+                                  ? _HomePalette.summaryCard
+                                  : _HomePalette.chartBar,
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                     ),
@@ -558,10 +681,7 @@ class _WeekdayLabel extends StatelessWidget {
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: _HomePalette.textSecondary,
-          fontSize: 10,
-        ),
+        style: const TextStyle(color: _HomePalette.textSecondary, fontSize: 10),
       ),
     );
   }
@@ -574,8 +694,10 @@ class _UpcomingBillsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bills = ref.watch(upcomingBillsProvider).valueOrNull ?? const <Bill>[];
-    final sorted = [...bills]..sort((a, b) => a.nextDueDate.compareTo(b.nextDueDate));
+    final bills =
+        ref.watch(upcomingBillsProvider).valueOrNull ?? const <Bill>[];
+    final sorted = [...bills]
+      ..sort((a, b) => a.nextDueDate.compareTo(b.nextDueDate));
     final visible = sorted.take(2).toList();
 
     return Column(
@@ -617,9 +739,26 @@ class _GoalProgressSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final goals = ref.watch(goalsStreamProvider).valueOrNull ?? const <Goal>[];
     final settings = ref.watch(settingsStreamProvider).valueOrNull;
-    final insights = ref.watch(goalInsightsProvider).valueOrNull ?? const <String, GoalInsight>{};
+    final insights =
+        ref.watch(goalInsightsProvider).valueOrNull ??
+        const <String, GoalInsight>{};
 
-    final ordered = [...goals];
+    final ordered = <Goal>[];
+    final seenGoalKeys = <String>{};
+    for (final goal in goals) {
+      final key = [
+        goal.name.trim().toLowerCase(),
+        goal.targetAmount.toStringAsFixed(2),
+        DateTime(
+          goal.targetDate.year,
+          goal.targetDate.month,
+          goal.targetDate.day,
+        ).toIso8601String(),
+      ].join('|');
+      if (seenGoalKeys.add(key)) {
+        ordered.add(goal);
+      }
+    }
     if (settings?.primaryGoalId != null) {
       ordered.sort((a, b) {
         final aRank = a.id == settings!.primaryGoalId ? 0 : 1;
@@ -657,10 +796,7 @@ class _GoalProgressSection extends ConsumerWidget {
             child: Column(
               children: [
                 for (final goal in visible) ...[
-                  _GoalProgressRow(
-                    goal: goal,
-                    insight: insights[goal.id],
-                  ),
+                  _GoalProgressRow(goal: goal, insight: insights[goal.id]),
                   if (goal != visible.last) const SizedBox(height: 16),
                 ],
               ],
@@ -672,10 +808,7 @@ class _GoalProgressSection extends ConsumerWidget {
 }
 
 class _GoalProgressRow extends StatelessWidget {
-  const _GoalProgressRow({
-    required this.goal,
-    required this.insight,
-  });
+  const _GoalProgressRow({required this.goal, required this.insight});
 
   final Goal goal;
   final GoalInsight? insight;
@@ -730,9 +863,14 @@ class _RecentActivitySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactions = ref.watch(recentTransactionsProvider).valueOrNull ?? const <Transaction>[];
-    final categories = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
-    final categoryMap = {for (final category in categories) category.id: category};
+    final transactions =
+        ref.watch(recentTransactionsProvider).valueOrNull ??
+        const <Transaction>[];
+    final categories =
+        ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
+    final categoryMap = {
+      for (final category in categories) category.id: category,
+    };
     final visible = transactions.take(4).toList();
 
     return Column(
@@ -785,7 +923,7 @@ class _SectionHeader extends StatelessWidget {
               color: _HomePalette.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              letterSpacing: -0.3,
+              letterSpacing: 0,
             ),
           ),
         ),
@@ -799,10 +937,7 @@ class _SectionHeader extends StatelessWidget {
           ),
           child: Text(
             actionLabel,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
           ),
         ),
       ],
@@ -889,10 +1024,7 @@ class _ListCardRow extends StatelessWidget {
 }
 
 class _ActivityCard extends StatelessWidget {
-  const _ActivityCard({
-    required this.transaction,
-    required this.category,
-  });
+  const _ActivityCard({required this.transaction, required this.category});
 
   final Transaction transaction;
   final Category? category;
@@ -997,20 +1129,14 @@ class _EmptyCard extends StatelessWidget {
       ),
       child: Text(
         message,
-        style: const TextStyle(
-          color: _HomePalette.textSecondary,
-          fontSize: 14,
-        ),
+        style: const TextStyle(color: _HomePalette.textSecondary, fontSize: 14),
       ),
     );
   }
 }
 
 class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _CircleIconButton({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;
@@ -1069,13 +1195,27 @@ DateTime _startOfWeek(DateTime now) {
   return day.subtract(Duration(days: day.weekday - 1));
 }
 
-String _pacingLabel(double? pacePercent) {
-  if (pacePercent == null) return 'Weekly pacing will appear once guidance is ready';
-  final rounded = pacePercent.abs().round();
-  if (pacePercent >= 0) {
-    return 'You are pacing $rounded% under budget';
+DateTime _startOfDay(DateTime now) => DateTime(now.year, now.month, now.day);
+
+String _dailyPacingLabel({
+  required double? remainingToday,
+  required double? todaySpend,
+  required double? dailyAllowance,
+}) {
+  if (remainingToday == null || dailyAllowance == null) {
+    return 'Daily budget will appear once guidance is ready';
   }
-  return 'You are pacing $rounded% over budget';
+  if (remainingToday < 0) {
+    return 'You are ${formatCurrency(remainingToday.abs())} over today';
+  }
+  if (todaySpend == null || todaySpend <= 0) {
+    return '${formatCurrency(remainingToday)} available for today';
+  }
+  final pct =
+      dailyAllowance > 0
+          ? (remainingToday / dailyAllowance * 100).clamp(0, 100).round()
+          : 0;
+  return '$pct% of today\'s budget still available';
 }
 
 String _trendText(double? trend) {
@@ -1083,6 +1223,28 @@ String _trendText(double? trend) {
   final rounded = trend.abs().round();
   if (trend <= 0) return 'Down $rounded%';
   return 'Up $rounded%';
+}
+
+String _badgeLabel(LocalBadgeId badge) {
+  return switch (badge) {
+    LocalBadgeId.firstExpenseAdded => 'First expense',
+    LocalBadgeId.firstGoalCreated => 'First goal',
+    LocalBadgeId.sevenDayTrackingStreak => '7-day streak',
+    LocalBadgeId.underBudgetToday => 'Under budget',
+    LocalBadgeId.savedThisWeek => 'Saved this week',
+    LocalBadgeId.billPaidOnTime => 'Bill paid',
+  };
+}
+
+IconData _badgeIcon(LocalBadgeId badge) {
+  return switch (badge) {
+    LocalBadgeId.firstExpenseAdded => Icons.receipt_long_outlined,
+    LocalBadgeId.firstGoalCreated => Icons.flag_outlined,
+    LocalBadgeId.sevenDayTrackingStreak => Icons.local_fire_department_outlined,
+    LocalBadgeId.underBudgetToday => Icons.check_circle_outline_rounded,
+    LocalBadgeId.savedThisWeek => Icons.savings_outlined,
+    LocalBadgeId.billPaidOnTime => Icons.event_available_outlined,
+  };
 }
 
 String _billDueLabel(DateTime date) {
@@ -1102,9 +1264,10 @@ String _transactionTitle(Transaction transaction, Category? category) {
   if (category != null) return category.name;
   return switch (transaction.type) {
     'expense' => 'Expense',
-    'income' => transaction.source?.trim().isNotEmpty == true
-        ? transaction.source!
-        : 'Income',
+    'income' =>
+      transaction.source?.trim().isNotEmpty == true
+          ? transaction.source!
+          : 'Income',
     'adjustment' => 'Adjustment',
     _ => 'Transaction',
   };
@@ -1136,6 +1299,8 @@ abstract final class _HomePalette {
   static const positive = Color(0xFF3B9797);
   static const mintCard = Color(0xFFF0FDFA);
   static const mintAccent = Color(0xFF0F766E);
+  static const incomeCard = Color(0xFFFFF7ED);
+  static const incomeAccent = Color(0xFFC26A38);
   static const iconCircle = Color(0xFFF1F5F9);
   static const iconAccent = Color(0xFF475569);
   static const chartBar = Color(0xFF3B9797);

@@ -32,6 +32,7 @@ class DriftRecurringIncomeRepository implements RecurringIncomeRepository {
         .watch();
   }
 
+  @override
   Future<RecurringIncome> getById(String id) {
     return (_db.select(_db.recurringIncomes)
           ..where((t) => t.id.equals(id)))

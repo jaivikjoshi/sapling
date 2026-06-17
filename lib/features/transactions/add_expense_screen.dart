@@ -106,7 +106,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             color: _Tok.textTitle,
             size: 24,
           ),
-          onPressed: () => context.pop(),
+          onPressed: _leaveScreen,
         ),
         title: const Text(
           'Add Expense',
@@ -243,7 +243,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   Future<void> _checkOverspend(String txnId) async {
     final settings = ref.read(settingsStreamProvider).valueOrNull;
     if (settings == null) {
-      if (mounted) context.pop();
+      if (mounted) _leaveScreen();
       return;
     }
 
@@ -256,7 +256,6 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       if (settings.overspendEnabled) {
         ref.read(notificationSchedulerProvider).showOverspendNow();
       }
-      context.pop();
       await showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -266,8 +265,17 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
         builder:
             (_) => OverspendModal(result: result, triggerTransactionId: txnId),
       );
+      if (mounted) _leaveScreen();
     } else {
+      _leaveScreen();
+    }
+  }
+
+  void _leaveScreen() {
+    if (Navigator.of(context).canPop()) {
       context.pop();
+    } else {
+      context.go('/home');
     }
   }
 }
@@ -794,18 +802,17 @@ class _LabelSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 10,
+          runSpacing: 10,
           children:
               SpendLabel.values.map((l) {
                 final isActive = effectiveLabel == l;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: _LabelChip(
-                    label: l,
-                    isActive: isActive,
-                    onTap: () => onChanged(l),
-                  ),
+                return _LabelChip(
+                  label: l,
+                  isActive: isActive,
+                  onTap: () => onChanged(l),
                 );
               }).toList(),
         ),

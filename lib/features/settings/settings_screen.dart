@@ -34,26 +34,33 @@ class SettingsScreen extends ConsumerWidget {
       backgroundColor: _SettingsReferencePalette.background,
       body: SafeArea(
         child: settingsAsync.when(
-          data: (settings) => _PrototypeSettingsBody(
-            settings: settings,
-            user: user,
-            goals: goals,
-            recurringIncomes: incomes,
-            profileService: profileService,
-          ),
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: _SettingsReferencePalette.navy),
-          ),
-          error: (error, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'Settings failed to load.\n$error',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: _SettingsReferencePalette.textSecondary),
+          data:
+              (settings) => _PrototypeSettingsBody(
+                settings: settings,
+                user: user,
+                goals: goals,
+                recurringIncomes: incomes,
+                profileService: profileService,
               ),
-            ),
-          ),
+          loading:
+              () => const Center(
+                child: CircularProgressIndicator(
+                  color: _SettingsReferencePalette.navy,
+                ),
+              ),
+          error:
+              (error, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'Settings failed to load.\n$error',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: _SettingsReferencePalette.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
         ),
       ),
     );
@@ -108,23 +115,41 @@ class _PrototypeSettingsBody extends ConsumerWidget {
               onTap: () => context.push('/settings'),
             ),
             _PrototypeSettingsRow(
+              icon: Icons.account_balance_rounded,
+              title: 'Connections and imports',
+              subtitle: 'Bank drafts, alerts, receipts, review queue',
+              onTap: () => context.push('/imports'),
+            ),
+            _PrototypeSettingsRow(
+              icon: Icons.group_outlined,
+              title: 'Household mode',
+              subtitle: 'Shared budgets, roles, and consent',
+              onTap: () => context.push('/household'),
+            ),
+            _PrototypeSettingsRow(
               icon: Icons.paid_outlined,
               title: 'Budget preferences',
               subtitle: 'Default budget and categories',
               isLast: true,
-              onTap: () => _showChoiceSheet<AllowanceMode>(
-                context,
-                title: 'Default allowance mode',
-                value: settings.allowanceDefaultMode,
-                items: AllowanceMode.values,
-                labelOf: _allowanceModeLabel,
-                subtitleOf: (value) => switch (value) {
-                  AllowanceMode.paycheck => 'Plan to the next cycle or payday',
-                  AllowanceMode.goal => 'Plan around your primary goal',
-                },
-                onSelected: (value) =>
-                    saveSettingsField(repo, allowanceDefaultMode: value),
-              ),
+              onTap:
+                  () => _showChoiceSheet<AllowanceMode>(
+                    context,
+                    title: 'Default allowance mode',
+                    value: settings.allowanceDefaultMode,
+                    items: AllowanceMode.values,
+                    labelOf: _allowanceModeLabel,
+                    subtitleOf:
+                        (value) => switch (value) {
+                          AllowanceMode.paycheck =>
+                            'Plan to the next cycle or payday',
+                          AllowanceMode.goal => 'Plan around your primary goal',
+                        },
+                    onSelected:
+                        (value) => saveSettingsField(
+                          repo,
+                          allowanceDefaultMode: value,
+                        ),
+                  ),
             ),
           ],
         ),
@@ -136,9 +161,10 @@ class _PrototypeSettingsBody extends ConsumerWidget {
           onToggleAutoDeposit: (enabled) {
             saveSettingsField(
               repo,
-              defaultPaydayBehavior: enabled
-                  ? PaydayBehavior.autoPostExpected
-                  : PaydayBehavior.confirmActualOnPayday,
+              defaultPaydayBehavior:
+                  enabled
+                      ? PaydayBehavior.autoPostExpected
+                      : PaydayBehavior.confirmActualOnPayday,
             );
             _applyAutoDepositToAllIncomes(
               ref,
@@ -157,12 +183,14 @@ class _PrototypeSettingsBody extends ConsumerWidget {
               icon: Icons.schedule_rounded,
               title: 'Reminders',
               subtitle: 'Timing and frequency',
-              onTap: () => _showTimePickerRow(
-                context,
-                initialValue: settings.nightlyCloseoutTime,
-                onSelected: (value) =>
-                    saveSettingsField(repo, nightlyCloseoutTime: value),
-              ),
+              onTap:
+                  () => _showTimePickerRow(
+                    context,
+                    initialValue: settings.nightlyCloseoutTime,
+                    onSelected:
+                        (value) =>
+                            saveSettingsField(repo, nightlyCloseoutTime: value),
+                  ),
             ),
             _PrototypeSettingsRow(
               icon: Icons.shield_outlined,
@@ -186,10 +214,7 @@ class _PrototypeSettingsBody extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 16),
-        _PrototypeAppearanceGroup(
-          enabled: false,
-          onToggle: (_) {},
-        ),
+        _PrototypeAppearanceGroup(enabled: false, onToggle: (_) {}),
         const SizedBox(height: 16),
         _PrototypeSignOutCard(
           onTap: user == null ? null : () => _logout(context, ref),
@@ -218,12 +243,15 @@ Future<void> _applyAutoDepositToAllIncomes(
 ) async {
   if (incomes.isEmpty) return;
   final service = ref.read(recurringIncomeServiceProvider);
-  final newBehavior = enabled
-      ? PaydayBehavior.autoPostExpected
-      : PaydayBehavior.confirmActualOnPayday;
+  final newBehavior =
+      enabled
+          ? PaydayBehavior.autoPostExpected
+          : PaydayBehavior.confirmActualOnPayday;
   for (final income in incomes) {
-    final current =
-        enumFromDb<PaydayBehavior>(income.paydayBehavior, PaydayBehavior.values);
+    final current = enumFromDb<PaydayBehavior>(
+      income.paydayBehavior,
+      PaydayBehavior.values,
+    );
     if (current == newBehavior) continue;
     if (enabled &&
         (income.expectedAmount == null || income.expectedAmount! <= 0)) {
@@ -233,8 +261,10 @@ Future<void> _applyAutoDepositToAllIncomes(
     await service.update(
       id: income.id,
       name: income.name,
-      frequency:
-          enumFromDb<IncomeFrequency>(income.frequency, IncomeFrequency.values),
+      frequency: enumFromDb<IncomeFrequency>(
+        income.frequency,
+        IncomeFrequency.values,
+      ),
       nextPaydayDate: income.nextPaydayDate,
       expectedAmount: income.expectedAmount,
       paydayBehavior: newBehavior,
@@ -307,9 +337,10 @@ class _PaychecksGroup extends StatelessWidget {
           _PrototypeToggleRow(
             icon: Icons.savings_outlined,
             title: 'Auto-deposit on payday',
-            subtitle: autoDepositEnabled
-                ? 'Leko will deposit each paycheck on its payday.'
-                : 'Leko will wait for you to confirm each paycheck.',
+            subtitle:
+                autoDepositEnabled
+                    ? 'Leko will deposit each paycheck on its payday.'
+                    : 'Leko will wait for you to confirm each paycheck.',
             value: autoDepositEnabled,
             onChanged: onToggleAutoDeposit,
             isLast: incomes.isEmpty,
@@ -324,9 +355,10 @@ class _PaychecksGroup extends StatelessWidget {
           _PrototypeSettingsRow(
             icon: Icons.add_rounded,
             title: incomes.isEmpty ? 'Add a paycheck' : 'Add another paycheck',
-            subtitle: incomes.isEmpty
-                ? 'Set the amount and the days you get paid'
-                : 'Track another recurring deposit',
+            subtitle:
+                incomes.isEmpty
+                    ? 'Set the amount and the days you get paid'
+                    : 'Track another recurring deposit',
             isLast: true,
             onTap: onAddIncome,
           ),
@@ -345,9 +377,8 @@ class _PaycheckTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final amount = income.expectedAmount;
-    final amountLabel = amount == null
-        ? 'Amount not set'
-        : '\$${amount.toStringAsFixed(2)}';
+    final amountLabel =
+        amount == null ? 'Amount not set' : '\$${amount.toStringAsFixed(2)}';
     final freq = enumFromDb<IncomeFrequency>(
       income.frequency,
       IncomeFrequency.values,
@@ -596,10 +627,7 @@ class _PrototypeProfileCard extends StatelessWidget {
 }
 
 class _PrototypeSettingsGroup extends StatelessWidget {
-  const _PrototypeSettingsGroup({
-    required this.title,
-    required this.children,
-  });
+  const _PrototypeSettingsGroup({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -928,7 +956,8 @@ class _SettingsBody extends ConsumerWidget {
     final firstName = profileService.firstName(user);
     final initials = profileService.initials(user);
     final isGoalMode = settings.allowanceDefaultMode == AllowanceMode.goal;
-    final isPaydayBased = settings.rolloverResetType == RolloverResetType.paydayBased;
+    final isPaydayBased =
+        settings.rolloverResetType == RolloverResetType.paydayBased;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
@@ -943,23 +972,27 @@ class _SettingsBody extends ConsumerWidget {
           planningSummary:
               '${_allowanceModeLabel(settings.allowanceDefaultMode)} mode · ${_rolloverLabel(settings.rolloverResetType)} cycle',
           onEditName: () => _showEditNameSheet(context, ref, displayName),
-          onEditCurrency: () => _showChoiceSheet<Currency>(
-            context,
-            title: 'Preferred currency',
-            value: settings.baseCurrency,
-            items: Currency.values,
-            labelOf: (value) => value.name.toUpperCase(),
-            subtitleOf: (value) => switch (value) {
-              Currency.cad => 'Use Canadian dollars across the app',
-              Currency.usd => 'Use US dollars across the app',
-            },
-            onSelected: (value) => saveSettingsField(repo, baseCurrency: value),
-          ),
+          onEditCurrency:
+              () => _showChoiceSheet<Currency>(
+                context,
+                title: 'Preferred currency',
+                value: settings.baseCurrency,
+                items: Currency.values,
+                labelOf: (value) => value.name.toUpperCase(),
+                subtitleOf:
+                    (value) => switch (value) {
+                      Currency.cad => 'Use Canadian dollars across the app',
+                      Currency.usd => 'Use US dollars across the app',
+                    },
+                onSelected:
+                    (value) => saveSettingsField(repo, baseCurrency: value),
+              ),
         ),
         const SizedBox(height: 18),
         _SectionTitle(
           title: 'Profile',
-          subtitle: 'Your identity and the money language Leko uses everywhere.',
+          subtitle:
+              'Your identity and the money language Leko uses everywhere.',
         ),
         const SizedBox(height: 10),
         _SettingsGroup(
@@ -983,18 +1016,21 @@ class _SettingsBody extends ConsumerWidget {
               subtitle: 'How balances and budgets are displayed',
               value: settings.baseCurrency.name.toUpperCase(),
               isLast: true,
-              onTap: () => _showChoiceSheet<Currency>(
-                context,
-                title: 'Preferred currency',
-                value: settings.baseCurrency,
-                items: Currency.values,
-                labelOf: (value) => value.name.toUpperCase(),
-                subtitleOf: (value) => switch (value) {
-                  Currency.cad => 'Use Canadian dollars across the app',
-                  Currency.usd => 'Use US dollars across the app',
-                },
-                onSelected: (value) => saveSettingsField(repo, baseCurrency: value),
-              ),
+              onTap:
+                  () => _showChoiceSheet<Currency>(
+                    context,
+                    title: 'Preferred currency',
+                    value: settings.baseCurrency,
+                    items: Currency.values,
+                    labelOf: (value) => value.name.toUpperCase(),
+                    subtitleOf:
+                        (value) => switch (value) {
+                          Currency.cad => 'Use Canadian dollars across the app',
+                          Currency.usd => 'Use US dollars across the app',
+                        },
+                    onSelected:
+                        (value) => saveSettingsField(repo, baseCurrency: value),
+                  ),
             ),
           ],
         ),
@@ -1008,13 +1044,18 @@ class _SettingsBody extends ConsumerWidget {
         if (isGoalMode || isPaydayBased) ...[
           _PlanningHighlight(
             icon: isGoalMode ? Icons.flag_circle_rounded : Icons.anchor_rounded,
-            eyebrow: isGoalMode ? 'Goal planning is active' : 'Payday cycle is active',
-            title: isGoalMode
-                ? _goalName(settings.primaryGoalId)
-                : _anchorName(settings.paydayAnchorRecurringIncomeId),
-            subtitle: isGoalMode
-                ? 'Primary goal is directly shaping your default allowance mode.'
-                : 'Payday anchor is defining when allowance cycles reset.',
+            eyebrow:
+                isGoalMode
+                    ? 'Goal planning is active'
+                    : 'Payday cycle is active',
+            title:
+                isGoalMode
+                    ? _goalName(settings.primaryGoalId)
+                    : _anchorName(settings.paydayAnchorRecurringIncomeId),
+            subtitle:
+                isGoalMode
+                    ? 'Primary goal is directly shaping your default allowance mode.'
+                    : 'Payday anchor is defining when allowance cycles reset.',
           ),
           const SizedBox(height: 12),
         ],
@@ -1025,103 +1066,127 @@ class _SettingsBody extends ConsumerWidget {
               title: 'Default allowance mode',
               subtitle: 'Choose the planning lens Leko should prioritize',
               value: _allowanceModeLabel(settings.allowanceDefaultMode),
-              onTap: () => _showChoiceSheet<AllowanceMode>(
-                context,
-                title: 'Default allowance mode',
-                value: settings.allowanceDefaultMode,
-                items: AllowanceMode.values,
-                labelOf: _allowanceModeLabel,
-                subtitleOf: (value) => switch (value) {
-                  AllowanceMode.paycheck => 'Plan to the next cycle or payday',
-                  AllowanceMode.goal => 'Plan around your primary goal',
-                },
-                onSelected: (value) =>
-                    saveSettingsField(repo, allowanceDefaultMode: value),
-              ),
+              onTap:
+                  () => _showChoiceSheet<AllowanceMode>(
+                    context,
+                    title: 'Default allowance mode',
+                    value: settings.allowanceDefaultMode,
+                    items: AllowanceMode.values,
+                    labelOf: _allowanceModeLabel,
+                    subtitleOf:
+                        (value) => switch (value) {
+                          AllowanceMode.paycheck =>
+                            'Plan to the next cycle or payday',
+                          AllowanceMode.goal => 'Plan around your primary goal',
+                        },
+                    onSelected:
+                        (value) => saveSettingsField(
+                          repo,
+                          allowanceDefaultMode: value,
+                        ),
+                  ),
             ),
             _SettingsRow(
               icon: Icons.insights_rounded,
               title: 'Spending baseline',
               subtitle: 'How much recent history should shape guidance',
               value: '${settings.spendingBaselineDays} days',
-              onTap: () => _showChoiceSheet<int>(
-                context,
-                title: 'Spending baseline',
-                value: settings.spendingBaselineDays,
-                items: const [30, 60, 90],
-                labelOf: (value) => '$value days',
-                subtitleOf: (value) => switch (value) {
-                  30 => 'More responsive to recent changes',
-                  60 => 'Balanced for most people',
-                  _ => 'Smoother and less jumpy',
-                },
-                onSelected: (value) =>
-                    saveSettingsField(repo, spendingBaselineDays: value),
-              ),
+              onTap:
+                  () => _showChoiceSheet<int>(
+                    context,
+                    title: 'Spending baseline',
+                    value: settings.spendingBaselineDays,
+                    items: const [30, 60, 90],
+                    labelOf: (value) => '$value days',
+                    subtitleOf:
+                        (value) => switch (value) {
+                          30 => 'More responsive to recent changes',
+                          60 => 'Balanced for most people',
+                          _ => 'Smoother and less jumpy',
+                        },
+                    onSelected:
+                        (value) => saveSettingsField(
+                          repo,
+                          spendingBaselineDays: value,
+                        ),
+                  ),
             ),
             _SettingsRow(
               icon: Icons.event_repeat_rounded,
               title: 'Cycle reset',
               subtitle: 'When allowance planning should refresh',
               value: _rolloverLabel(settings.rolloverResetType),
-              onTap: () => _showChoiceSheet<RolloverResetType>(
-                context,
-                title: 'Cycle reset',
-                value: settings.rolloverResetType,
-                items: RolloverResetType.values,
-                labelOf: _rolloverLabel,
-                subtitleOf: (value) => switch (value) {
-                  RolloverResetType.monthly => 'Reset on a clean monthly rhythm',
-                  RolloverResetType.paydayBased => 'Reset around your payday schedule',
-                },
-                onSelected: (value) =>
-                    saveSettingsField(repo, rolloverResetType: value),
-              ),
+              onTap:
+                  () => _showChoiceSheet<RolloverResetType>(
+                    context,
+                    title: 'Cycle reset',
+                    value: settings.rolloverResetType,
+                    items: RolloverResetType.values,
+                    labelOf: _rolloverLabel,
+                    subtitleOf:
+                        (value) => switch (value) {
+                          RolloverResetType.monthly =>
+                            'Reset on a clean monthly rhythm',
+                          RolloverResetType.paydayBased =>
+                            'Reset around your payday schedule',
+                        },
+                    onSelected:
+                        (value) =>
+                            saveSettingsField(repo, rolloverResetType: value),
+                  ),
             ),
             _SettingsRow(
               icon: Icons.payments_rounded,
               title: 'Default payday behavior',
               subtitle: 'How recurring income should post by default',
               value: _paydayBehaviorLabel(settings.defaultPaydayBehavior),
-              onTap: () => _showChoiceSheet<PaydayBehavior>(
-                context,
-                title: 'Default payday behavior',
-                value: settings.defaultPaydayBehavior,
-                items: PaydayBehavior.values,
-                labelOf: _paydayBehaviorLabel,
-                subtitleOf: (value) => switch (value) {
-                  PaydayBehavior.confirmActualOnPayday =>
-                    'Wait for you to confirm the real amount',
-                  PaydayBehavior.autoPostExpected =>
-                    'Automatically post the expected amount',
-                },
-                onSelected: (value) =>
-                    saveSettingsField(repo, defaultPaydayBehavior: value),
-              ),
+              onTap:
+                  () => _showChoiceSheet<PaydayBehavior>(
+                    context,
+                    title: 'Default payday behavior',
+                    value: settings.defaultPaydayBehavior,
+                    items: PaydayBehavior.values,
+                    labelOf: _paydayBehaviorLabel,
+                    subtitleOf:
+                        (value) => switch (value) {
+                          PaydayBehavior.confirmActualOnPayday =>
+                            'Wait for you to confirm the real amount',
+                          PaydayBehavior.autoPostExpected =>
+                            'Automatically post the expected amount',
+                        },
+                    onSelected:
+                        (value) => saveSettingsField(
+                          repo,
+                          defaultPaydayBehavior: value,
+                        ),
+                  ),
             ),
             _SettingsRow(
               icon: Icons.flag_circle_rounded,
               title: 'Primary goal',
-              subtitle: settings.allowanceDefaultMode == AllowanceMode.goal
-                  ? 'This is front and center in your goal-based allowance'
-                  : 'Choose the goal Leko should keep in view',
+              subtitle:
+                  settings.allowanceDefaultMode == AllowanceMode.goal
+                      ? 'This is front and center in your goal-based allowance'
+                      : 'Choose the goal Leko should keep in view',
               value: _goalName(settings.primaryGoalId),
               emphasis: isGoalMode,
-              onTap: () => _showChoiceSheet<String?>(
-                context,
-                title: 'Primary goal',
-                value: settings.primaryGoalId,
-                items: [
-                  null,
-                  ...goals.map((goal) => goal.id as String),
-                ],
-                labelOf: (value) => value == null ? 'None' : _goalName(value),
-                subtitleOf: (value) => value == null
-                    ? 'No goal will be prioritized'
-                    : 'Use this goal as the main planning focus',
-                onSelected: (value) =>
-                    saveSettingsField(repo, primaryGoalId: () => value),
-              ),
+              onTap:
+                  () => _showChoiceSheet<String?>(
+                    context,
+                    title: 'Primary goal',
+                    value: settings.primaryGoalId,
+                    items: [null, ...goals.map((goal) => goal.id as String)],
+                    labelOf:
+                        (value) => value == null ? 'None' : _goalName(value),
+                    subtitleOf:
+                        (value) =>
+                            value == null
+                                ? 'No goal will be prioritized'
+                                : 'Use this goal as the main planning focus',
+                    onSelected:
+                        (value) =>
+                            saveSettingsField(repo, primaryGoalId: () => value),
+                  ),
             ),
             if (settings.rolloverResetType == RolloverResetType.paydayBased)
               _SettingsRow(
@@ -1130,24 +1195,31 @@ class _SettingsBody extends ConsumerWidget {
                 subtitle: 'The recurring income that defines your cycle timing',
                 value: _anchorName(settings.paydayAnchorRecurringIncomeId),
                 emphasis: true,
-                onTap: () => _showChoiceSheet<String?>(
-                  context,
-                  title: 'Payday anchor',
-                  value: settings.paydayAnchorRecurringIncomeId,
-                  items: [
-                    null,
-                    ...recurringIncomes.map((income) => income.id as String),
-                  ],
-                  labelOf: (value) =>
-                      value == null ? 'None' : _anchorName(value),
-                  subtitleOf: (value) => value == null
-                      ? 'Payday-based planning needs an anchor income'
-                      : 'Use this income to anchor payday cycles',
-                  onSelected: (value) => saveSettingsField(
-                    repo,
-                    paydayAnchorRecurringIncomeId: () => value,
-                  ),
-                ),
+                onTap:
+                    () => _showChoiceSheet<String?>(
+                      context,
+                      title: 'Payday anchor',
+                      value: settings.paydayAnchorRecurringIncomeId,
+                      items: [
+                        null,
+                        ...recurringIncomes.map(
+                          (income) => income.id as String,
+                        ),
+                      ],
+                      labelOf:
+                          (value) =>
+                              value == null ? 'None' : _anchorName(value),
+                      subtitleOf:
+                          (value) =>
+                              value == null
+                                  ? 'Payday-based planning needs an anchor income'
+                                  : 'Use this income to anchor payday cycles',
+                      onSelected:
+                          (value) => saveSettingsField(
+                            repo,
+                            paydayAnchorRecurringIncomeId: () => value,
+                          ),
+                    ),
               ),
             _SettingsRow(
               icon: Icons.sync_alt_rounded,
@@ -1155,11 +1227,12 @@ class _SettingsBody extends ConsumerWidget {
               subtitle: 'Align Leko with your real bank balance',
               value: 'Adjust now',
               isLast: true,
-              onTap: () => showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                builder: (_) => const ReconcileSheet(),
-              ),
+              onTap:
+                  () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (_) => const ReconcileSheet(),
+                  ),
             ),
           ],
         ),
@@ -1195,14 +1268,16 @@ class _SettingsBody extends ConsumerWidget {
               title: 'Payday reminders',
               subtitle: 'Get nudged when income is due or confirmed',
               value: settings.paydayEnabled,
-              onChanged: (value) => saveSettingsField(repo, paydayEnabled: value),
+              onChanged:
+                  (value) => saveSettingsField(repo, paydayEnabled: value),
             ),
             _ToggleSettingsRow(
               icon: Icons.receipt_long_rounded,
               title: 'Bill reminders',
               subtitle: 'Surface upcoming bills before they hit',
               value: settings.billsEnabled,
-              onChanged: (value) => saveSettingsField(repo, billsEnabled: value),
+              onChanged:
+                  (value) => saveSettingsField(repo, billsEnabled: value),
             ),
             _ToggleSettingsRow(
               icon: Icons.warning_amber_rounded,
@@ -1210,25 +1285,27 @@ class _SettingsBody extends ConsumerWidget {
               subtitle: 'Catch drift quickly when today runs too hot',
               value: settings.overspendEnabled,
               accentColor: _SettingsPalette.alert,
-              onChanged: (value) =>
-                  saveSettingsField(repo, overspendEnabled: value),
+              onChanged:
+                  (value) => saveSettingsField(repo, overspendEnabled: value),
             ),
             _ToggleSettingsRow(
               icon: Icons.restart_alt_rounded,
               title: 'Cycle reset alerts',
               subtitle: 'Know when a new allowance cycle begins',
               value: settings.cycleResetEnabled,
-              onChanged: (value) =>
-                  saveSettingsField(repo, cycleResetEnabled: value),
+              onChanged:
+                  (value) => saveSettingsField(repo, cycleResetEnabled: value),
             ),
             _ToggleSettingsRow(
               icon: Icons.nightlight_round,
               title: 'Nightly closeout',
-              subtitle: 'Keep the daily habit alive with a calm end-of-day prompt',
+              subtitle:
+                  'Keep the daily habit alive with a calm end-of-day prompt',
               value: settings.nightlyCloseoutEnabled,
               isLast: !settings.nightlyCloseoutEnabled,
-              onChanged: (value) =>
-                  saveSettingsField(repo, nightlyCloseoutEnabled: value),
+              onChanged:
+                  (value) =>
+                      saveSettingsField(repo, nightlyCloseoutEnabled: value),
             ),
             if (settings.nightlyCloseoutEnabled)
               _SettingsRow(
@@ -1237,13 +1314,17 @@ class _SettingsBody extends ConsumerWidget {
                 subtitle: 'When Leko should ask you to wrap the day',
                 value: _formatTime(settings.nightlyCloseoutTime),
                 isLast: true,
-                onTap: () => _showTimePickerRow(
-                  context,
-                  initialValue: settings.nightlyCloseoutTime,
-                  onSelected: (value) =>
-                      saveSettingsField(repo, nightlyCloseoutTime: value),
-                ),
-              )
+                onTap:
+                    () => _showTimePickerRow(
+                      context,
+                      initialValue: settings.nightlyCloseoutTime,
+                      onSelected:
+                          (value) => saveSettingsField(
+                            repo,
+                            nightlyCloseoutTime: value,
+                          ),
+                    ),
+              ),
           ],
         ),
         const SizedBox(height: 20),
@@ -1266,14 +1347,24 @@ class _SettingsBody extends ConsumerWidget {
               title: 'Privacy',
               subtitle: 'Read how your data is handled',
               value: 'View',
-              onTap: () => _showComingSoon(context, 'Privacy'),
+              onTap:
+                  () => _showPolicySheet(
+                    context,
+                    title: 'Privacy',
+                    sections: _privacySections,
+                  ),
             ),
             _SettingsRow(
               icon: Icons.gavel_rounded,
               title: 'Terms',
               subtitle: 'Read the terms for using Leko',
               value: 'View',
-              onTap: () => _showComingSoon(context, 'Terms'),
+              onTap:
+                  () => _showPolicySheet(
+                    context,
+                    title: 'Terms',
+                    sections: _termsSections,
+                  ),
             ),
             _SettingsRow(
               icon: Icons.logout_rounded,
@@ -1351,10 +1442,10 @@ class _Header extends StatelessWidget {
         Text(
           'Settings',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: _SettingsPalette.textPrimary,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -1.1,
-              ),
+            color: _SettingsPalette.textPrimary,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -1.1,
+          ),
         ),
         const SizedBox(height: 6),
         Text(
@@ -1398,10 +1489,7 @@ class _ProfileHero extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(34),
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF121516),
-            Color(0xFF1A2123),
-          ],
+          colors: [Color(0xFF121516), Color(0xFF1A2123)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1425,7 +1513,10 @@ class _ProfileHero extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(999),
@@ -1456,7 +1547,9 @@ class _ProfileHero extends StatelessWidget {
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
                 ),
                 child: Center(
                   child: Text(
@@ -1693,17 +1786,21 @@ class _SettingsRow extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: emphasis
-                  ? _SettingsPalette.teal.withValues(alpha: 0.18)
-                  : (iconColor ?? _SettingsPalette.iconMuted).withValues(alpha: 0.12),
+              color:
+                  emphasis
+                      ? _SettingsPalette.teal.withValues(alpha: 0.18)
+                      : (iconColor ?? _SettingsPalette.iconMuted).withValues(
+                        alpha: 0.12,
+                      ),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
               icon,
               size: 20,
-              color: emphasis
-                  ? _SettingsPalette.tealBright
-                  : iconColor ?? _SettingsPalette.iconMuted,
+              color:
+                  emphasis
+                      ? _SettingsPalette.tealBright
+                      : iconColor ?? _SettingsPalette.iconMuted,
             ),
           ),
           const SizedBox(width: 14),
@@ -1740,7 +1837,8 @@ class _SettingsRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
               style: TextStyle(
-                color: valueColor ??
+                color:
+                    valueColor ??
                     (emphasis
                         ? _SettingsPalette.textSoft
                         : _SettingsPalette.textMuted),
@@ -1760,18 +1858,22 @@ class _SettingsRow extends StatelessWidget {
       ),
     );
 
-    final child = onTap == null
-        ? row
-        : Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: isLast
-                  ? const BorderRadius.vertical(bottom: Radius.circular(28))
-                  : null,
-              child: row,
-            ),
-          );
+    final child =
+        onTap == null
+            ? row
+            : Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius:
+                    isLast
+                        ? const BorderRadius.vertical(
+                          bottom: Radius.circular(28),
+                        )
+                        : null,
+                child: row,
+              ),
+            );
 
     return Column(
       children: [
@@ -2093,9 +2195,10 @@ Future<void> _showChoiceSheet<T>(
                     final item = items[index];
                     final isSelected = item == value;
                     return Material(
-                      color: isSelected
-                          ? _SettingsPalette.surfaceSoft
-                          : _SettingsPalette.backgroundSoft,
+                      color:
+                          isSelected
+                              ? _SettingsPalette.surfaceSoft
+                              : _SettingsPalette.backgroundSoft,
                       borderRadius: BorderRadius.circular(18),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(18),
@@ -2135,9 +2238,10 @@ Future<void> _showChoiceSheet<T>(
                                 isSelected
                                     ? Icons.check_circle_rounded
                                     : Icons.circle_outlined,
-                                color: isSelected
-                                    ? _SettingsPalette.teal
-                                    : _SettingsPalette.textMuted,
+                                color:
+                                    isSelected
+                                        ? _SettingsPalette.teal
+                                        : _SettingsPalette.textMuted,
                               ),
                             ],
                           ),
@@ -2190,7 +2294,9 @@ Future<void> _showEditNameSheet(
                       width: 42,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: _SettingsPalette.textMuted.withValues(alpha: 0.35),
+                        color: _SettingsPalette.textMuted.withValues(
+                          alpha: 0.35,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
@@ -2208,12 +2314,15 @@ Future<void> _showEditNameSheet(
                       controller: ctrl,
                       textCapitalization: TextCapitalization.words,
                       autofocus: true,
-                      style: const TextStyle(color: _SettingsPalette.textPrimary),
+                      style: const TextStyle(
+                        color: _SettingsPalette.textPrimary,
+                      ),
                       onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
                         hintText: 'First name',
-                        hintStyle:
-                            const TextStyle(color: _SettingsPalette.textMuted),
+                        hintStyle: const TextStyle(
+                          color: _SettingsPalette.textMuted,
+                        ),
                         filled: true,
                         fillColor: _SettingsPalette.backgroundSoft,
                         contentPadding: const EdgeInsets.symmetric(
@@ -2222,13 +2331,15 @@ Future<void> _showEditNameSheet(
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
-                          borderSide:
-                              const BorderSide(color: _SettingsPalette.outline),
+                          borderSide: const BorderSide(
+                            color: _SettingsPalette.outline,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
-                          borderSide:
-                              const BorderSide(color: _SettingsPalette.outline),
+                          borderSide: const BorderSide(
+                            color: _SettingsPalette.outline,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -2250,34 +2361,36 @@ Future<void> _showEditNameSheet(
                             borderRadius: BorderRadius.circular(20),
                           ),
                         ),
-                        onPressed: !valid || isSaving
-                            ? null
-                            : () async {
-                                setState(() => isSaving = true);
-                                try {
-                                  await ref
-                                      .read(profileServiceProvider)
-                                      .updateDisplayName(ctrl.text);
-                                  if (context.mounted) Navigator.pop(context);
-                                } finally {
-                                  if (context.mounted) {
-                                    setState(() => isSaving = false);
+                        onPressed:
+                            !valid || isSaving
+                                ? null
+                                : () async {
+                                  setState(() => isSaving = true);
+                                  try {
+                                    await ref
+                                        .read(profileServiceProvider)
+                                        .updateDisplayName(ctrl.text);
+                                    if (context.mounted) Navigator.pop(context);
+                                  } finally {
+                                    if (context.mounted) {
+                                      setState(() => isSaving = false);
+                                    }
                                   }
-                                }
-                              },
-                        child: isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: _SettingsPalette.textPrimary,
+                                },
+                        child:
+                            isSaving
+                                ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: _SettingsPalette.textPrimary,
+                                  ),
+                                )
+                                : const Text(
+                                  'Save name',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
                                 ),
-                              )
-                            : const Text(
-                                'Save name',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
                       ),
                     ),
                   ],
@@ -2297,10 +2410,7 @@ Future<void> _showTimePickerRow(
   required ValueChanged<String> onSelected,
 }) async {
   final initial = _parseTime(initialValue);
-  final picked = await showTimePicker(
-    context: context,
-    initialTime: initial,
-  );
+  final picked = await showTimePicker(context: context, initialTime: initial);
   if (picked != null) {
     final value =
         '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
@@ -2309,36 +2419,159 @@ Future<void> _showTimePickerRow(
 }
 
 void _showComingSoon(BuildContext context, String label) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('$label link can be wired next.')),
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text('$label link can be wired next.')));
+}
+
+void _showPolicySheet(
+  BuildContext context, {
+  required String title,
+  required List<({String heading, String body})> sections,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.72,
+        minChildSize: 0.42,
+        maxChildSize: 0.92,
+        builder: (context, controller) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: ListView(
+              controller: controller,
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: _SettingsPalette.textPrimary,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                for (final section in sections) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    section.heading,
+                    style: const TextStyle(
+                      color: _SettingsPalette.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    section.body,
+                    style: const TextStyle(
+                      color: _SettingsPalette.textSecondary,
+                      fontSize: 14,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      );
+    },
   );
 }
+
+const _privacySections = <({String heading, String body})>[
+  (
+    heading: 'Financial data',
+    body:
+        'Leko uses your balances, income, expenses, bills, categories, and goals to calculate budgets and show insights. We only use this data to operate and improve your Leko experience.',
+  ),
+  (
+    heading: 'Attachments',
+    body:
+        'Receipts, images, screenshots, and PDFs you attach in Leaf can be associated with the chat or transaction draft. Parsing may be added later to suggest amount, merchant, date, and category.',
+  ),
+  (
+    heading: 'Notification reading',
+    body:
+        'Automatic expense detection from bank notifications must be opt-in. Leko should ask for permission first, store only the details needed to create transactions, and let you turn it off.',
+  ),
+  (
+    heading: 'Bank connections',
+    body:
+        'Future bank connections should use a trusted provider and explicit consent. Leko should never store bank credentials directly in the app.',
+  ),
+];
+
+const _termsSections = <({String heading, String body})>[
+  (
+    heading: 'Budget guidance',
+    body:
+        'Leaf gives practical budgeting suggestions based on the information in your app. It is not a financial adviser and does not provide professional investment, tax, or legal advice.',
+  ),
+  (
+    heading: 'User control',
+    body:
+        'You choose what to add, import, attach, or connect. Features such as notification reading and bank connections should remain optional and permission-based.',
+  ),
+  (
+    heading: 'Accuracy',
+    body:
+        'Leko tries to keep math and transaction history accurate, but you should review important balances, bills, and imported transactions before relying on them.',
+  ),
+  (
+    heading: 'Attachments and imports',
+    body:
+        'You are responsible for files you upload and accounts you connect. Do not upload documents you do not have permission to use.',
+  ),
+];
 
 Future<void> _logout(BuildContext context, WidgetRef ref) async {
   final ok = await showDialog<bool>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      title: const Text('Sign out?'),
-      content: const Text('You will need to sign in again to access your budget.'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: _SettingsPalette.alert,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+    builder:
+        (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Sign out'),
+          title: const Text('Sign out?'),
+          content: const Text(
+            'You will need to sign in again to access your budget.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: _SettingsPalette.alert,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Sign out'),
+            ),
+          ],
         ),
-      ],
-    ),
   );
 
   if (ok == true && context.mounted) {
@@ -2348,19 +2581,19 @@ Future<void> _logout(BuildContext context, WidgetRef ref) async {
 }
 
 String _allowanceModeLabel(AllowanceMode value) => switch (value) {
-      AllowanceMode.paycheck => 'Paycheck',
-      AllowanceMode.goal => 'Goal',
-    };
+  AllowanceMode.paycheck => 'Paycheck',
+  AllowanceMode.goal => 'Goal',
+};
 
 String _rolloverLabel(RolloverResetType value) => switch (value) {
-      RolloverResetType.monthly => 'Monthly',
-      RolloverResetType.paydayBased => 'Payday based',
-    };
+  RolloverResetType.monthly => 'Monthly',
+  RolloverResetType.paydayBased => 'Payday based',
+};
 
 String _paydayBehaviorLabel(PaydayBehavior value) => switch (value) {
-      PaydayBehavior.confirmActualOnPayday => 'Confirm actual',
-      PaydayBehavior.autoPostExpected => 'Auto-post expected',
-    };
+  PaydayBehavior.confirmActualOnPayday => 'Confirm actual',
+  PaydayBehavior.autoPostExpected => 'Auto-post expected',
+};
 
 TimeOfDay _parseTime(String value) {
   final parts = value.split(':');

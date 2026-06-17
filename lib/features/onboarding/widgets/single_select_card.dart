@@ -31,7 +31,9 @@ class SingleSelectCard extends StatelessWidget {
           vertical: compact ? 16 : 20,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? LekoColors.onboardingFill.withOpacity(0.15) : LekoColors.onboardingSurface,
+          color: isSelected
+              ? LekoColors.onboardingFill.withValues(alpha: 0.15)
+              : LekoColors.onboardingSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? LekoColors.onboardingFill : LekoColors.onboardingSurface,
@@ -57,7 +59,10 @@ class SingleSelectCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: compact ? 16 : 18,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? LekoColors.onboardingTextPrimary : LekoColors.onboardingTextPrimary.withOpacity(0.9),
+                      color: isSelected
+                          ? LekoColors.onboardingTextPrimary
+                          : LekoColors.onboardingTextPrimary
+                              .withValues(alpha: 0.9),
                     ),
                   ),
                   if (description != null) ...[
@@ -82,7 +87,10 @@ class SingleSelectCard extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? LekoColors.onboardingFill : LekoColors.onboardingTextSecondary.withOpacity(0.4),
+                  color: isSelected
+                      ? LekoColors.onboardingFill
+                      : LekoColors.onboardingTextSecondary
+                          .withValues(alpha: 0.4),
                   width: 2,
                 ),
                 color: isSelected ? LekoColors.onboardingFill : Colors.transparent,

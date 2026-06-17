@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -117,6 +118,40 @@ void main() {
   });
 
   group('GoalsService primary goal', () {
+    test('deduped goal list preserves preferred primary row', () async {
+      final targetDate = DateTime.now().add(const Duration(days: 120));
+      final now = DateTime.now();
+      await goalsRepo.insert(
+        GoalsCompanion.insert(
+          id: 'goal-old',
+          name: 'Vacation',
+          targetAmount: 5000,
+          targetDate: targetDate,
+          savingStyle: const Value('natural'),
+          priorityOrder: const Value(0),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await goalsRepo.insert(
+        GoalsCompanion.insert(
+          id: 'goal-primary',
+          name: 'Vacation',
+          targetAmount: 5000,
+          targetDate: targetDate,
+          savingStyle: const Value('natural'),
+          priorityOrder: const Value(1),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final goals = await service.getAll(preferredGoalId: 'goal-primary');
+
+      expect(goals, hasLength(1));
+      expect(goals.single.id, 'goal-primary');
+    });
+
     test('setPrimaryGoal stores in settings', () async {
       final id = await service.create(
         name: 'Trip',

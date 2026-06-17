@@ -3,9 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ProfileService {
   ProfileService(this._client);
 
-  final SupabaseClient _client;
+  final SupabaseClient? _client;
 
-  User? get currentUser => _client.auth.currentUser;
+  User? get currentUser => _client?.auth.currentUser;
 
   String displayName(User? user) {
     if (user == null) return '';
@@ -29,10 +29,11 @@ class ProfileService {
       return email.isNotEmpty ? email[0].toUpperCase() : '?';
     }
 
-    final parts = full
-        .split(RegExp(r'\s+'))
-        .where((part) => part.trim().isNotEmpty)
-        .toList();
+    final parts =
+        full
+            .split(RegExp(r'\s+'))
+            .where((part) => part.trim().isNotEmpty)
+            .toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return (parts.first[0] + parts.last[0]).toUpperCase();
@@ -41,15 +42,16 @@ class ProfileService {
   Future<void> updateDisplayName(String value) async {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return;
+    final client = _client;
+    if (client == null) {
+      throw StateError(
+        'A signed-in Supabase session is required to update profile details.',
+      );
+    }
 
     final first = trimmed.split(RegExp(r'\s+')).first.trim();
-    await _client.auth.updateUser(
-      UserAttributes(
-        data: {
-          'full_name': trimmed,
-          'name': first,
-        },
-      ),
+    await client.auth.updateUser(
+      UserAttributes(data: {'full_name': trimmed, 'name': first}),
     );
   }
 }

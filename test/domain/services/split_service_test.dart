@@ -1,9 +1,7 @@
-import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:leko/data/db/leko_database.dart';
-import 'package:leko/data/repositories/persons_repository.dart';
 import 'package:leko/data/repositories/persons_repository.dart';
 import 'package:leko/data/repositories/split_entries_repository.dart';
 import 'package:leko/data/repositories/split_shares_repository.dart';
@@ -26,18 +24,22 @@ void main() {
     personsRepo = DriftPersonsRepository(db);
 
     final now = DateTime(2025, 1, 15);
-    await personsRepo.insert(PersonsCompanion.insert(
-      id: 'person_a',
-      name: 'Alice',
-      createdAt: now,
-      updatedAt: now,
-    ));
-    await personsRepo.insert(PersonsCompanion.insert(
-      id: 'person_b',
-      name: 'Bob',
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await personsRepo.insert(
+      PersonsCompanion.insert(
+        id: 'person_a',
+        name: 'Alice',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    await personsRepo.insert(
+      PersonsCompanion.insert(
+        id: 'person_b',
+        name: 'Bob',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
 
     service = SplitService(entriesRepo, sharesRepo, txnRepo, personsRepo);
   });
@@ -80,29 +82,32 @@ void main() {
       expect(you!.name, 'You');
     });
 
-    test('equal split produces correct share amounts and sum equals total', () async {
-      final id = await service.createSplit(
-        description: 'Dinner',
-        totalAmount: 30,
-        paidBy: kSplitPaidByYou,
-        shares: [
-          (personId: kSplitPaidByYou, shareAmount: 10),
-          (personId: 'person_a', shareAmount: 10),
-          (personId: 'person_b', shareAmount: 10),
-        ],
-      );
-      expect(id, isNotEmpty);
+    test(
+      'equal split produces correct share amounts and sum equals total',
+      () async {
+        final id = await service.createSplit(
+          description: 'Dinner',
+          totalAmount: 30,
+          paidBy: kSplitPaidByYou,
+          shares: [
+            (personId: kSplitPaidByYou, shareAmount: 10),
+            (personId: 'person_a', shareAmount: 10),
+            (personId: 'person_b', shareAmount: 10),
+          ],
+        );
+        expect(id, isNotEmpty);
 
-      final entry = await service.getSplitById(id);
-      expect(entry != null, true);
-      expect(entry!.totalAmount, 30.0);
-      expect(entry.status, 'open');
+        final entry = await service.getSplitById(id);
+        expect(entry != null, true);
+        expect(entry!.totalAmount, 30.0);
+        expect(entry.status, 'open');
 
-      final shares = await service.getSharesForSplit(id);
-      expect(shares.length, 3);
-      final sum = shares.fold<double>(0, (s, sh) => s + sh.shareAmount);
-      expect(sum, closeTo(30, 0.01));
-    });
+        final shares = await service.getSharesForSplit(id);
+        expect(shares.length, 3);
+        final sum = shares.fold<double>(0, (s, sh) => s + sh.shareAmount);
+        expect(sum, closeTo(30, 0.01));
+      },
+    );
 
     test('rejects totalAmount <= 0', () async {
       expect(
@@ -200,25 +205,28 @@ void main() {
   });
 
   group('markSettled', () {
-    test('settlement updates balances correctly (excluded from open)', () async {
-      final id = await service.createSplit(
-        description: 'Trip',
-        totalAmount: 100,
-        paidBy: kSplitPaidByYou,
-        shares: [
-          (personId: kSplitPaidByYou, shareAmount: 50),
-          (personId: 'person_a', shareAmount: 50),
-        ],
-      );
+    test(
+      'settlement updates balances correctly (excluded from open)',
+      () async {
+        final id = await service.createSplit(
+          description: 'Trip',
+          totalAmount: 100,
+          paidBy: kSplitPaidByYou,
+          shares: [
+            (personId: kSplitPaidByYou, shareAmount: 50),
+            (personId: 'person_a', shareAmount: 50),
+          ],
+        );
 
-      var balances = await service.computeBalancesByPerson();
-      expect(balances['person_a']!.owedToYou, 50);
+        var balances = await service.computeBalancesByPerson();
+        expect(balances['person_a']!.owedToYou, 50);
 
-      await service.markSettled(id);
+        await service.markSettled(id);
 
-      balances = await service.computeBalancesByPerson();
-      expect(balances.containsKey('person_a'), false);
-    });
+        balances = await service.computeBalancesByPerson();
+        expect(balances.containsKey('person_a'), false);
+      },
+    );
 
     test('only specified split is settled', () async {
       final id1 = await service.createSplit(

@@ -40,15 +40,17 @@ void main() {
     String id = 'goal-1',
   }) async {
     final now = DateTime.now();
-    await goalsRepo.insert(GoalsCompanion.insert(
-      id: id,
-      name: 'Test Goal',
-      targetAmount: amount,
-      targetDate: DateTime(now.year, now.month, now.day + daysFromNow),
-      savingStyle: Value(style),
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await goalsRepo.insert(
+      GoalsCompanion.insert(
+        id: id,
+        name: 'Test Goal',
+        targetAmount: amount,
+        targetDate: DateTime(now.year, now.month, now.day + daysFromNow),
+        savingStyle: Value(style),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     return id;
   }
 
@@ -67,30 +69,32 @@ void main() {
       expect(result, equals(null));
     });
 
-    test('goal mode: daily = (balance + income - bills - goalTarget) / days',
-        () async {
-      // Balance = $5000, goal target = $2000, 90 days to goal
-      // No future income or bills → spendable = 5000 - 2000 = 3000
-      // dailyAllowance = 3000 / 91 ≈ $32.97
-      final goalId = await createGoal(amount: 2000, daysFromNow: 90);
-      await ledger.addIncome(
-        amount: 5000,
-        date: DateTime.now(),
-        postingType: IncomePostingType.manualOneTime,
-      );
+    test(
+      'goal mode: daily = (balance + income - bills - goalTarget) / days',
+      () async {
+        // Balance = $5000, goal target = $2000, 90 days to goal
+        // No future income or bills → spendable = 5000 - 2000 = 3000
+        // dailyAllowance = 3000 / 91 ≈ $32.97
+        final goalId = await createGoal(amount: 2000, daysFromNow: 90);
+        await ledger.addIncome(
+          amount: 5000,
+          date: DateTime.now(),
+          postingType: IncomePostingType.manualOneTime,
+        );
 
-      final result = await engine.computeGoalMode(
-        settings: settingsWithGoal(goalId),
-      );
+        final result = await engine.computeGoalMode(
+          settings: settingsWithGoal(goalId),
+        );
 
-      expect(result, isNot(equals(null)));
-      expect(result!.balance, 5000);
-      expect(result.spendablePool, closeTo(3000, 1));
-      // daysToGoal = 91 (90 + 1 for today)
-      expect(result.dailyAllowance, closeTo(3000 / 91, 0.5));
-      expect(result.todaySpend, 0);
-      expect(result.remainingToday, result.dailyAllowance);
-    });
+        expect(result, isNot(equals(null)));
+        expect(result!.balance, 5000);
+        expect(result.spendablePool, closeTo(3000, 1));
+        // daysToGoal = 91 (90 + 1 for today)
+        expect(result.dailyAllowance, closeTo(3000 / 91, 0.5));
+        expect(result.todaySpend, 0);
+        expect(result.remainingToday, result.dailyAllowance);
+      },
+    );
 
     test('today spend reduces remaining in goal mode', () async {
       final goalId = await createGoal(amount: 2000, daysFromNow: 60);
@@ -112,11 +116,12 @@ void main() {
 
       expect(result, isNot(equals(null)));
       expect(result!.todaySpend, 20);
+      expect(result.spendablePool, 3000);
+      expect(result.dailyAllowance, closeTo(3000 / result.daysToGoal, 0.01));
       expect(result.remainingToday, result.dailyAllowance - 20);
     });
 
-    test('saving style does not affect daily spend (pure cash flow)',
-        () async {
+    test('saving style does not affect daily spend (pure cash flow)', () async {
       await ledger.addIncome(
         amount: 10000,
         date: DateTime.now(),
@@ -147,8 +152,10 @@ void main() {
       // is the same and it's pure cash flow math
       expect(easyResult, isNot(equals(null)));
       expect(aggroResult, isNot(equals(null)));
-      expect(aggroResult!.dailyAllowance,
-          closeTo(easyResult!.dailyAllowance, 0.01));
+      expect(
+        aggroResult!.dailyAllowance,
+        closeTo(easyResult!.dailyAllowance, 0.01),
+      );
     });
 
     test('feasibility shows deficit when goal is unreachable', () async {
@@ -195,16 +202,18 @@ void main() {
       );
 
       // Recurring $500 biweekly income — should project ~4 paychecks
-      await incomeRepo.insert(RecurringIncomesCompanion.insert(
-        id: 'salary-1',
-        name: 'Salary',
-        frequency: const Value('biweekly'),
-        nextPaydayDate: DateTime(now.year, now.month, now.day + 7),
-        expectedAmount: const Value(500),
-        isPaydayAnchor: const Value(true),
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await incomeRepo.insert(
+        RecurringIncomesCompanion.insert(
+          id: 'salary-1',
+          name: 'Salary',
+          frequency: const Value('biweekly'),
+          nextPaydayDate: DateTime(now.year, now.month, now.day + 7),
+          expectedAmount: const Value(500),
+          isPaydayAnchor: const Value(true),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       final result = await engine.computeGoalMode(
         settings: settingsWithGoal(goalId),

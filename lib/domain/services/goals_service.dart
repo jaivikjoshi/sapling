@@ -14,8 +14,12 @@ class GoalsService {
 
   GoalsService(this._goalsRepo, this._settingsRepo);
 
-  Stream<List<Goal>> watchAll() => _goalsRepo.watchAll();
+  Stream<List<Goal>> watchAll({String? preferredGoalId}) => _goalsRepo
+      .watchAll()
+      .map((goals) => _dedupeGoals(goals, preferredGoalId: preferredGoalId));
   Stream<List<Goal>> watchArchived() => _goalsRepo.watchArchived();
+  Future<List<Goal>> getAll({String? preferredGoalId}) async =>
+      _dedupeGoals(await _goalsRepo.getAll(), preferredGoalId: preferredGoalId);
   Future<Goal> getById(String id) => _goalsRepo.getById(id);
 
   static String? validateName(String name) {
@@ -45,16 +49,18 @@ class GoalsService {
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _goalsRepo.insert(GoalsCompanion.insert(
-      id: id,
-      name: name.trim(),
-      targetAmount: targetAmount,
-      targetDate: targetDate,
-      savingStyle: Value(enumToDb(savingStyle)),
-      priorityOrder: Value(priorityOrder),
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _goalsRepo.insert(
+      GoalsCompanion.insert(
+        id: id,
+        name: name.trim(),
+        targetAmount: targetAmount,
+        targetDate: targetDate,
+        savingStyle: Value(enumToDb(savingStyle)),
+        priorityOrder: Value(priorityOrder),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     return id;
   }
 
@@ -73,9 +79,8 @@ class GoalsService {
         targetAmount: Value(targetAmount),
         targetDate: Value(targetDate),
         savingStyle: Value(enumToDb(savingStyle)),
-        priorityOrder: priorityOrder != null
-            ? Value(priorityOrder)
-            : const Value.absent(),
+        priorityOrder:
+            priorityOrder != null ? Value(priorityOrder) : const Value.absent(),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -103,5 +108,30 @@ class GoalsService {
     await _settingsRepo.update(
       const AppSettingsCompanion(primaryGoalId: Value(null)),
     );
+  }
+
+  static List<Goal> _dedupeGoals(List<Goal> goals, {String? preferredGoalId}) {
+    final deduped = <Goal>[];
+    final indexByKey = <String, int>{};
+    for (final goal in goals) {
+      final key = [
+        goal.name.trim().toLowerCase(),
+        goal.targetAmount.toStringAsFixed(2),
+        DateTime(
+          goal.targetDate.year,
+          goal.targetDate.month,
+          goal.targetDate.day,
+        ).toIso8601String(),
+        goal.savingStyle,
+      ].join('|');
+      final existingIndex = indexByKey[key];
+      if (existingIndex == null) {
+        indexByKey[key] = deduped.length;
+        deduped.add(goal);
+      } else if (goal.id == preferredGoalId) {
+        deduped[existingIndex] = goal;
+      }
+    }
+    return deduped;
   }
 }

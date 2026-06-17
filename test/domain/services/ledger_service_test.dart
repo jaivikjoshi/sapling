@@ -117,6 +117,32 @@ void main() {
       // 1500 + 500 - 80 - 120 = 1800
       expect(await ledger.computeBalance(), 1800.0);
     });
+
+    test('future-dated transactions do not affect current balance', () async {
+      final now = DateTime.now();
+      await ledger.addIncome(
+        amount: 1000,
+        date: now,
+        postingType: IncomePostingType.manualOneTime,
+      );
+      await ledger.addIncome(
+        amount: 500,
+        date: now.add(const Duration(days: 3)),
+        postingType: IncomePostingType.manualOneTime,
+      );
+      await ledger.addExpense(
+        amount: 200,
+        date: now.add(const Duration(days: 4)),
+        categoryId: 'cat_bills',
+        label: SpendLabel.orange,
+      );
+
+      expect(await ledger.computeBalance(), 1000.0);
+      expect(
+        await repo.computeBalanceUpTo(now.add(const Duration(days: 5))),
+        1300.0,
+      );
+    });
   });
 
   group('reconcile', () {

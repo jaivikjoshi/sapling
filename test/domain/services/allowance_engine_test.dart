@@ -40,8 +40,7 @@ void main() {
 
   group('AllowanceEngine — paycheck mode (monthly)', () {
     test('empty state returns zero allowance', () async {
-      final result =
-          await engine.computePaycheckMode(settings: baseSettings);
+      final result = await engine.computePaycheckMode(settings: baseSettings);
       expect(result.balance, 0);
       expect(result.dailyAllowance, 0);
       expect(result.todaySpend, 0);
@@ -57,8 +56,7 @@ void main() {
         postingType: IncomePostingType.manualOneTime,
       );
 
-      final result =
-          await engine.computePaycheckMode(settings: baseSettings);
+      final result = await engine.computePaycheckMode(settings: baseSettings);
       expect(result.balance, 3000);
       // dailyAllowance = spendablePool / daysLeft = 3000 / daysLeft
       expect(result.dailyAllowance, closeTo(3000 / result.daysLeft, 0.01));
@@ -79,10 +77,11 @@ void main() {
         label: SpendLabel.green,
       );
 
-      final result =
-          await engine.computePaycheckMode(settings: baseSettings);
+      final result = await engine.computePaycheckMode(settings: baseSettings);
       expect(result.balance, 2950);
       expect(result.todaySpend, 50);
+      expect(result.spendablePool, 3000);
+      expect(result.dailyAllowance, closeTo(3000 / result.daysLeft, 0.01));
       // remainingToday = dailyAllowance - 50
       expect(result.remainingToday, result.dailyAllowance - 50);
     });
@@ -103,8 +102,7 @@ void main() {
         label: SpendLabel.red,
       );
 
-      final result =
-          await engine.computePaycheckMode(settings: baseSettings);
+      final result = await engine.computePaycheckMode(settings: baseSettings);
       // Balance = 800, daily = 800/daysLeft
       expect(result.balance, 800);
       expect(result.dailyAllowance, closeTo(800 / result.daysLeft, 0.01));
@@ -120,22 +118,47 @@ void main() {
 
       final now = DateTime.now();
       final dueDate = DateTime(now.year, now.month, now.day + 5);
-      await billsRepo.insert(BillsCompanion.insert(
-        id: 'bill-test',
-        name: 'Rent',
-        amount: 1000,
-        nextDueDate: dueDate,
-        categoryId: 'cat-1',
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await billsRepo.insert(
+        BillsCompanion.insert(
+          id: 'bill-test',
+          name: 'Rent',
+          amount: 1000,
+          nextDueDate: dueDate,
+          categoryId: 'cat-1',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
-      final result =
-          await engine.computePaycheckMode(settings: baseSettings);
+      final result = await engine.computePaycheckMode(settings: baseSettings);
       // spendable = 3000 - 1000 = 2000
       expect(result.projectedBills, greaterThanOrEqualTo(1000));
       expect(result.spendablePool, closeTo(2000, 1));
     });
+
+    test(
+      'future one-time income is projected, not counted in balance',
+      () async {
+        final now = DateTime.now();
+        await ledger.addIncome(
+          amount: 1000,
+          date: now,
+          postingType: IncomePostingType.manualOneTime,
+        );
+        await ledger.addIncome(
+          amount: 500,
+          date: now.add(const Duration(days: 2)),
+          postingType: IncomePostingType.manualOneTime,
+        );
+
+        final result = await engine.computePaycheckMode(settings: baseSettings);
+
+        expect(result.balance, 1000);
+        expect(result.projectedIncome, 500);
+        expect(result.spendablePool, 1500);
+        expect(result.dailyAllowance, closeTo(1500 / result.daysLeft, 0.01));
+      },
+    );
 
     test('behind amount is positive when overspent overall', () async {
       await ledger.addExpense(
@@ -145,8 +168,7 @@ void main() {
         label: SpendLabel.red,
       );
 
-      final result =
-          await engine.computePaycheckMode(settings: baseSettings);
+      final result = await engine.computePaycheckMode(settings: baseSettings);
       expect(result.balance, -500);
       expect(result.dailyAllowance, 0);
       expect(result.behindAmount, 500);
@@ -156,16 +178,18 @@ void main() {
   group('AllowanceEngine — payday_based cycle', () {
     test('uses anchor schedule for cycle boundaries', () async {
       final now = DateTime.now();
-      await incomeRepo.insert(RecurringIncomesCompanion.insert(
-        id: 'anchor-1',
-        name: 'Salary',
-        frequency: const Value('biweekly'),
-        nextPaydayDate: DateTime(now.year, now.month, now.day + 7),
-        expectedAmount: const Value(2000),
-        isPaydayAnchor: const Value(true),
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await incomeRepo.insert(
+        RecurringIncomesCompanion.insert(
+          id: 'anchor-1',
+          name: 'Salary',
+          frequency: const Value('biweekly'),
+          nextPaydayDate: DateTime(now.year, now.month, now.day + 7),
+          expectedAmount: const Value(2000),
+          isPaydayAnchor: const Value(true),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       await ledger.addIncome(
         amount: 2000,
@@ -178,11 +202,9 @@ void main() {
         paydayAnchorRecurringIncomeId: () => 'anchor-1',
       );
 
-      final result =
-          await engine.computePaycheckMode(settings: paydaySettings);
-      final cycleDays = result.cycleWindow.end
-          .difference(result.cycleWindow.start)
-          .inDays;
+      final result = await engine.computePaycheckMode(settings: paydaySettings);
+      final cycleDays =
+          result.cycleWindow.end.difference(result.cycleWindow.start).inDays;
       // Biweekly = ~14 days (may be 13 due to day boundary)
       expect(cycleDays, inInclusiveRange(13, 14));
     });

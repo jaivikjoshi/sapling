@@ -5,12 +5,14 @@ import '../../data/db/leko_database.dart';
 import '../../features/leaf/leaf_action_executor.dart';
 import '../../features/leaf/leaf_assistant_responses.dart';
 import '../../features/leaf/leaf_assistant_service.dart';
+import '../../features/leaf/leaf_clarification_options.dart';
 import '../../features/leaf/leaf_context.dart';
 import '../../features/leaf/leaf_models.dart';
 import 'allowance_providers.dart';
 import 'auth_providers.dart';
 import 'bills_providers.dart';
 import 'goals_providers.dart';
+import 'integration_providers.dart';
 import 'ledger_providers.dart';
 import 'profile_providers.dart';
 import 'settings_providers.dart';
@@ -29,7 +31,8 @@ final leafContextProvider = Provider<LeafContext>((ref) {
   final goals = ref.watch(goalsStreamProvider).valueOrNull ?? const <Goal>[];
   final bills = ref.watch(upcomingBillsProvider).valueOrNull ?? const <Bill>[];
   final txns =
-      ref.watch(recentTransactionsProvider).valueOrNull ?? const <Transaction>[];
+      ref.watch(recentTransactionsProvider).valueOrNull ??
+      const <Transaction>[];
 
   Goal? primary;
   final pid = settings?.primaryGoalId;
@@ -154,9 +157,10 @@ class LeafConversationState {
   }) {
     return LeafConversationState(
       messages: messages ?? this.messages,
-      pendingAction: pendingAction == _leafNoChange
-          ? this.pendingAction
-          : pendingAction as LeafPendingAction?,
+      pendingAction:
+          pendingAction == _leafNoChange
+              ? this.pendingAction
+              : pendingAction as LeafPendingAction?,
       isLoading: isLoading ?? this.isLoading,
       error: error == _leafNoChange ? this.error : error as String?,
       suggestedPrompts: suggestedPrompts ?? this.suggestedPrompts,
@@ -174,18 +178,18 @@ const List<String> _defaultLeafPrompts = <String>[
 
 class LeafConversationController extends StateNotifier<LeafConversationState> {
   LeafConversationController(this.ref)
-      : super(
-          LeafConversationState(
-            messages: [
-              LeafChatMessage(
-                isUser: false,
-                text:
-                    "I'm Leko. Ask me for a budgeting tip, a read on your week, or tell me something to record and I'll preview it before anything changes.",
-                at: DateTime.now(),
-              ),
-            ],
-          ),
-        );
+    : super(
+        LeafConversationState(
+          messages: [
+            LeafChatMessage(
+              isUser: false,
+              text:
+                  "I'm Leko. Ask me for a budgeting tip, a read on your week, or tell me something to record and I'll preview it before anything changes.",
+              at: DateTime.now(),
+            ),
+          ],
+        ),
+      );
 
   final Ref ref;
 
@@ -200,8 +204,7 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
       ref.read(goalsStreamProvider).valueOrNull ?? const <Goal>[];
   List<Bill> get _bills =>
       ref.read(billsStreamProvider).valueOrNull ?? const <Bill>[];
-  LeafAssistantService get _assistant =>
-      ref.read(leafAssistantServiceProvider);
+  LeafAssistantService get _assistant => ref.read(leafAssistantServiceProvider);
   LeafActionExecutor get _executor => ref.read(leafActionExecutorProvider);
 
   void clearConversation() {
@@ -251,15 +254,22 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
     final attachments = state.stagedAttachments;
     if (trimmed.isEmpty && attachments.isEmpty) return;
 
+    if (attachments.isEmpty) {
+      final handled = await _tryResolveClarificationWithText(trimmed);
+      if (handled) return;
+    }
+
     final now = DateTime.now();
-    final userText = trimmed.isEmpty ? _attachmentSummaryText(attachments) : trimmed;
+    final userText =
+        trimmed.isEmpty ? _attachmentSummaryText(attachments) : trimmed;
     final userMessage = LeafChatMessage(
       isUser: true,
       text: userText,
       at: now,
-      attachments: attachments
-          .map((a) => LeafAttachmentPreview(name: a.name, mime: a.mime))
-          .toList(),
+      attachments:
+          attachments
+              .map((a) => LeafAttachmentPreview(name: a.name, mime: a.mime))
+              .toList(),
     );
 
     state = state.copyWith(
@@ -268,6 +278,10 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
       error: null,
       stagedAttachments: const [],
     );
+
+    if (attachments.isNotEmpty) {
+      await _extractAttachmentReviewDrafts(attachments);
+    }
 
     final envelope = await _assistant.handleMessage(
       message: trimmed.isEmpty ? '[attachment]' : trimmed,
@@ -291,10 +305,18 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
     final action = source.action;
     if (action == null || source.clarificationField == null) return;
 
-    final mergedData = {...action.data, ...option.patch};
+    final patch = Map<String, dynamic>.from(option.patch);
+    final selectedCustomDate =
+        (source.clarificationField == 'date' ||
+            source.clarificationField == 'target_date') &&
+        patch[source.clarificationField] == '__custom__';
+    if (selectedCustomDate) {
+      patch.remove(source.clarificationField);
+    }
+    final mergedData = {...action.data, ...patch};
     final resolvedField = source.clarificationField!;
     final remaining = action.missingFields
-        .where((field) => !_fieldResolvedBy(field, resolvedField, option.patch))
+        .where((field) => !_fieldResolvedBy(field, resolvedField, patch))
         .toList(growable: false);
 
     final updatedAction = LeafPendingAction(
@@ -316,40 +338,29 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
 
     // Neutralize the original options on the previous clarification so they
     // collapse after selection.
-    final priorMessages = state.messages
-        .map((message) => identical(message, source)
-            ? message.withClarificationCleared()
-            : message)
-        .toList();
+    final priorMessages =
+        state.messages
+            .map(
+              (message) =>
+                  identical(message, source)
+                      ? message.withClarificationCleared()
+                      : message,
+            )
+            .toList();
 
-    state = state.copyWith(
-      messages: [...priorMessages, selectionEcho],
-      pendingAction: remaining.isEmpty ? updatedAction : null,
-    );
+    state = state.copyWith(messages: [...priorMessages, selectionEcho]);
 
-    if (remaining.isEmpty) {
-      final summary = _localPreviewSummary(updatedAction);
+    if (selectedCustomDate) {
       _appendAssistant(
-        text: summary,
-        kind: LeafMessageKind.actionPreview,
-        action: updatedAction,
+        text: 'What date should I use? Type it like Jun 16 or 2026-06-16.',
+        kind: LeafMessageKind.clarification,
+        action: action,
+        clarificationField: source.clarificationField,
       );
-      state = state.copyWith(pendingAction: updatedAction);
       return;
     }
 
-    // Still more to resolve — fall back to the assistant so it can decide
-    // which field to ask about next.
-    state = state.copyWith(isLoading: true, error: null);
-    final envelope = await _assistant.handleMessage(
-      message: 'The user selected ${option.label}.',
-      context: _ctx,
-      categories: _categories,
-      bills: _bills,
-      goals: _goals,
-      history: _buildHistory(),
-    );
-    _applyEnvelope(envelope);
+    _advanceResolvedAction(updatedAction);
   }
 
   Future<void> confirmPendingAction() async {
@@ -386,10 +397,7 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
         kind: LeafMessageKind.executionResult,
         success: true,
       );
-      state = state.copyWith(
-        isLoading: false,
-        error: null,
-      );
+      state = state.copyWith(isLoading: false, error: null);
     } on LeafActionException catch (error) {
       await _appendExecutionFailure(action, error.message);
     } catch (error) {
@@ -424,13 +432,11 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
       kind: LeafMessageKind.error,
       success: false,
     );
-    state = state.copyWith(
-      isLoading: false,
-      error: errorMessage,
-    );
+    state = state.copyWith(isLoading: false, error: errorMessage);
   }
 
   void _applyEnvelope(LeafAssistantEnvelope envelope) {
+    final normalizedEnvelope = _withLocalClarificationOptions(envelope);
     final kind = switch (envelope.type) {
       LeafEnvelopeType.assistantMessage => LeafMessageKind.text,
       LeafEnvelopeType.clarificationRequest => LeafMessageKind.clarification,
@@ -438,27 +444,30 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
       LeafEnvelopeType.executionResult => LeafMessageKind.executionResult,
       LeafEnvelopeType.error => LeafMessageKind.error,
     };
-    if (envelope.assistantMessage.trim().isNotEmpty) {
+    if (normalizedEnvelope.assistantMessage.trim().isNotEmpty) {
       _appendAssistant(
-        text: envelope.assistantMessage,
+        text: normalizedEnvelope.assistantMessage,
         kind: kind,
-        action: envelope.action,
-        success: envelope.success,
-        clarificationField: envelope.clarificationField,
-        clarificationOptions: envelope.clarificationOptions,
+        action: normalizedEnvelope.action,
+        success: normalizedEnvelope.success,
+        clarificationField: normalizedEnvelope.clarificationField,
+        clarificationOptions: normalizedEnvelope.clarificationOptions,
       );
     }
     state = state.copyWith(
-      pendingAction: envelope.type == LeafEnvelopeType.actionPreview
-          ? envelope.action
-          : null,
+      pendingAction:
+          normalizedEnvelope.type == LeafEnvelopeType.actionPreview
+              ? normalizedEnvelope.action
+              : null,
       isLoading: false,
-      error: envelope.type == LeafEnvelopeType.error
-          ? envelope.assistantMessage
-          : null,
-      suggestedPrompts: envelope.suggestedPrompts.isEmpty
-          ? state.suggestedPrompts
-          : envelope.suggestedPrompts,
+      error:
+          normalizedEnvelope.type == LeafEnvelopeType.error
+              ? normalizedEnvelope.assistantMessage
+              : null,
+      suggestedPrompts:
+          normalizedEnvelope.suggestedPrompts.isEmpty
+              ? state.suggestedPrompts
+              : normalizedEnvelope.suggestedPrompts,
     );
   }
 
@@ -488,21 +497,47 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
     );
   }
 
+  Future<void> _extractAttachmentReviewDrafts(
+    List<LeafAttachment> attachments,
+  ) async {
+    var created = 0;
+    for (var i = 0; i < attachments.length; i++) {
+      final attachment = attachments[i];
+      final draft = await ref
+          .read(transactionReviewControllerProvider.notifier)
+          .extractReceiptDraft(
+            attachmentId: _attachmentDraftId(attachment, i),
+            fileName: attachment.name,
+            mimeType: attachment.mime,
+            dataBase64: attachment.dataBase64,
+          );
+      if (draft != null) created += 1;
+    }
+    if (created > 0) {
+      _appendAssistant(
+        text:
+            '$created receipt draft${created == 1 ? '' : 's'} ready in transaction review. I will still keep this chat draft separate until you approve an import.',
+        kind: LeafMessageKind.text,
+      );
+    }
+  }
+
   /// Last ~20 turns so Gemini maintains a continuous session without blowing
   /// the token budget. The backend schema caps inbound history at 20 turns.
   List<LeafHistoryTurn> _buildHistory() {
     final trimmed = <LeafHistoryTurn>[];
     final source = state.messages;
-    final recent = source.length <= 20
-        ? source
-        : source.sublist(source.length - 20);
+    final recent =
+        source.length <= 20 ? source : source.sublist(source.length - 20);
     for (final message in recent) {
       final text = message.text.trim();
       if (text.isEmpty) continue;
-      trimmed.add(LeafHistoryTurn(
-        role: message.isUser ? 'user' : 'assistant',
-        text: text,
-      ));
+      trimmed.add(
+        LeafHistoryTurn(
+          role: message.isUser ? 'user' : 'assistant',
+          text: text,
+        ),
+      );
     }
     return trimmed;
   }
@@ -516,6 +551,228 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
       _ => 'Ready when you are — confirm to apply.',
     };
   }
+
+  Future<bool> _tryResolveClarificationWithText(String raw) async {
+    final source = _latestOpenClarification();
+    if (source == null || source.action == null) return false;
+    final field = source.clarificationField;
+    if (field == null) return false;
+    final patch = _patchFromTypedClarification(field, raw);
+    if (patch == null) return false;
+
+    final userMessage = LeafChatMessage(
+      isUser: true,
+      text: raw,
+      at: DateTime.now(),
+    );
+    final priorMessages =
+        state.messages
+            .map(
+              (message) =>
+                  identical(message, source)
+                      ? message.withClarificationCleared()
+                      : message,
+            )
+            .toList();
+    state = state.copyWith(messages: [...priorMessages, userMessage]);
+
+    final remaining = source.action!.missingFields
+        .where((missing) => !_fieldResolvedBy(missing, field, patch))
+        .toList(growable: false);
+    final updatedAction = LeafPendingAction(
+      intent: source.action!.intent,
+      confidence: remaining.isEmpty ? 0.95 : source.action!.confidence,
+      requiresConfirmation: source.action!.requiresConfirmation,
+      isReadOnly: source.action!.isReadOnly,
+      missingFields: remaining,
+      reason: source.action!.reason,
+      data: {...source.action!.data, ...patch},
+    );
+    _advanceResolvedAction(updatedAction);
+    return true;
+  }
+
+  LeafChatMessage? _latestOpenClarification() {
+    for (final message in state.messages.reversed) {
+      if (message.isUser) continue;
+      if (message.kind == LeafMessageKind.clarification &&
+          message.action != null &&
+          message.clarificationField != null) {
+        return message;
+      }
+      if (message.kind == LeafMessageKind.actionPreview ||
+          message.kind == LeafMessageKind.executionResult) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _patchFromTypedClarification(String field, String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    return switch (field) {
+      'amount' || 'target_amount' => _typedAmountPatch(field, trimmed),
+      'date' || 'target_date' => _typedDatePatch(field, trimmed),
+      'name' => {'name': trimmed},
+      'source' => {'source': trimmed},
+      _ => _typedOptionPatch(field, trimmed),
+    };
+  }
+
+  Map<String, dynamic>? _typedAmountPatch(String field, String raw) {
+    final match = RegExp(r'\$?\s?(\d+(?:\.\d{1,2})?)').firstMatch(raw);
+    final amount = match == null ? null : double.tryParse(match.group(1)!);
+    if (amount == null || amount <= 0) return null;
+    return {field: amount};
+  }
+
+  Map<String, dynamic>? _typedDatePatch(String field, String raw) {
+    final lower = raw.toLowerCase();
+    final now = DateTime.now();
+    DateTime? parsed;
+    if (lower == 'today') {
+      parsed = DateTime(now.year, now.month, now.day);
+    } else if (lower == 'yesterday') {
+      final day = now.subtract(const Duration(days: 1));
+      parsed = DateTime(day.year, day.month, day.day);
+    } else {
+      parsed = parseLeafActionDate(raw) ?? _parseLooseMonthDay(raw, now);
+    }
+    if (parsed == null) return null;
+    return {field: _isoDay(parsed)};
+  }
+
+  Map<String, dynamic>? _typedOptionPatch(String field, String raw) {
+    final normalized = raw.toLowerCase();
+    final options = _optionsForField(field);
+    for (final option in options) {
+      if (option.label.toLowerCase() == normalized ||
+          option.id.toLowerCase() == normalized) {
+        return option.patch;
+      }
+    }
+    return null;
+  }
+
+  void _advanceResolvedAction(LeafPendingAction action) {
+    if (action.missingFields.isEmpty) {
+      final summary = _localPreviewSummary(action);
+      _appendAssistant(
+        text: summary,
+        kind: LeafMessageKind.actionPreview,
+        action: action,
+      );
+      state = state.copyWith(pendingAction: action);
+      return;
+    }
+    _appendNextClarification(action);
+  }
+
+  void _appendNextClarification(LeafPendingAction action) {
+    final field = _nextMissingField(action);
+    final message = _clarificationMessageFor(field, action);
+    _appendAssistant(
+      text: message,
+      kind: LeafMessageKind.clarification,
+      action: action,
+      clarificationField: field,
+      clarificationOptions: _optionsForField(field),
+    );
+    state = state.copyWith(pendingAction: null, isLoading: false);
+  }
+
+  LeafAssistantEnvelope _withLocalClarificationOptions(
+    LeafAssistantEnvelope envelope,
+  ) {
+    if (envelope.type != LeafEnvelopeType.clarificationRequest ||
+        envelope.action == null) {
+      return envelope;
+    }
+    final field =
+        envelope.clarificationField ?? _nextMissingField(envelope.action!);
+    return envelope.copyWith(
+      assistantMessage: _clarificationMessageFor(field, envelope.action!),
+      clarificationField: field,
+      clarificationOptions:
+          envelope.clarificationOptions.isNotEmpty
+              ? envelope.clarificationOptions
+              : _optionsForField(field),
+    );
+  }
+
+  String _nextMissingField(LeafPendingAction action) {
+    if (action.missingFields.isEmpty) return 'confirm';
+    const preference = [
+      'amount',
+      'target_amount',
+      'category_id',
+      'category_name',
+      'date',
+      'target_date',
+      'account',
+      'recurrence',
+      'bill_id',
+      'name',
+      'source',
+    ];
+    for (final field in preference) {
+      if (action.missingFields.contains(field)) return field;
+    }
+    return action.missingFields.first;
+  }
+
+  String _clarificationMessageFor(String field, LeafPendingAction action) {
+    return switch (field) {
+      'amount' =>
+        action.intent == LeafIntent.addIncome
+            ? 'How much income should I add?'
+            : 'How much was it?',
+      'target_amount' => 'How much do you want to save?',
+      'category_id' || 'category_name' => 'What category should I use?',
+      'date' => 'When did this happen?',
+      'target_date' => 'When do you want to reach this goal?',
+      'account' => 'Which account should I use?',
+      'recurrence' => 'How often should this repeat?',
+      'bill_id' || 'bill_name' => 'Which bill do you mean?',
+      'name' => 'What should I call it?',
+      'source' => 'Where did this income come from?',
+      _ => 'Choose an option so I can finish this.',
+    };
+  }
+
+  List<LeafClarificationOption> _optionsForField(String field) {
+    return switch (field) {
+      'category_id' ||
+      'category_name' => standardExpenseCategoryOptions(_categories),
+      'date' ||
+      'target_date' => dateClarificationOptions(DateTime.now(), field: field),
+      'account' => accountClarificationOptions,
+      'recurrence' => recurrenceClarificationOptions,
+      'bill_id' || 'bill_name' =>
+        _bills
+            .take(8)
+            .map(
+              (bill) => LeafClarificationOption(
+                id: bill.id,
+                label: bill.name,
+                subtitle: _asCurrency(bill.amount),
+                patch: {
+                  'bill_id': bill.id,
+                  'bill_name': bill.name,
+                  'amount': bill.amount,
+                },
+              ),
+            )
+            .toList(),
+      _ => const [],
+    };
+  }
+}
+
+String _attachmentDraftId(LeafAttachment attachment, int index) {
+  final size = attachment.sizeBytes ?? attachment.dataBase64.length;
+  return '${attachment.name}-$size-$index';
 }
 
 bool _fieldResolvedBy(
@@ -589,6 +846,45 @@ String? _asCurrency(Object? raw) {
   return '\$${amount.toStringAsFixed(2)}';
 }
 
+DateTime? _parseLooseMonthDay(String raw, DateTime now) {
+  final match = RegExp(
+    r'\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s+(\d{1,2})\b',
+    caseSensitive: false,
+  ).firstMatch(raw);
+  if (match == null) return null;
+  final month = _monthNumber(match.group(1)!);
+  final day = int.tryParse(match.group(2)!);
+  if (month == null || day == null) return null;
+  final candidate = DateTime(now.year, month, day);
+  final today = DateTime(now.year, now.month, now.day);
+  return candidate.isBefore(today)
+      ? DateTime(now.year + 1, month, day)
+      : candidate;
+}
+
+int? _monthNumber(String raw) {
+  return switch (raw.toLowerCase()) {
+    'jan' => 1,
+    'feb' => 2,
+    'mar' => 3,
+    'apr' => 4,
+    'may' => 5,
+    'jun' => 6,
+    'jul' => 7,
+    'aug' => 8,
+    'sep' || 'sept' => 9,
+    'oct' => 10,
+    'nov' => 11,
+    'dec' => 12,
+    _ => null,
+  };
+}
+
+String _isoDay(DateTime date) {
+  final day = DateTime(date.year, date.month, date.day);
+  return day.toIso8601String().split('T').first;
+}
+
 final leafAssistantHttpClientProvider = Provider<http.Client>((ref) {
   final client = http.Client();
   ref.onDispose(client.close);
@@ -615,10 +911,11 @@ final leafActionExecutorProvider = Provider<LeafActionExecutor>((ref) {
 });
 
 final leafConversationProvider =
-    StateNotifierProvider<LeafConversationController, LeafConversationState>(
-        (ref) {
-  return LeafConversationController(ref);
-});
+    StateNotifierProvider<LeafConversationController, LeafConversationState>((
+      ref,
+    ) {
+      return LeafConversationController(ref);
+    });
 
 /// Opening line for the hero card; recomputes with context.
 final leafHeroBriefingProvider = Provider<String>((ref) {

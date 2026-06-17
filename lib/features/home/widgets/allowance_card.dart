@@ -34,9 +34,10 @@ class _ModeToggle extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () {
-        final next = mode == AllowanceMode.paycheck
-            ? AllowanceMode.goal
-            : AllowanceMode.paycheck;
+        final next =
+            mode == AllowanceMode.paycheck
+                ? AllowanceMode.goal
+                : AllowanceMode.paycheck;
         ref.read(allowanceModeOverrideProvider.notifier).state = next;
       },
       child: Container(
@@ -50,14 +51,12 @@ class _ModeToggle extends ConsumerWidget {
           children: [
             Text(
               mode == AllowanceMode.paycheck ? 'To Paycheck' : 'To Goal',
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: LekoColors.secondary),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: LekoColors.secondary),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.swap_horiz,
-                size: 14, color: LekoColors.secondary),
+            const Icon(Icons.swap_horiz, size: 14, color: LekoColors.secondary),
           ],
         ),
       ),
@@ -88,9 +87,7 @@ class _PaycheckCard extends ConsumerWidget {
     final dateFmt = DateFormat.MMMd();
     return Card(
       color: LekoColors.primary,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -100,11 +97,13 @@ class _PaycheckCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('You can spend today',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: LekoColors.background, letterSpacing: 0.2)),
+                Text(
+                  'You can spend today',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: LekoColors.background,
+                    letterSpacing: 0.2,
+                  ),
+                ),
                 const _ModeToggle(),
               ],
             ),
@@ -112,12 +111,12 @@ class _PaycheckCard extends ConsumerWidget {
             Text(
               formatCurrency(r.allowanceToday),
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 56,
-                    letterSpacing: -2.0,
-                    color: Colors.white,
-                    height: 1.0,
-                  ),
+                fontWeight: FontWeight.w700,
+                fontSize: 56,
+                letterSpacing: 0,
+                color: Colors.white,
+                height: 1.0,
+              ),
             ),
             const SizedBox(height: 32),
             Row(
@@ -127,9 +126,10 @@ class _PaycheckCard extends ConsumerWidget {
                 _MiniStatBlock(
                   label: 'Banked',
                   value: formatCurrency(r.bankedAllowance),
-                  valueColor: r.bankedAllowance >= 0
-                      ? LekoColors.secondary
-                      : LekoColors.accent,
+                  valueColor:
+                      r.bankedAllowance >= 0
+                          ? LekoColors.secondary
+                          : LekoColors.accent,
                 ),
                 _MiniStatBlock(
                   label: 'Days left',
@@ -138,7 +138,8 @@ class _PaycheckCard extends ConsumerWidget {
                 ),
                 _MiniStatBlock(
                   label: 'Cycle',
-                  value: '${dateFmt.format(r.cycleWindow.start)} – '
+                  value:
+                      '${dateFmt.format(r.cycleWindow.start)} – '
                       '${dateFmt.format(r.cycleWindow.end)}',
                   valueColor: Colors.white,
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -151,13 +152,14 @@ class _PaycheckCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildShell(BuildContext context,
-      {bool loading = false, String? error}) {
+  Widget _buildShell(
+    BuildContext context, {
+    bool loading = false,
+    String? error,
+  }) {
     return Card(
       color: LekoColors.primary,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -167,26 +169,28 @@ class _PaycheckCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('You can spend today',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: LekoColors.background, letterSpacing: 0.2)),
+                Text(
+                  'You can spend today',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: LekoColors.background,
+                    letterSpacing: 0.2,
+                  ),
+                ),
                 const _ModeToggle(),
               ],
             ),
             const SizedBox(height: 16),
             if (loading)
               const SizedBox(
-                height: 56, width: 150,
+                height: 56,
+                width: 150,
                 child: LinearProgressIndicator(
                   color: LekoColors.secondary,
                   backgroundColor: LekoColors.support,
                 ),
               )
             else if (error != null)
-              Text(error,
-                  style: const TextStyle(color: LekoColors.labelRed)),
+              Text(error, style: const TextStyle(color: LekoColors.labelRed)),
             const SizedBox(height: 32),
           ],
         ),
@@ -218,9 +222,7 @@ class _GoalCard extends ConsumerWidget {
     final dateFmt = DateFormat.MMMd();
     return Card(
       color: LekoColors.primary,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -230,11 +232,13 @@ class _GoalCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('You can spend today',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: LekoColors.background, letterSpacing: 0.2)),
+                Text(
+                  'You can spend today',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: LekoColors.background,
+                    letterSpacing: 0.2,
+                  ),
+                ),
                 const _ModeToggle(),
               ],
             ),
@@ -242,12 +246,12 @@ class _GoalCard extends ConsumerWidget {
             Text(
               formatCurrency(r.allowanceToday),
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.w700, 
-                    fontSize: 56,
-                    letterSpacing: -2.0,
-                    color: Colors.white,
-                    height: 1.0,
-                  ),
+                fontWeight: FontWeight.w700,
+                fontSize: 56,
+                letterSpacing: 0,
+                color: Colors.white,
+                height: 1.0,
+              ),
             ),
             const SizedBox(height: 32),
             Row(
@@ -267,9 +271,10 @@ class _GoalCard extends ConsumerWidget {
                 _MiniStatBlock(
                   label: 'Banked',
                   value: formatCurrency(r.bankedAllowance),
-                  valueColor: r.bankedAllowance >= 0
-                      ? LekoColors.secondary
-                      : LekoColors.accent,
+                  valueColor:
+                      r.bankedAllowance >= 0
+                          ? LekoColors.secondary
+                          : LekoColors.accent,
                   crossAxisAlignment: CrossAxisAlignment.end,
                 ),
               ],
@@ -287,9 +292,7 @@ class _GoalCard extends ConsumerWidget {
   Widget _buildNoGoal(BuildContext context) {
     return Card(
       color: LekoColors.primary,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -299,21 +302,22 @@ class _GoalCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('You can spend today',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: LekoColors.background, letterSpacing: 0.2)),
+                Text(
+                  'You can spend today',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: LekoColors.background,
+                    letterSpacing: 0.2,
+                  ),
+                ),
                 const _ModeToggle(),
               ],
             ),
             const SizedBox(height: 32),
             Text(
               'No primary goal set.\nGo to Goals tab and set one.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: LekoColors.background.withValues(alpha: 0.7)),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: LekoColors.background.withValues(alpha: 0.7),
+              ),
             ),
             const SizedBox(height: 16),
           ],
@@ -322,13 +326,14 @@ class _GoalCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildGoalShell(BuildContext context,
-      {bool loading = false, String? error}) {
+  Widget _buildGoalShell(
+    BuildContext context, {
+    bool loading = false,
+    String? error,
+  }) {
     return Card(
       color: LekoColors.primary,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -338,26 +343,28 @@ class _GoalCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('You can spend today',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: LekoColors.background, letterSpacing: 0.2)),
+                Text(
+                  'You can spend today',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: LekoColors.background,
+                    letterSpacing: 0.2,
+                  ),
+                ),
                 const _ModeToggle(),
               ],
             ),
             const SizedBox(height: 16),
             if (loading)
               const SizedBox(
-                height: 56, width: 150,
+                height: 56,
+                width: 150,
                 child: LinearProgressIndicator(
                   color: LekoColors.secondary,
                   backgroundColor: LekoColors.support,
                 ),
               )
             else if (error != null)
-              Text(error,
-                  style: const TextStyle(color: LekoColors.labelRed)),
+              Text(error, style: const TextStyle(color: LekoColors.labelRed)),
             const SizedBox(height: 32),
           ],
         ),
@@ -405,43 +412,6 @@ class _FeasibilityWarning extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
-}
-
-// ── Shared info row ──
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(
-                    color: LekoColors.background.withValues(alpha: 0.7))),
-        Flexible(
-          child: Text(value,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: color, fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis),
-        ),
-      ],
     );
   }
 }

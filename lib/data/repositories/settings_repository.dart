@@ -15,20 +15,24 @@ class DriftSettingsRepository implements SettingsRepository {
 
   DriftSettingsRepository(this._db);
 
+  @override
   Future<AppSetting> get() async {
     return _db.select(_db.appSettings).getSingle();
   }
 
+  @override
   Stream<AppSetting> watch() {
     return _db.select(_db.appSettings).watchSingle();
   }
 
+  @override
   Future<void> update(AppSettingsCompanion companion) async {
     await (_db.update(_db.appSettings)
           ..where((t) => t.id.equals('singleton')))
         .write(companion);
   }
 
+  @override
   Future<void> markOnboardingComplete() async {
     await update(
       const AppSettingsCompanion(onboardingCompleted: Value(true)),

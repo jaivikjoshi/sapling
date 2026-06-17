@@ -8,6 +8,8 @@ import '../../features/splash/splash_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/bills/bills_screen.dart';
 import '../../features/goals/goals_screen.dart';
+import '../../features/household/household_screen.dart';
+import '../../features/imports/import_review_screen.dart';
 import '../../features/leaf/leaf_screen.dart';
 import '../../features/reports/reports_screen.dart';
 import '../../features/settings/settings_screen.dart';
@@ -142,6 +144,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const TransactionListScreen(),
       ),
       GoRoute(
+        path: '/imports',
+        builder: (context, state) => const ImportReviewScreen(),
+      ),
+      GoRoute(
+        path: '/household',
+        builder: (context, state) => const HouseholdScreen(),
+      ),
+      GoRoute(
         path: '/categories',
         builder: (context, state) => const CategoriesScreen(),
       ),
@@ -250,10 +260,7 @@ class _GlassNavBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(36),
-                border: Border.all(
-                  color: borderColor,
-                  width: 0.8,
-                ),
+                border: Border.all(color: borderColor, width: 0.8),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,

@@ -135,30 +135,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onPressed: enabled ? _signIn : null,
               style: FilledButton.styleFrom(
                 backgroundColor: AuthPalette.primaryBtn,
-                disabledBackgroundColor:
-                    AuthPalette.primaryBtn.withValues(alpha: 0.35),
+                disabledBackgroundColor: AuthPalette.primaryBtn.withValues(
+                  alpha: 0.35,
+                ),
                 foregroundColor: AuthPalette.primaryBtnText,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
                 ),
                 elevation: 0,
               ),
-              child: _loading
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AuthPalette.primaryBtnText,
+              child:
+                  _loading
+                      ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AuthPalette.primaryBtnText,
+                        ),
+                      )
+                      : const Text(
+                        'Sign in',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    )
-                  : const Text(
-                      'Sign in',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
             ),
           ),
           const SizedBox(height: 20),
@@ -169,7 +171,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: OutlinedButton(
               onPressed: _loading ? null : _signInWithGoogle,
               style: OutlinedButton.styleFrom(
-                backgroundColor: AuthPalette.secondaryBtn.withValues(alpha: 0.45),
+                backgroundColor: AuthPalette.secondaryBtn.withValues(
+                  alpha: 0.45,
+                ),
                 foregroundColor: AuthPalette.secondaryBtnText,
                 side: BorderSide(
                   color: AuthPalette.secondaryBtnBorder.withValues(alpha: 0.7),
@@ -183,11 +187,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   Icon(Icons.login, size: 20),
                   SizedBox(width: 12),
-                  Text(
-                    'Continue with Google',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      'Continue with Google',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],

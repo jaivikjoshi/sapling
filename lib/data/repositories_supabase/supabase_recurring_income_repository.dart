@@ -47,7 +47,7 @@ class SupabaseRecurringIncomeRepository implements RecurringIncomeRepository {
         .eq('user_id', _userId)
         .maybeSingle();
     if (res == null) throw Exception('RecurringIncome not found: $id');
-    return recurringIncomeFromSupabase(res as Map<String, dynamic>);
+    return recurringIncomeFromSupabase(res);
   }
 
   @override

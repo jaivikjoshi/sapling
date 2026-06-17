@@ -88,7 +88,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
             color: _Tok.textTitle,
             size: 24,
           ),
-          onPressed: () => context.pop(),
+          onPressed: _leaveScreen,
         ),
         title: const Text(
           'Add Income',
@@ -229,9 +229,17 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
           );
 
       ref.read(snapshotWriterProvider).writeSnapshot();
-      if (mounted) context.pop();
+      if (mounted) _leaveScreen();
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _leaveScreen() {
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+    } else {
+      context.go('/home');
     }
   }
 }
@@ -663,9 +671,7 @@ class _FrequencyRow extends StatelessWidget {
                         decoration: BoxDecoration(
                           color:
                               isEq
-                                  ? LekoColors.secondary.withValues(
-                                    alpha: 0.12,
-                                  )
+                                  ? LekoColors.secondary.withValues(alpha: 0.12)
                                   : Colors.transparent,
                           borderRadius: BorderRadius.circular(_Tok.rChip),
                           border: Border.all(

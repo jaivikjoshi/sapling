@@ -12,6 +12,7 @@ import '../../core/providers/ledger_providers.dart';
 import '../../core/providers/reports_providers.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../data/db/leko_database.dart';
+import '../../domain/integrations/product_foundations.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/services/reports_service.dart';
 
@@ -37,19 +38,23 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       backgroundColor: _ReportsPalette.background,
       body: SafeArea(
         child: periodsAsync.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: _ReportsPalette.teal),
-          ),
-          error: (error, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'Unable to load report periods.\n$error',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: _ReportsPalette.textSecondary),
+          loading:
+              () => const Center(
+                child: CircularProgressIndicator(color: _ReportsPalette.teal),
               ),
-            ),
-          ),
+          error:
+              (error, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'Unable to load report periods.\n$error',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: _ReportsPalette.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
           data: (periods) {
             if (periods.isEmpty) {
               return const Center(
@@ -91,34 +96,39 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     onComparisonChanged: (value) {
                       setState(() => _comparisonMode = value);
                     },
-                    onPeriodTap: () => _showPeriodPicker(periods, selectedPeriod),
+                    onPeriodTap:
+                        () => _showPeriodPicker(periods, selectedPeriod),
                   ),
                   const SizedBox(height: 20),
                   snapshotAsync.when(
-                    loading: () => const Padding(
-                      padding: EdgeInsets.only(top: 80),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: _ReportsPalette.teal,
+                    loading:
+                        () => const Padding(
+                          padding: EdgeInsets.only(top: 80),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: _ReportsPalette.teal,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    error: (error, _) => _InlineError(
-                      message: 'Reports failed to load.',
-                      details: error.toString(),
-                    ),
-                    data: (snapshot) => _ReportContent(
-                      snapshot: snapshot,
-                      chartMode: _chartMode,
-                      onChartModeChanged: (value) {
-                        setState(() => _chartMode = value);
-                      },
-                      onOpenTransactions: (query, title) {
-                        _showTransactionsSheet(title: title, query: query);
-                      },
-                      onOpenBills: () => _showBillsSheet(snapshot.period),
-                      onOpenGoalImpact: () => _showGoalImpactSheet(snapshot.goal),
-                    ),
+                    error:
+                        (error, _) => _InlineError(
+                          message: 'Reports failed to load.',
+                          details: error.toString(),
+                        ),
+                    data:
+                        (snapshot) => _ReportContent(
+                          snapshot: snapshot,
+                          chartMode: _chartMode,
+                          onChartModeChanged: (value) {
+                            setState(() => _chartMode = value);
+                          },
+                          onOpenTransactions: (query, title) {
+                            _showTransactionsSheet(title: title, query: query);
+                          },
+                          onOpenBills: () => _showBillsSheet(snapshot.period),
+                          onOpenGoalImpact:
+                              () => _showGoalImpactSheet(snapshot.goal),
+                        ),
                   ),
                 ],
               ),
@@ -145,11 +155,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => _PeriodPickerSheet(
-        title: 'Choose ${_timeframeLabel(_timeframe).toLowerCase()}',
-        periods: periods,
-        selected: selected,
-      ),
+      builder:
+          (context) => _PeriodPickerSheet(
+            title: 'Choose ${_timeframeLabel(_timeframe).toLowerCase()}',
+            periods: periods,
+            selected: selected,
+          ),
     );
     if (choice != null) {
       setState(() => _selectedPeriodId = choice.id);
@@ -200,7 +211,8 @@ class _ReportContent extends StatelessWidget {
   final ReportsSnapshot snapshot;
   final _ReportChartMode chartMode;
   final ValueChanged<_ReportChartMode> onChartModeChanged;
-  final void Function(ReportDrilldownQuery query, String title) onOpenTransactions;
+  final void Function(ReportDrilldownQuery query, String title)
+  onOpenTransactions;
   final VoidCallback onOpenBills;
   final VoidCallback onOpenGoalImpact;
 
@@ -214,6 +226,8 @@ class _ReportContent extends StatelessWidget {
         _PrototypeChartCard(snapshot: snapshot),
         const SizedBox(height: 16),
         _InsightCard(snapshot: snapshot),
+        const SizedBox(height: 16),
+        _DynamicInsightsCard(snapshot: snapshot),
         const SizedBox(height: 16),
         _TopCategoriesCard(
           snapshot: snapshot,
@@ -230,11 +244,84 @@ class _ReportContent extends StatelessWidget {
           },
         ),
         const SizedBox(height: 16),
-        _BottomStatCards(
-          snapshot: snapshot,
-          onOpenBills: onOpenBills,
-        ),
+        _BottomStatCards(snapshot: snapshot, onOpenBills: onOpenBills),
       ],
+    );
+  }
+}
+
+class _DynamicInsightsCard extends StatelessWidget {
+  const _DynamicInsightsCard({required this.snapshot});
+
+  final ReportsSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final insights = snapshot.dynamicInsights;
+    if (insights.isEmpty) return const SizedBox.shrink();
+
+    return _PrototypeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Dynamic checks',
+            style: TextStyle(
+              color: _ReportsPalette.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 14),
+          for (final insight in insights) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEAF6F2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _dynamicInsightIcon(insight.type),
+                    color: _ReportsPalette.teal,
+                    size: 17,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        insight.title,
+                        style: const TextStyle(
+                          color: _ReportsPalette.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        insight.detail,
+                        style: const TextStyle(
+                          color: _ReportsPalette.textSecondary,
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (insight != insights.last) const SizedBox(height: 14),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -274,7 +361,7 @@ class _Header extends StatelessWidget {
                       color: _ReportsPalette.textPrimary,
                       fontSize: 30,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: -1.1,
+                      letterSpacing: 0,
                     ),
                   ),
                   SizedBox(height: 4),
@@ -290,17 +377,11 @@ class _Header extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            _FilterCircleButton(
-              icon: Icons.tune_rounded,
-              onTap: onPeriodTap,
-            ),
+            _FilterCircleButton(icon: Icons.tune_rounded, onTap: onPeriodTap),
           ],
         ),
         const SizedBox(height: 16),
-        _ModeSwitcher(
-          timeframe: timeframe,
-          onChanged: onTimeframeChanged,
-        ),
+        _ModeSwitcher(timeframe: timeframe, onChanged: onTimeframeChanged),
       ],
     );
   }
@@ -313,9 +394,10 @@ class _TopStatCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final savingsRate = snapshot.earnedThisPeriod <= 0
-        ? 0
-        : (((snapshot.earnedThisPeriod - snapshot.spentThisPeriod) /
+    final savingsRate =
+        snapshot.earnedThisPeriod <= 0
+            ? 0
+            : (((snapshot.earnedThisPeriod - snapshot.spentThisPeriod) /
                         snapshot.earnedThisPeriod) *
                     100)
                 .round();
@@ -341,10 +423,7 @@ class _TopStatCards extends StatelessWidget {
 }
 
 class _SummaryStatCard extends StatelessWidget {
-  const _SummaryStatCard({
-    required this.label,
-    required this.value,
-  });
+  const _SummaryStatCard({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -381,7 +460,7 @@ class _SummaryStatCard extends StatelessWidget {
               color: _ReportsPalette.textPrimary,
               fontSize: 27,
               fontWeight: FontWeight.w700,
-              letterSpacing: -1,
+              letterSpacing: 0,
             ),
           ),
         ],
@@ -482,9 +561,10 @@ class _PrototypeChartCard extends StatelessWidget {
                         width: 38,
                         height: bars[i],
                         decoration: BoxDecoration(
-                          color: i == bars.length - 2
-                              ? _ReportsPalette.navy
-                              : _ReportsPalette.teal,
+                          color:
+                              i == bars.length - 2
+                                  ? _ReportsPalette.navy
+                                  : _ReportsPalette.teal,
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(16),
                           ),
@@ -526,12 +606,14 @@ class _InsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final comparison = snapshot.hero.comparison;
-    final headline = comparison == null
-        ? _heroInsight(snapshot.hero.status)
-        : _insightHeadline(comparison, snapshot.period.timeframe);
-    final detail = snapshot.goalFundingRoom > 0
-        ? 'That alone kept about ${formatCurrency(snapshot.goalFundingRoom)} available for your goal without changing your overall routine much.'
-        : 'A calmer pace here makes more room for bills, recovery, and goal progress.';
+    final headline =
+        comparison == null
+            ? _heroInsight(snapshot.hero.status)
+            : _insightHeadline(comparison, snapshot.period.timeframe);
+    final detail =
+        snapshot.goalFundingRoom > 0
+            ? 'That alone kept about ${formatCurrency(snapshot.goalFundingRoom)} available for your goal without changing your overall routine much.'
+            : 'A calmer pace here makes more room for bills, recovery, and goal progress.';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
@@ -575,7 +657,7 @@ class _InsightCard extends StatelessWidget {
               color: Colors.white,
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.4,
+              letterSpacing: 0,
               height: 1.35,
             ),
           ),
@@ -610,10 +692,7 @@ class _TopCategoriesCard extends StatelessWidget {
       return const _PrototypeCard(
         child: Text(
           'No category activity yet for this period.',
-          style: TextStyle(
-            color: _ReportsPalette.textSecondary,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: _ReportsPalette.textSecondary, fontSize: 14),
         ),
       );
     }
@@ -628,7 +707,7 @@ class _TopCategoriesCard extends StatelessWidget {
               color: _ReportsPalette.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              letterSpacing: -0.3,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 18),
@@ -689,10 +768,7 @@ class _TopCategoriesCard extends StatelessWidget {
 }
 
 class _BottomStatCards extends StatelessWidget {
-  const _BottomStatCards({
-    required this.snapshot,
-    required this.onOpenBills,
-  });
+  const _BottomStatCards({required this.snapshot, required this.onOpenBills});
 
   final ReportsSnapshot snapshot;
   final VoidCallback onOpenBills;
@@ -821,10 +897,7 @@ class _PrototypeCard extends StatelessWidget {
 }
 
 class _FilterCircleButton extends StatelessWidget {
-  const _FilterCircleButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _FilterCircleButton({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;
@@ -874,10 +947,7 @@ class _HeroCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF122428),
-            Color(0xFF0B171A),
-          ],
+          colors: [Color(0xFF122428), Color(0xFF0B171A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -936,10 +1006,14 @@ class _HeroCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _HeroMetric(
-                  label: hero.safeRemaining < 0 ? 'Over safe range' : 'Safe remaining',
-                  value: hero.safeRemaining < 0
-                      ? formatCurrency(hero.safeRemaining.abs())
-                      : formatCurrency(hero.safeRemaining),
+                  label:
+                      hero.safeRemaining < 0
+                          ? 'Over safe range'
+                          : 'Safe remaining',
+                  value:
+                      hero.safeRemaining < 0
+                          ? formatCurrency(hero.safeRemaining.abs())
+                          : formatCurrency(hero.safeRemaining),
                   valueColor: safeTone,
                 ),
               ),
@@ -948,9 +1022,10 @@ class _HeroCard extends StatelessWidget {
                 child: _HeroMetric(
                   label: 'Pace delta',
                   value: _signedCurrency(hero.paceDelta),
-                  valueColor: hero.paceDelta > 0
-                      ? _ReportsPalette.alert
-                      : _ReportsPalette.tealBright,
+                  valueColor:
+                      hero.paceDelta > 0
+                          ? _ReportsPalette.alert
+                          : _ReportsPalette.tealBright,
                 ),
               ),
             ],
@@ -1008,15 +1083,16 @@ class _ChartCard extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _ReportChartMode.values
-                .map(
-                  (mode) => _OptionChip(
-                    label: _chartModeLabel(mode),
-                    selected: chartMode == mode,
-                    onTap: () => onChartModeChanged(mode),
-                  ),
-                )
-                .toList(),
+            children:
+                _ReportChartMode.values
+                    .map(
+                      (mode) => _OptionChip(
+                        label: _chartModeLabel(mode),
+                        selected: chartMode == mode,
+                        onTap: () => onChartModeChanged(mode),
+                      ),
+                    )
+                    .toList(),
           ),
           const SizedBox(height: 18),
           SizedBox(
@@ -1024,9 +1100,10 @@ class _ChartCard extends StatelessWidget {
             child: LineChart(
               LineChartData(
                 minX: 0,
-                maxX: snapshot.chart.xLabels.isEmpty
-                    ? 1
-                    : snapshot.chart.xLabels.last.x,
+                maxX:
+                    snapshot.chart.xLabels.isEmpty
+                        ? 1
+                        : snapshot.chart.xLabels.last.x,
                 minY: 0,
                 maxY: snapshot.chart.maxY,
                 borderData: FlBorderData(show: false),
@@ -1034,10 +1111,11 @@ class _ChartCard extends StatelessWidget {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: snapshot.chart.maxY / 4,
-                  getDrawingHorizontalLine: (_) => FlLine(
-                    color: _ReportsPalette.outline.withValues(alpha: 0.55),
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine:
+                      (_) => FlLine(
+                        color: _ReportsPalette.outline.withValues(alpha: 0.55),
+                        strokeWidth: 1,
+                      ),
                 ),
                 titlesData: FlTitlesData(
                   rightTitles: const AxisTitles(
@@ -1093,24 +1171,31 @@ class _ChartCard extends StatelessWidget {
                   ),
                 ),
                 lineBarsData: bars,
-                betweenBarsData: chartMode == _ReportChartMode.spendVsPace
-                    ? [
-                        BetweenBarsData(
-                          fromIndex: 0,
-                          toIndex: 1,
-                          color: _ReportsPalette.teal.withValues(alpha: 0.10),
-                        ),
-                      ]
-                    : const [],
+                betweenBarsData:
+                    chartMode == _ReportChartMode.spendVsPace
+                        ? [
+                          BetweenBarsData(
+                            fromIndex: 0,
+                            toIndex: 1,
+                            color: _ReportsPalette.teal.withValues(alpha: 0.10),
+                          ),
+                        ]
+                        : const [],
               ),
             ),
           ),
           const SizedBox(height: 14),
           Row(
             children: [
-              _LegendDot(color: _ReportsPalette.tealBright, label: series.primaryLabel),
+              _LegendDot(
+                color: _ReportsPalette.tealBright,
+                label: series.primaryLabel,
+              ),
               const SizedBox(width: 14),
-              _LegendDot(color: series.secondaryColor, label: series.secondaryLabel),
+              _LegendDot(
+                color: series.secondaryColor,
+                label: series.secondaryLabel,
+              ),
             ],
           ),
         ],
@@ -1118,7 +1203,11 @@ class _ChartCard extends StatelessWidget {
     );
   }
 
-  LineChartBarData _bar(List<ReportChartPoint> points, Color color, double width) {
+  LineChartBarData _bar(
+    List<ReportChartPoint> points,
+    Color color,
+    double width,
+  ) {
     return LineChartBarData(
       spots: points.map((point) => FlSpot(point.x, point.y)).toList(),
       isCurved: true,
@@ -1142,10 +1231,19 @@ class _StatsGrid extends StatelessWidget {
       _MetricSpec('Earned', formatCurrency(snapshot.earnedThisPeriod)),
       _MetricSpec('Spent', formatCurrency(snapshot.spentThisPeriod)),
       _MetricSpec('Net flow', _signedCurrency(snapshot.netFlow)),
-      _MetricSpec('Daily allowed', '${formatCurrency(snapshot.dailyAllowed)}/day'),
-      _MetricSpec('Current pace', '${formatCurrency(snapshot.currentPace)}/day'),
+      _MetricSpec(
+        'Daily allowed',
+        '${formatCurrency(snapshot.dailyAllowed)}/day',
+      ),
+      _MetricSpec(
+        'Current pace',
+        '${formatCurrency(snapshot.currentPace)}/day',
+      ),
       _MetricSpec('Projected end', formatCurrency(snapshot.projectedEndSpend)),
-      _MetricSpec('Banked allowance', _signedCurrency(snapshot.bankedAllowance)),
+      _MetricSpec(
+        'Banked allowance',
+        _signedCurrency(snapshot.bankedAllowance),
+      ),
       _MetricSpec('Days left', '${snapshot.daysLeftInPeriod}'),
       _MetricSpec('No-spend days', '${snapshot.noSpendDays}'),
       _MetricSpec('Goal room', formatCurrency(snapshot.goalFundingRoom)),
@@ -1154,14 +1252,15 @@ class _StatsGrid extends StatelessWidget {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
-      children: items
-          .map(
-            (item) => SizedBox(
-              width: (MediaQuery.of(context).size.width - 52) / 2,
-              child: _StatCard(item: item),
-            ),
-          )
-          .toList(),
+      children:
+          items
+              .map(
+                (item) => SizedBox(
+                  width: (MediaQuery.of(context).size.width - 52) / 2,
+                  child: _StatCard(item: item),
+                ),
+              )
+              .toList(),
     );
   }
 }
@@ -1180,7 +1279,8 @@ class _SpendingBreakdown extends StatelessWidget {
     final spending = snapshot.spending;
     if (spending.topCategories.isEmpty) {
       return const _QuietMessage(
-        text: 'No expense activity yet in this period, so there are no spending drivers to rank.',
+        text:
+            'No expense activity yet in this period, so there are no spending drivers to rank.',
       );
     }
 
@@ -1198,12 +1298,17 @@ class _SpendingBreakdown extends StatelessWidget {
           leftLabel: 'Spending days',
           leftValue: '${spending.spendingDays}',
           rightLabel: 'Top category share',
-          rightValue: '${(spending.topCategories.first.share * 100).toStringAsFixed(0)}%',
+          rightValue:
+              '${(spending.topCategories.first.share * 100).toStringAsFixed(0)}%',
         ),
         const SizedBox(height: 18),
         for (final category in spending.topCategories) ...[
-          _CategoryRow(category: category, onTap: () => onOpenCategory(category)),
-          if (category != spending.topCategories.last) const SizedBox(height: 12),
+          _CategoryRow(
+            category: category,
+            onTap: () => onOpenCategory(category),
+          ),
+          if (category != spending.topCategories.last)
+            const SizedBox(height: 12),
         ],
       ],
     );
@@ -1211,10 +1316,7 @@ class _SpendingBreakdown extends StatelessWidget {
 }
 
 class _LabelBreakdown extends StatelessWidget {
-  const _LabelBreakdown({
-    required this.snapshot,
-    required this.onOpenLabel,
-  });
+  const _LabelBreakdown({required this.snapshot, required this.onOpenLabel});
 
   final ReportsSnapshot snapshot;
   final ValueChanged<ReportLabelBreakdown> onOpenLabel;
@@ -1222,14 +1324,15 @@ class _LabelBreakdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: snapshot.labels.items
-          .map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _LabelRow(item: item, onTap: () => onOpenLabel(item)),
-            ),
-          )
-          .toList(),
+      children:
+          snapshot.labels.items
+              .map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _LabelRow(item: item, onTap: () => onOpenLabel(item)),
+                ),
+              )
+              .toList(),
     );
   }
 }
@@ -1458,9 +1561,10 @@ class _HabitsSection extends StatelessWidget {
           leftLabel: 'Today',
           leftValue: habits.todayWithinBudget ? 'Within budget' : 'Over budget',
           rightLabel: 'Recovery',
-          rightValue: habits.hasActiveRecoveryPlan
-              ? _signedCurrency(habits.activeRecoveryAdjustment)
-              : 'Inactive',
+          rightValue:
+              habits.hasActiveRecoveryPlan
+                  ? _signedCurrency(habits.activeRecoveryAdjustment)
+                  : 'Inactive',
         ),
         const SizedBox(height: 12),
         Text(
@@ -1531,10 +1635,7 @@ class _SectionCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: 12),
-                trailing!,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 12), trailing!],
             ],
           ),
           const SizedBox(height: 18),
@@ -1546,33 +1647,37 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _TransactionsSheet extends ConsumerWidget {
-  const _TransactionsSheet({
-    required this.title,
-    required this.query,
-  });
+  const _TransactionsSheet({required this.title, required this.query});
 
   final String title;
   final ReportDrilldownQuery query;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactionsAsync = ref.watch(reportDrilldownTransactionsProvider(query));
-    final categories = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
-    final categoryById = {for (final category in categories) category.id: category};
+    final transactionsAsync = ref.watch(
+      reportDrilldownTransactionsProvider(query),
+    );
+    final categories =
+        ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
+    final categoryById = {
+      for (final category in categories) category.id: category,
+    };
 
     return _SheetFrame(
       title: title,
       child: transactionsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: _ReportsPalette.teal),
-        ),
-        error: (error, _) => Center(
-          child: Text(
-            'Failed to load transactions.\n$error',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: _ReportsPalette.textSecondary),
-          ),
-        ),
+        loading:
+            () => const Center(
+              child: CircularProgressIndicator(color: _ReportsPalette.teal),
+            ),
+        error:
+            (error, _) => Center(
+              child: Text(
+                'Failed to load transactions.\n$error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: _ReportsPalette.textSecondary),
+              ),
+            ),
         data: (transactions) {
           if (transactions.isEmpty) {
             return const _QuietMessage(
@@ -1583,12 +1688,14 @@ class _TransactionsSheet extends ConsumerWidget {
             padding: EdgeInsets.zero,
             itemCount: transactions.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, index) => _TransactionRow(
-              transaction: transactions[index],
-              categoryName: transactions[index].categoryId == null
-                  ? null
-                  : categoryById[transactions[index].categoryId!]?.name,
-            ),
+            itemBuilder:
+                (context, index) => _TransactionRow(
+                  transaction: transactions[index],
+                  categoryName:
+                      transactions[index].categoryId == null
+                          ? null
+                          : categoryById[transactions[index].categoryId!]?.name,
+                ),
           );
         },
       ),
@@ -1607,16 +1714,18 @@ class _BillsSheet extends ConsumerWidget {
     return _SheetFrame(
       title: 'Paid bills',
       child: billsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: _ReportsPalette.teal),
-        ),
-        error: (error, _) => Center(
-          child: Text(
-            'Failed to load bill details.\n$error',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: _ReportsPalette.textSecondary),
-          ),
-        ),
+        loading:
+            () => const Center(
+              child: CircularProgressIndicator(color: _ReportsPalette.teal),
+            ),
+        error:
+            (error, _) => Center(
+              child: Text(
+                'Failed to load bill details.\n$error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: _ReportsPalette.textSecondary),
+              ),
+            ),
         data: (rows) {
           if (rows.isEmpty) {
             return const _QuietMessage(
@@ -1636,7 +1745,8 @@ class _BillsSheet extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(18),
                   onTap: () {
                     Navigator.pop(context);
-                    final state = context.findAncestorStateOfType<_ReportsScreenState>();
+                    final state =
+                        context.findAncestorStateOfType<_ReportsScreenState>();
                     state?._showTransactionsSheet(
                       title: row.title,
                       query: ReportDrilldownQuery(
@@ -1703,51 +1813,54 @@ class _GoalImpactSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return _SheetFrame(
       title: 'Goal impact',
-      child: goal.hasPrimaryGoal
-          ? ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                Text(
-                  goal.goalName!,
-                  style: const TextStyle(
-                    color: _ReportsPalette.textPrimary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
+      child:
+          goal.hasPrimaryGoal
+              ? ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  Text(
+                    goal.goalName!,
+                    style: const TextStyle(
+                      color: _ReportsPalette.textPrimary,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  goal.impactLine,
-                  style: const TextStyle(
-                    color: _ReportsPalette.textSecondary,
-                    height: 1.45,
+                  const SizedBox(height: 10),
+                  Text(
+                    goal.impactLine,
+                    style: const TextStyle(
+                      color: _ReportsPalette.textSecondary,
+                      height: 1.45,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 18),
-                _SimpleAmountRow(
-                  label: 'Funding room this period',
-                  amount: goal.fundingRoomThisPeriod,
-                ),
-                const SizedBox(height: 10),
-                _SimpleAmountRow(
-                  label: 'Remaining to target',
-                  amount: goal.remainingToGoal,
-                ),
-                const SizedBox(height: 10),
-                _SimpleAmountRow(
-                  label: 'Pace needed',
-                  amountLabel: '${formatCurrency(goal.paceNeededPerDay)}/day',
-                ),
-                if (goal.suggestedTargetDate != null) ...[
+                  const SizedBox(height: 18),
+                  _SimpleAmountRow(
+                    label: 'Funding room this period',
+                    amount: goal.fundingRoomThisPeriod,
+                  ),
                   const SizedBox(height: 10),
                   _SimpleAmountRow(
-                    label: 'Suggested target date',
-                    amountLabel: DateFormat.yMMMd().format(goal.suggestedTargetDate!),
+                    label: 'Remaining to target',
+                    amount: goal.remainingToGoal,
                   ),
+                  const SizedBox(height: 10),
+                  _SimpleAmountRow(
+                    label: 'Pace needed',
+                    amountLabel: '${formatCurrency(goal.paceNeededPerDay)}/day',
+                  ),
+                  if (goal.suggestedTargetDate != null) ...[
+                    const SizedBox(height: 10),
+                    _SimpleAmountRow(
+                      label: 'Suggested target date',
+                      amountLabel: DateFormat.yMMMd().format(
+                        goal.suggestedTargetDate!,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
-            )
-          : _QuietMessage(text: goal.impactLine),
+              )
+              : _QuietMessage(text: goal.impactLine),
     );
   }
 }
@@ -1804,9 +1917,10 @@ class _PeriodPickerSheet extends StatelessWidget {
                   final period = periods[index];
                   final isSelected = period.id == selected.id;
                   return Material(
-                    color: isSelected
-                        ? _ReportsPalette.surfaceRaised
-                        : _ReportsPalette.backgroundSoft,
+                    color:
+                        isSelected
+                            ? _ReportsPalette.surfaceRaised
+                            : _ReportsPalette.backgroundSoft,
                     borderRadius: BorderRadius.circular(18),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(18),
@@ -1841,9 +1955,10 @@ class _PeriodPickerSheet extends StatelessWidget {
                               isSelected
                                   ? Icons.check_circle_rounded
                                   : Icons.circle_outlined,
-                              color: isSelected
-                                  ? _ReportsPalette.tealBright
-                                  : _ReportsPalette.textMuted,
+                              color:
+                                  isSelected
+                                      ? _ReportsPalette.tealBright
+                                      : _ReportsPalette.textMuted,
                             ),
                           ],
                         ),
@@ -1861,10 +1976,7 @@ class _PeriodPickerSheet extends StatelessWidget {
 }
 
 class _SheetFrame extends StatelessWidget {
-  const _SheetFrame({
-    required this.title,
-    required this.child,
-  });
+  const _SheetFrame({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -1919,18 +2031,12 @@ class _ReportsBackdrop extends StatelessWidget {
         const Positioned(
           top: -80,
           left: -40,
-          child: _Orb(
-            size: 220,
-            color: Color(0x221B7D74),
-          ),
+          child: _Orb(size: 220, color: Color(0x221B7D74)),
         ),
         const Positioned(
           top: 220,
           right: -70,
-          child: _Orb(
-            size: 240,
-            color: Color(0x16E0B980),
-          ),
+          child: _Orb(size: 240, color: Color(0x16E0B980)),
         ),
         Positioned.fill(
           child: IgnorePointer(
@@ -1967,12 +2073,7 @@ class _Orb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            color,
-            Colors.transparent,
-          ],
-        ),
+        gradient: RadialGradient(colors: [color, Colors.transparent]),
       ),
     );
   }
@@ -2018,10 +2119,7 @@ class _InlineError extends StatelessWidget {
 }
 
 class _ModeSwitcher extends StatelessWidget {
-  const _ModeSwitcher({
-    required this.timeframe,
-    required this.onChanged,
-  });
+  const _ModeSwitcher({required this.timeframe, required this.onChanged});
 
   final ReportTimeframe timeframe;
   final ValueChanged<ReportTimeframe> onChanged;
@@ -2029,45 +2127,53 @@ class _ModeSwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: ReportTimeframe.values
-          .map(
-            (value) => Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => onChanged(value),
-                  borderRadius: BorderRadius.circular(999),
-                  child: Ink(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: value == timeframe ? _ReportsPalette.navy : Colors.white,
+      children:
+          ReportTimeframe.values
+              .map(
+                (value) => Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => onChanged(value),
                       borderRadius: BorderRadius.circular(999),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x120F172A),
-                          blurRadius: 10,
-                          offset: Offset(0, 4),
+                      child: Ink(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
                         ),
-                      ],
-                    ),
-                    child: Text(
-                      _timeframeChipLabel(value),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: value == timeframe
-                            ? Colors.white
-                            : _ReportsPalette.textSecondary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                        decoration: BoxDecoration(
+                          color:
+                              value == timeframe
+                                  ? _ReportsPalette.navy
+                                  : Colors.white,
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x120F172A),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _timeframeChipLabel(value),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color:
+                                value == timeframe
+                                    ? Colors.white
+                                    : _ReportsPalette.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          )
-          .toList(),
+              )
+              .toList(),
     );
   }
 }
@@ -2086,16 +2192,17 @@ class _ComparisonSwitcher extends StatelessWidget {
     return PopupMenuButton<ReportComparisonMode>(
       color: _ReportsPalette.surfaceRaised,
       onSelected: onChanged,
-      itemBuilder: (context) => const [
-        PopupMenuItem(
-          value: ReportComparisonMode.previousPeriod,
-          child: Text('Vs last period'),
-        ),
-        PopupMenuItem(
-          value: ReportComparisonMode.none,
-          child: Text('No comparison'),
-        ),
-      ],
+      itemBuilder:
+          (context) => const [
+            PopupMenuItem(
+              value: ReportComparisonMode.previousPeriod,
+              child: Text('Vs last period'),
+            ),
+            PopupMenuItem(
+              value: ReportComparisonMode.none,
+              child: Text('No comparison'),
+            ),
+          ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
@@ -2289,22 +2396,25 @@ class _OptionChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: selected
-              ? _ReportsPalette.surfaceRaised
-              : _ReportsPalette.backgroundSoft,
+          color:
+              selected
+                  ? _ReportsPalette.surfaceRaised
+                  : _ReportsPalette.backgroundSoft,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: selected
-                ? _ReportsPalette.outlineStrong
-                : _ReportsPalette.outline,
+            color:
+                selected
+                    ? _ReportsPalette.outlineStrong
+                    : _ReportsPalette.outline,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected
-                ? _ReportsPalette.textPrimary
-                : _ReportsPalette.textSecondary,
+            color:
+                selected
+                    ? _ReportsPalette.textPrimary
+                    : _ReportsPalette.textSecondary,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
@@ -2315,10 +2425,7 @@ class _OptionChip extends StatelessWidget {
 }
 
 class _GhostButton extends StatelessWidget {
-  const _GhostButton({
-    required this.label,
-    required this.onTap,
-  });
+  const _GhostButton({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
@@ -2404,23 +2511,16 @@ class _CompactStatRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(
-          child: _CompactMetric(label: leftLabel, value: leftValue),
-        ),
+        Expanded(child: _CompactMetric(label: leftLabel, value: leftValue)),
         const SizedBox(width: 12),
-        Expanded(
-          child: _CompactMetric(label: rightLabel, value: rightValue),
-        ),
+        Expanded(child: _CompactMetric(label: rightLabel, value: rightValue)),
       ],
     );
   }
 }
 
 class _CompactMetric extends StatelessWidget {
-  const _CompactMetric({
-    required this.label,
-    required this.value,
-  });
+  const _CompactMetric({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -2458,10 +2558,7 @@ class _CompactMetric extends StatelessWidget {
 }
 
 class _CategoryRow extends StatelessWidget {
-  const _CategoryRow({
-    required this.category,
-    required this.onTap,
-  });
+  const _CategoryRow({required this.category, required this.onTap});
 
   final ReportCategoryBreakdown category;
   final VoidCallback onTap;
@@ -2505,7 +2602,9 @@ class _CategoryRow extends StatelessWidget {
                   value: category.share,
                   minHeight: 8,
                   backgroundColor: _ReportsPalette.surfaceRaised,
-                  valueColor: const AlwaysStoppedAnimation(_ReportsPalette.tealBright),
+                  valueColor: const AlwaysStoppedAnimation(
+                    _ReportsPalette.tealBright,
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -2522,9 +2621,10 @@ class _CategoryRow extends StatelessWidget {
                   Text(
                     _trendLabel(category),
                     style: TextStyle(
-                      color: category.trendAmount > 0
-                          ? _ReportsPalette.alertSoft
-                          : _ReportsPalette.tealBright,
+                      color:
+                          category.trendAmount > 0
+                              ? _ReportsPalette.alertSoft
+                              : _ReportsPalette.tealBright,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -2540,10 +2640,7 @@ class _CategoryRow extends StatelessWidget {
 }
 
 class _LabelRow extends StatelessWidget {
-  const _LabelRow({
-    required this.item,
-    required this.onTap,
-  });
+  const _LabelRow({required this.item, required this.onTap});
 
   final ReportLabelBreakdown item;
   final VoidCallback onTap;
@@ -2625,11 +2722,8 @@ class _GoalStatusPill extends StatelessWidget {
 }
 
 class _SimpleAmountRow extends StatelessWidget {
-  const _SimpleAmountRow({
-    required this.label,
-    this.amount,
-    this.amountLabel,
-  }) : assert(amount != null || amountLabel != null);
+  const _SimpleAmountRow({required this.label, this.amount, this.amountLabel})
+    : assert(amount != null || amountLabel != null);
 
   final String label;
   final double? amount;
@@ -2642,9 +2736,7 @@ class _SimpleAmountRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              color: _ReportsPalette.textSecondary,
-            ),
+            style: const TextStyle(color: _ReportsPalette.textSecondary),
           ),
         ),
         Text(
@@ -2671,19 +2763,21 @@ class _TransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.type == 'expense';
-    final amountColor = isExpense
-        ? _ReportsPalette.alertSoft
-        : transaction.type == 'income'
+    final amountColor =
+        isExpense
+            ? _ReportsPalette.alertSoft
+            : transaction.type == 'income'
             ? _ReportsPalette.tealBright
             : _ReportsPalette.textPrimary;
 
-    final title = transaction.note?.trim().isNotEmpty == true
-        ? transaction.note!
-        : switch (transaction.type) {
-            'expense' => categoryName ?? 'Expense',
-            'income' => transaction.source ?? 'Income',
-            _ => 'Adjustment',
-          };
+    final title =
+        transaction.note?.trim().isNotEmpty == true
+            ? transaction.note!
+            : switch (transaction.type) {
+              'expense' => categoryName ?? 'Expense',
+              'income' => transaction.source ?? 'Income',
+              _ => 'Adjustment',
+            };
 
     final subtitle = [
       DateFormat.MMMd().format(transaction.date),
@@ -2711,8 +2805,8 @@ class _TransactionRow extends StatelessWidget {
               isExpense
                   ? Icons.arrow_downward_rounded
                   : transaction.type == 'income'
-                      ? Icons.arrow_upward_rounded
-                      : Icons.sync_alt_rounded,
+                  ? Icons.arrow_upward_rounded
+                  : Icons.sync_alt_rounded,
               color: amountColor,
               size: 18,
             ),
@@ -2746,11 +2840,12 @@ class _TransactionRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            '${isExpense ? '-' : transaction.amount < 0 ? '' : '+'}${formatCurrency(transaction.amount.abs())}',
-            style: TextStyle(
-              color: amountColor,
-              fontWeight: FontWeight.w700,
-            ),
+            '${isExpense
+                ? '-'
+                : transaction.amount < 0
+                ? ''
+                : '+'}${formatCurrency(transaction.amount.abs())}',
+            style: TextStyle(color: amountColor, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -2800,7 +2895,10 @@ class _ChartSeriesSelection {
   final Color secondaryColor;
 }
 
-_ChartSeriesSelection _seriesFor(ReportChartModel chart, _ReportChartMode mode) {
+_ChartSeriesSelection _seriesFor(
+  ReportChartModel chart,
+  _ReportChartMode mode,
+) {
   switch (mode) {
     case _ReportChartMode.spendVsIncome:
       return _ChartSeriesSelection(
@@ -2836,16 +2934,20 @@ String _signedCurrency(double value) {
 }
 
 String _heroInsight(ReportPaceStatus status) => switch (status) {
-      ReportPaceStatus.underPace => 'You are under pace and still spending inside the safer part of the period.',
-      ReportPaceStatus.closeToLimit => 'You are close to the line. Keep the next few days tighter.',
-      ReportPaceStatus.overspending => 'You are currently overspending and the period needs recovery.',
-    };
+  ReportPaceStatus.underPace =>
+    'You are under pace and still spending inside the safer part of the period.',
+  ReportPaceStatus.closeToLimit =>
+    'You are close to the line. Keep the next few days tighter.',
+  ReportPaceStatus.overspending =>
+    'You are currently overspending and the period needs recovery.',
+};
 
 String _comparisonLine(ReportComparisonSummary comparison) {
   final direction = comparison.expenseDelta <= 0 ? 'less' : 'more';
-  final percent = comparison.expenseChangePercent == null
-      ? ''
-      : ' (${comparison.expenseChangePercent!.abs().toStringAsFixed(0)}%)';
+  final percent =
+      comparison.expenseChangePercent == null
+          ? ''
+          : ' (${comparison.expenseChangePercent!.abs().toStringAsFixed(0)}%)';
   return '${formatCurrency(comparison.expenseDelta.abs())} $direction spent than ${comparison.previousLabel}$percent';
 }
 
@@ -2855,7 +2957,10 @@ List<double> _prototypeBars(List<ReportChartPoint> points) {
   final buckets = List<double>.filled(bucketCount, 0);
   final counts = List<int>.filled(bucketCount, 0);
   for (var i = 0; i < points.length; i++) {
-    final bucket = (i * bucketCount / points.length).floor().clamp(0, bucketCount - 1);
+    final bucket = (i * bucketCount / points.length).floor().clamp(
+      0,
+      bucketCount - 1,
+    );
     buckets[bucket] += points[i].y;
     counts[bucket] += 1;
   }
@@ -2890,16 +2995,16 @@ String _insightHeadline(
 }
 
 String _spentLabel(ReportTimeframe timeframe) => switch (timeframe) {
-      ReportTimeframe.cycle => 'Spent this cycle',
-      ReportTimeframe.month => 'Spent this month',
-      ReportTimeframe.year => 'Spent this year',
-    };
+  ReportTimeframe.cycle => 'Spent this cycle',
+  ReportTimeframe.month => 'Spent this month',
+  ReportTimeframe.year => 'Spent this year',
+};
 
 String _periodWord(ReportTimeframe timeframe) => switch (timeframe) {
-      ReportTimeframe.cycle => 'cycle',
-      ReportTimeframe.month => 'month',
-      ReportTimeframe.year => 'year',
-    };
+  ReportTimeframe.cycle => 'cycle',
+  ReportTimeframe.month => 'month',
+  ReportTimeframe.year => 'year',
+};
 
 String _trendLabel(ReportCategoryBreakdown category) {
   if (category.trendAmount == 0) return 'Flat vs prior period';
@@ -2908,60 +3013,68 @@ String _trendLabel(ReportCategoryBreakdown category) {
 }
 
 String _timeframeLabel(ReportTimeframe timeframe) => switch (timeframe) {
-      ReportTimeframe.cycle => 'Cycle',
-      ReportTimeframe.month => 'Month',
-      ReportTimeframe.year => 'Year',
-    };
+  ReportTimeframe.cycle => 'Cycle',
+  ReportTimeframe.month => 'Month',
+  ReportTimeframe.year => 'Year',
+};
 
 String _timeframeChipLabel(ReportTimeframe timeframe) => switch (timeframe) {
-      ReportTimeframe.cycle => 'Week',
-      ReportTimeframe.month => 'Month',
-      ReportTimeframe.year => 'Year',
-    };
+  ReportTimeframe.cycle => 'Week',
+  ReportTimeframe.month => 'Month',
+  ReportTimeframe.year => 'Year',
+};
 
 String _chartModeLabel(_ReportChartMode mode) => switch (mode) {
-      _ReportChartMode.spendVsPace => 'Spend vs pace',
-      _ReportChartMode.spendVsIncome => 'Spend vs income',
-      _ReportChartMode.projectedEnd => 'Projected end',
-    };
+  _ReportChartMode.spendVsPace => 'Spend vs pace',
+  _ReportChartMode.spendVsIncome => 'Spend vs income',
+  _ReportChartMode.projectedEnd => 'Projected end',
+};
 
 String _statusLabel(ReportPaceStatus status) => switch (status) {
-      ReportPaceStatus.underPace => 'Under pace',
-      ReportPaceStatus.closeToLimit => 'Close to limit',
-      ReportPaceStatus.overspending => 'Overspending',
-    };
+  ReportPaceStatus.underPace => 'Under pace',
+  ReportPaceStatus.closeToLimit => 'Close to limit',
+  ReportPaceStatus.overspending => 'Overspending',
+};
 
 Color _statusColor(ReportPaceStatus status) => switch (status) {
-      ReportPaceStatus.underPace => _ReportsPalette.tealBright,
-      ReportPaceStatus.closeToLimit => _ReportsPalette.goldSoft,
-      ReportPaceStatus.overspending => _ReportsPalette.alertSoft,
-    };
+  ReportPaceStatus.underPace => _ReportsPalette.tealBright,
+  ReportPaceStatus.closeToLimit => _ReportsPalette.goldSoft,
+  ReportPaceStatus.overspending => _ReportsPalette.alertSoft,
+};
 
 String _goalStatusLabel(ReportGoalStatus status) => switch (status) {
-      ReportGoalStatus.onTrack => 'On track',
-      ReportGoalStatus.tight => 'Tight',
-      ReportGoalStatus.unrealistic => 'Unrealistic',
-      ReportGoalStatus.none => 'No goal',
-    };
+  ReportGoalStatus.onTrack => 'On track',
+  ReportGoalStatus.tight => 'Tight',
+  ReportGoalStatus.unrealistic => 'Unrealistic',
+  ReportGoalStatus.none => 'No goal',
+};
 
 Color _goalStatusColor(ReportGoalStatus status) => switch (status) {
-      ReportGoalStatus.onTrack => _ReportsPalette.tealBright,
-      ReportGoalStatus.tight => _ReportsPalette.goldSoft,
-      ReportGoalStatus.unrealistic => _ReportsPalette.alertSoft,
-      ReportGoalStatus.none => _ReportsPalette.textMuted,
-    };
+  ReportGoalStatus.onTrack => _ReportsPalette.tealBright,
+  ReportGoalStatus.tight => _ReportsPalette.goldSoft,
+  ReportGoalStatus.unrealistic => _ReportsPalette.alertSoft,
+  ReportGoalStatus.none => _ReportsPalette.textMuted,
+};
 
 String _spendLabelName(SpendLabel label) => switch (label) {
-      SpendLabel.green => 'Green essential',
-      SpendLabel.orange => 'Orange justified',
-      SpendLabel.red => 'Red non-essential',
-    };
+  SpendLabel.green => 'Green essential',
+  SpendLabel.orange => 'Orange justified',
+  SpendLabel.red => 'Red non-essential',
+};
 
 Color _spendLabelColor(SpendLabel label) => switch (label) {
-      SpendLabel.green => _ReportsPalette.green,
-      SpendLabel.orange => _ReportsPalette.goldSoft,
-      SpendLabel.red => _ReportsPalette.alertSoft,
-    };
+  SpendLabel.green => _ReportsPalette.green,
+  SpendLabel.orange => _ReportsPalette.goldSoft,
+  SpendLabel.red => _ReportsPalette.alertSoft,
+};
+
+IconData _dynamicInsightIcon(DynamicReportType type) => switch (type) {
+  DynamicReportType.recurringSubscriptionDrift => Icons.subscriptions_outlined,
+  DynamicReportType.billVariance => Icons.receipt_long_outlined,
+  DynamicReportType.categoryAnomaly => Icons.category_outlined,
+  DynamicReportType.weeklyForecast => Icons.view_week_outlined,
+  DynamicReportType.monthlyForecast => Icons.calendar_month_outlined,
+};
 
 abstract final class _ReportsPalette {
   static const background = Color(0xFFF5F7FB);

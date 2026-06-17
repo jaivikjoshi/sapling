@@ -46,7 +46,7 @@ class SupabasePersonsRepository implements PersonsRepository {
         .eq('id', id)
         .eq('user_id', _userId)
         .maybeSingle();
-    return res == null ? null : personFromSupabase(res as Map<String, dynamic>);
+    return res == null ? null : personFromSupabase(res);
   }
 
   @override

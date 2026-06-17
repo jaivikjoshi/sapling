@@ -14,12 +14,14 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
 
   static const _pollInterval = Duration(seconds: 30);
 
+  @override
   Future<void> insert(Transaction t) async {
     final map = transactionToSupabase(t);
     map['user_id'] = _userId;
     await _client.from('transactions').insert(map);
   }
 
+  @override
   Future<void> updateById(String id, Transaction t) async {
     final map = transactionToSupabase(t);
     map.remove('id');
@@ -32,6 +34,7 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
         .eq('user_id', _userId);
   }
 
+  @override
   Future<void> deleteById(String id) async {
     await _client
         .from('transactions')
@@ -40,28 +43,33 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
         .eq('user_id', _userId);
   }
 
+  @override
   Future<Transaction> getById(String id) async {
-    final res = await _client
-        .from('transactions')
-        .select()
-        .eq('id', id)
-        .eq('user_id', _userId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from('transactions')
+            .select()
+            .eq('id', id)
+            .eq('user_id', _userId)
+            .maybeSingle();
     if (res == null) throw Exception('Transaction not found: $id');
-    return transactionFromSupabase(res as Map<String, dynamic>);
+    return transactionFromSupabase(res);
   }
 
+  @override
   Future<Transaction?> getByIdOrNull(String id) async {
-    final res = await _client
-        .from('transactions')
-        .select()
-        .eq('id', id)
-        .eq('user_id', _userId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from('transactions')
+            .select()
+            .eq('id', id)
+            .eq('user_id', _userId)
+            .maybeSingle();
     if (res == null) return null;
-    return transactionFromSupabase(res as Map<String, dynamic>);
+    return transactionFromSupabase(res);
   }
 
+  @override
   Stream<List<Transaction>> watchAll({int? limit}) {
     return _pollStream(() async {
       var query = _client
@@ -78,6 +86,7 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
     });
   }
 
+  @override
   Stream<List<Transaction>> watchByDateRange(DateTime start, DateTime end) {
     return _pollStream(() async {
       final res = await _client
@@ -94,6 +103,7 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
     });
   }
 
+  @override
   Future<List<Transaction>> getByDateRange(DateTime start, DateTime end) async {
     final res = await _client
         .from('transactions')
@@ -108,6 +118,7 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
         .toList();
   }
 
+  @override
   Future<List<Transaction>> getAll() async {
     final res = await _client
         .from('transactions')
@@ -119,6 +130,7 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
         .toList();
   }
 
+  @override
   Future<double> computeBalanceUpTo(DateTime endExclusive) async {
     final res = await _client
         .from('transactions')
@@ -128,11 +140,13 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
     return _computeBalanceFromRows((res as List).cast<Map<String, dynamic>>());
   }
 
+  @override
   Future<double> computeBalance() async {
     final res = await _client
         .from('transactions')
         .select()
-        .eq('user_id', _userId);
+        .eq('user_id', _userId)
+        .lte('date', DateTime.now().toIso8601String());
     return _computeBalanceFromRows((res as List).cast<Map<String, dynamic>>());
   }
 
@@ -152,6 +166,7 @@ class SupabaseTransactionsRepository implements TransactionsRepository {
     return balance;
   }
 
+  @override
   Stream<double> watchBalance() {
     return _pollStream(() => computeBalance());
   }
