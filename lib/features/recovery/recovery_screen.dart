@@ -60,24 +60,29 @@ class _PlanDetail extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Overspend Amount',
-                    style: TextStyle(color: LekoColors.textSecondary)),
+                Text(
+                  'Overspend Amount',
+                  style: TextStyle(color: LekoColors.textSecondary),
+                ),
                 Text(
                   formatCurrency(plan.overspendAmount),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: LekoColors.labelRed,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: LekoColors.labelRed,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 12),
-                Text('Today\'s adjustment',
-                    style: TextStyle(color: LekoColors.textSecondary)),
+                Text(
+                  'Today\'s adjustment',
+                  style: TextStyle(color: LekoColors.textSecondary),
+                ),
                 Text(
                   formatCurrency(todayAdj),
                   style: TextStyle(
-                    color: todayAdj < 0
-                        ? LekoColors.labelRed
-                        : LekoColors.secondary,
+                    color:
+                        todayAdj < 0
+                            ? LekoColors.labelRed
+                            : LekoColors.secondary,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
@@ -88,37 +93,41 @@ class _PlanDetail extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         if (schedule.isNotEmpty) ...[
-          Text('Adjustment Schedule',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Adjustment Schedule',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
-          ...schedule.map((adj) => ListTile(
-                dense: true,
-                leading: Icon(
-                  _isToday(adj.date) ? Icons.today : Icons.calendar_today,
-                  size: 18,
-                  color: _isToday(adj.date)
-                      ? LekoColors.labelRed
-                      : LekoColors.textSecondary,
+          ...schedule.map(
+            (adj) => ListTile(
+              dense: true,
+              leading: Icon(
+                _isToday(adj.date) ? Icons.today : Icons.calendar_today,
+                size: 18,
+                color:
+                    _isToday(adj.date)
+                        ? LekoColors.labelRed
+                        : LekoColors.textSecondary,
+              ),
+              title: Text(dateFmt.format(adj.date)),
+              trailing: Text(
+                formatCurrency(adj.adjustment),
+                style: const TextStyle(
+                  color: LekoColors.labelRed,
+                  fontWeight: FontWeight.w600,
                 ),
-                title: Text(dateFmt.format(adj.date)),
-                trailing: Text(
-                  formatCurrency(adj.adjustment),
-                  style: const TextStyle(
-                      color: LekoColors.labelRed,
-                      fontWeight: FontWeight.w600),
-                ),
-              )),
+              ),
+            ),
+          ),
         ],
         const SizedBox(height: 24),
         OutlinedButton(
           onPressed: () async {
             await ref.read(recoveryPlanServiceProvider).cancel(plan.id);
           },
-          style: OutlinedButton.styleFrom(
-              foregroundColor: LekoColors.labelRed),
+          style: OutlinedButton.styleFrom(foregroundColor: LekoColors.labelRed),
           child: const Text('Cancel Recovery Plan'),
         ),
       ],

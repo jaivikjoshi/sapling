@@ -18,4 +18,3 @@ final currentUserProvider = Provider<User?>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return client.auth.currentUser;
 });
-

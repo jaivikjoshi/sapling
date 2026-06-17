@@ -30,7 +30,10 @@ class _ReconcileSheetState extends ConsumerState<ReconcileSheet> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24,
+        24,
+        24,
+        24,
+        MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -38,10 +41,9 @@ class _ReconcileSheetState extends ConsumerState<ReconcileSheet> {
         children: [
           Text(
             'Reconcile Balance',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           balanceAsync.when(
@@ -69,12 +71,16 @@ class _ReconcileSheetState extends ConsumerState<ReconcileSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('App balance',
-                    style: TextStyle(color: LekoColors.textSecondary)),
+                Text(
+                  'App balance',
+                  style: TextStyle(color: LekoColors.textSecondary),
+                ),
                 Text(
                   formatCurrency(currentBalance),
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ],
             ),
@@ -84,7 +90,9 @@ class _ReconcileSheetState extends ConsumerState<ReconcileSheet> {
         TextField(
           controller: _ctrl,
           keyboardType: const TextInputType.numberWithOptions(
-              decimal: true, signed: true),
+            decimal: true,
+            signed: true,
+          ),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'^-?\d*\.?\d{0,2}')),
           ],
@@ -99,17 +107,19 @@ class _ReconcileSheetState extends ConsumerState<ReconcileSheet> {
         if (adjustment != null) ...[
           const SizedBox(height: 12),
           Card(
-            color: adjustment >= 0
-                ? LekoColors.labelGreen.withValues(alpha: 0.1)
-                : LekoColors.labelRed.withValues(alpha: 0.1),
+            color:
+                adjustment >= 0
+                    ? LekoColors.labelGreen.withValues(alpha: 0.1)
+                    : LekoColors.labelRed.withValues(alpha: 0.1),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Text(
                 'Adjustment: ${adjustment >= 0 ? "+" : ""}${formatCurrency(adjustment)}',
                 style: TextStyle(
-                  color: adjustment >= 0
-                      ? LekoColors.labelGreen
-                      : LekoColors.labelRed,
+                  color:
+                      adjustment >= 0
+                          ? LekoColors.labelGreen
+                          : LekoColors.labelRed,
                   fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center,
@@ -119,15 +129,19 @@ class _ReconcileSheetState extends ConsumerState<ReconcileSheet> {
         ],
         const SizedBox(height: 20),
         ElevatedButton(
-          onPressed: realBalance != null && !_saving ? () => _save(realBalance) : null,
-          child: _saving
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
-                )
-              : const Text('Reconcile'),
+          onPressed:
+              realBalance != null && !_saving ? () => _save(realBalance) : null,
+          child:
+              _saving
+                  ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                  : const Text('Reconcile'),
         ),
       ],
     );

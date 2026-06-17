@@ -49,10 +49,7 @@ class _CreateSplitSheetState extends ConsumerState<CreateSplitSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'New split',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('New split', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             TextField(
               controller: _descCtrl,
@@ -66,7 +63,9 @@ class _CreateSplitSheetState extends ConsumerState<CreateSplitSheet> {
             const SizedBox(height: 12),
             TextField(
               controller: _amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
               ],
@@ -81,45 +80,48 @@ class _CreateSplitSheetState extends ConsumerState<CreateSplitSheet> {
             const SizedBox(height: 4),
             Text(
               'Who paid sets who owes whom. Amount is split equally between you and the people below.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: LekoColors.textSecondary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: LekoColors.textSecondary),
             ),
             const SizedBox(height: 12),
             Text(
               'Who is in this split? (pick at least one)',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: LekoColors.textSecondary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: LekoColors.textSecondary),
             ),
-            ...widget.persons.map((p) => CheckboxListTile(
-                  value: _selectedPersonIds.contains(p.id),
-                  onChanged: (v) {
-                    setState(() {
-                      if (v == true) {
-                        _selectedPersonIds = [..._selectedPersonIds, p.id];
-                      } else {
-                        _selectedPersonIds =
-                            _selectedPersonIds.where((id) => id != p.id).toList();
-                      }
-                    });
-                  },
-                  title: Text(p.name),
-                  controlAffinity: ListTileControlAffinity.leading,
-                )),
+            ...widget.persons.map(
+              (p) => CheckboxListTile(
+                value: _selectedPersonIds.contains(p.id),
+                onChanged: (v) {
+                  setState(() {
+                    if (v == true) {
+                      _selectedPersonIds = [..._selectedPersonIds, p.id];
+                    } else {
+                      _selectedPersonIds =
+                          _selectedPersonIds.where((id) => id != p.id).toList();
+                    }
+                  });
+                },
+                title: Text(p.name),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+            ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _valid && !_saving ? _save : null,
-              child: _saving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text('Create split'),
+              child:
+                  _saving
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Text('Create split'),
             ),
           ],
         ),
@@ -135,9 +137,10 @@ class _CreateSplitSheetState extends ConsumerState<CreateSplitSheet> {
     return DropdownButtonFormField<String>(
       value: options.any((o) => o.$1 == _paidBy) ? _paidBy : null,
       decoration: const InputDecoration(labelText: 'Paid by'),
-      items: options
-          .map((o) => DropdownMenuItem(value: o.$1, child: Text(o.$2)))
-          .toList(),
+      items:
+          options
+              .map((o) => DropdownMenuItem(value: o.$1, child: Text(o.$2)))
+              .toList(),
       onChanged: (v) => setState(() => _paidBy = v ?? kSplitPaidByYou),
     );
   }
@@ -151,10 +154,11 @@ class _CreateSplitSheetState extends ConsumerState<CreateSplitSheet> {
       final participants = [kSplitPaidByYou, ..._selectedPersonIds];
       final each = (_amount! / participants.length * 100).round() / 100;
       var remainder = _amount! - (each * participants.length);
-      final shares = participants.asMap().entries.map((e) {
-        final amt = e.key == 0 ? each + remainder : each;
-        return (personId: e.value, shareAmount: amt);
-      }).toList();
+      final shares =
+          participants.asMap().entries.map((e) {
+            final amt = e.key == 0 ? each + remainder : each;
+            return (personId: e.value, shareAmount: amt);
+          }).toList();
 
       await service.createSplit(
         description: _descCtrl.text.trim(),
@@ -165,9 +169,9 @@ class _CreateSplitSheetState extends ConsumerState<CreateSplitSheet> {
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);

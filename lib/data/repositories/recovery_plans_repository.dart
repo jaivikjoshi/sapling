@@ -18,17 +18,17 @@ class DriftRecoveryPlansRepository implements RecoveryPlansRepository {
   @override
   Future<List<RecoveryPlan>> getAll() {
     return (_db.select(_db.recoveryPlans)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .get();
+      ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
   }
 
   @override
   Future<RecoveryPlan?> getActive() async {
-    final rows = await (_db.select(_db.recoveryPlans)
-          ..where((t) => t.status.equals('active'))
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
-          ..limit(1))
-        .get();
+    final rows =
+        await (_db.select(_db.recoveryPlans)
+              ..where((t) => t.status.equals('active'))
+              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+              ..limit(1))
+            .get();
     return rows.isEmpty ? null : rows.first;
   }
 
@@ -49,14 +49,14 @@ class DriftRecoveryPlansRepository implements RecoveryPlansRepository {
 
   @override
   Future<void> updateById(String id, RecoveryPlansCompanion companion) {
-    return (_db.update(_db.recoveryPlans)..where((t) => t.id.equals(id)))
-        .write(companion);
+    return (_db.update(_db.recoveryPlans)
+      ..where((t) => t.id.equals(id))).write(companion);
   }
 
   @override
   Future<void> cancelAll() async {
-    await (_db.update(_db.recoveryPlans)
-          ..where((t) => t.status.equals('active')))
-        .write(const RecoveryPlansCompanion(status: Value('canceled')));
+    await (_db.update(_db.recoveryPlans)..where(
+      (t) => t.status.equals('active'),
+    )).write(const RecoveryPlansCompanion(status: Value('canceled')));
   }
 }

@@ -29,10 +29,8 @@ void main() {
 
   Future<void> setRollover(RolloverResetType type) async {
     await settingsRepo.update(
-          AppSettingsCompanion(
-            rolloverResetType: Value(enumToDb(type)),
-          ),
-        );
+      AppSettingsCompanion(rolloverResetType: Value(enumToDb(type))),
+    );
   }
 
   group('CycleBoundaryWatcher', () {
@@ -62,7 +60,9 @@ void main() {
 
     test('payday-based cycle uses anchor schedule', () async {
       await setRollover(RolloverResetType.paydayBased);
-      await db.into(db.recurringIncomes).insert(
+      await db
+          .into(db.recurringIncomes)
+          .insert(
             RecurringIncomesCompanion.insert(
               id: 'anchor',
               name: 'Pay',

@@ -28,14 +28,11 @@ class DriftSettingsRepository implements SettingsRepository {
   @override
   Future<void> update(AppSettingsCompanion companion) async {
     await (_db.update(_db.appSettings)
-          ..where((t) => t.id.equals('singleton')))
-        .write(companion);
+      ..where((t) => t.id.equals('singleton'))).write(companion);
   }
 
   @override
   Future<void> markOnboardingComplete() async {
-    await update(
-      const AppSettingsCompanion(onboardingCompleted: Value(true)),
-    );
+    await update(const AppSettingsCompanion(onboardingCompleted: Value(true)));
   }
 }

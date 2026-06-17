@@ -23,10 +23,14 @@ abstract final class ProjectionService {
     }
 
     for (final schedule in schedules) {
-      final freq =
-          enumFromDb<IncomeFrequency>(schedule.frequency, IncomeFrequency.values);
-      final behavior =
-          enumFromDb<PaydayBehavior>(schedule.paydayBehavior, PaydayBehavior.values);
+      final freq = enumFromDb<IncomeFrequency>(
+        schedule.frequency,
+        IncomeFrequency.values,
+      );
+      final behavior = enumFromDb<PaydayBehavior>(
+        schedule.paydayBehavior,
+        PaydayBehavior.values,
+      );
 
       var cursor = DateTime(
         schedule.nextPaydayDate.year,
@@ -36,9 +40,11 @@ abstract final class ProjectionService {
 
       while (cursor.isBefore(end)) {
         if (!cursor.isBefore(start)) {
-          final isAlreadyConfirmed = confirmedIncome.any((t) =>
-              t.linkedRecurringIncomeId == schedule.id &&
-              _sameDay(t.date, cursor));
+          final isAlreadyConfirmed = confirmedIncome.any(
+            (t) =>
+                t.linkedRecurringIncomeId == schedule.id &&
+                _sameDay(t.date, cursor),
+          );
 
           if (!isAlreadyConfirmed) {
             if (behavior == PaydayBehavior.autoPostExpected &&
@@ -70,8 +76,10 @@ abstract final class ProjectionService {
     double total = 0;
 
     for (final bill in bills) {
-      final freq =
-          enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
+      final freq = enumFromDb<BillFrequency>(
+        bill.frequency,
+        BillFrequency.values,
+      );
       var cursor = DateTime(
         bill.nextDueDate.year,
         bill.nextDueDate.month,
@@ -80,8 +88,9 @@ abstract final class ProjectionService {
 
       while (cursor.isBefore(end)) {
         if (!cursor.isBefore(start)) {
-          final alreadyPaid = paidBillTransactions.any((t) =>
-              t.linkedBillId == bill.id && _sameDay(t.date, cursor));
+          final alreadyPaid = paidBillTransactions.any(
+            (t) => t.linkedBillId == bill.id && _sameDay(t.date, cursor),
+          );
 
           if (!alreadyPaid) {
             total += bill.amount;

@@ -57,9 +57,4 @@ class LeafContext {
   }
 }
 
-enum LeafQueryKind {
-  spendingToday,
-  bills,
-  goal,
-  thisCycle,
-}
+enum LeafQueryKind { spendingToday, bills, goal, thisCycle }

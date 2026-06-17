@@ -58,35 +58,45 @@ void main() {
     test('weekly advances by 7 days', () {
       final d = DateTime(2025, 3, 1);
       final next = RecurringIncomeService.computeNextPayday(
-          d, IncomeFrequency.weekly);
+        d,
+        IncomeFrequency.weekly,
+      );
       expect(next, DateTime(2025, 3, 8));
     });
 
     test('biweekly advances by 14 days', () {
       final d = DateTime(2025, 3, 1);
       final next = RecurringIncomeService.computeNextPayday(
-          d, IncomeFrequency.biweekly);
+        d,
+        IncomeFrequency.biweekly,
+      );
       expect(next, DateTime(2025, 3, 15));
     });
 
     test('monthly advances to same day next month', () {
       final d = DateTime(2025, 1, 15);
       final next = RecurringIncomeService.computeNextPayday(
-          d, IncomeFrequency.monthly);
+        d,
+        IncomeFrequency.monthly,
+      );
       expect(next, DateTime(2025, 2, 15));
     });
 
     test('monthly handles month-end clamping (Jan 31 -> Feb 28)', () {
       final d = DateTime(2025, 1, 31);
       final next = RecurringIncomeService.computeNextPayday(
-          d, IncomeFrequency.monthly);
+        d,
+        IncomeFrequency.monthly,
+      );
       expect(next, DateTime(2025, 2, 28));
     });
 
     test('monthly handles December to January year wrap', () {
       final d = DateTime(2025, 12, 15);
       final next = RecurringIncomeService.computeNextPayday(
-          d, IncomeFrequency.monthly);
+        d,
+        IncomeFrequency.monthly,
+      );
       expect(next, DateTime(2026, 1, 15));
     });
   });

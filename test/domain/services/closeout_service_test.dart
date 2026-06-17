@@ -17,7 +17,10 @@ class FakeAllowanceEngineForStreak extends AllowanceEngineForStreak {
   FakeAllowanceEngineForStreak({this.withinBudgetOverride});
 
   @override
-  Future<bool> wasWithinBudgetOnDate(DateTime date, UserSettings settings) async {
+  Future<bool> wasWithinBudgetOnDate(
+    DateTime date,
+    UserSettings settings,
+  ) async {
     if (withinBudgetOverride != null) return withinBudgetOverride!(date);
     return true;
   }

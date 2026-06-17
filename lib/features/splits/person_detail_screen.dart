@@ -21,9 +21,10 @@ class PersonDetailScreen extends ConsumerWidget {
     final splitsAsync = ref.watch(openSplitsForPersonProvider(personId));
 
     final persons = personsAsync.valueOrNull ?? [];
-    final name = persons.any((p) => p.id == personId)
-        ? persons.firstWhere((p) => p.id == personId).name
-        : personId;
+    final name =
+        persons.any((p) => p.id == personId)
+            ? persons.firstWhere((p) => p.id == personId).name
+            : personId;
 
     final balance = balancesAsync.valueOrNull?[personId];
     final splits = splitsAsync.valueOrNull ?? [];
@@ -36,26 +37,25 @@ class PersonDetailScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: balance == null && !balancesAsync.hasValue
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (balance != null) _BalanceCard(balance: balance, name: name),
-                if (balance != null) const SizedBox(height: 24),
-                Text(
-                  'Open splits with $name',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: LekoColors.textSecondary,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                _OpenSplitsForPerson(
-                  personId: personId,
-                  splits: splits,
-                ),
-              ],
-            ),
+      body:
+          balance == null && !balancesAsync.hasValue
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (balance != null)
+                    _BalanceCard(balance: balance, name: name),
+                  if (balance != null) const SizedBox(height: 24),
+                  Text(
+                    'Open splits with $name',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: LekoColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _OpenSplitsForPerson(personId: personId, splits: splits),
+                ],
+              ),
     );
   }
 }
@@ -78,7 +78,11 @@ class _BalanceCard extends StatelessWidget {
             if (owedToYou > 0)
               Row(
                 children: [
-                  Icon(Icons.arrow_downward, color: LekoColors.labelGreen, size: 20),
+                  Icon(
+                    Icons.arrow_downward,
+                    color: LekoColors.labelGreen,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Owed to you: ${formatCurrency(owedToYou)}',
@@ -93,7 +97,11 @@ class _BalanceCard extends StatelessWidget {
               if (owedToYou > 0) const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.arrow_upward, color: LekoColors.labelRed, size: 20),
+                  Icon(
+                    Icons.arrow_upward,
+                    color: LekoColors.labelRed,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'You owe: ${formatCurrency(youOwe)}',
@@ -118,10 +126,7 @@ class _BalanceCard extends StatelessWidget {
 }
 
 class _OpenSplitsForPerson extends ConsumerWidget {
-  const _OpenSplitsForPerson({
-    required this.personId,
-    required this.splits,
-  });
+  const _OpenSplitsForPerson({required this.personId, required this.splits});
   final String personId;
   final List<SplitEntry> splits;
 
@@ -146,7 +151,9 @@ class _OpenSplitsForPerson extends ConsumerWidget {
         final s = splits[i];
         return ListTile(
           title: Text(s.description),
-          subtitle: Text('${dateFmt.format(s.date)} • ${formatCurrency(s.totalAmount)}'),
+          subtitle: Text(
+            '${dateFmt.format(s.date)} • ${formatCurrency(s.totalAmount)}',
+          ),
           trailing: TextButton(
             onPressed: () => _showSettle(context, ref, s.id),
             child: const Text('Settle'),

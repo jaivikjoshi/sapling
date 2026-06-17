@@ -46,17 +46,19 @@ class RecurringIncomeService {
 
     if (isPaydayAnchor) await _repo.clearPaydayAnchor();
 
-    await _repo.insert(RecurringIncomesCompanion.insert(
-      id: id,
-      name: name.trim(),
-      frequency: Value(enumToDb(frequency)),
-      nextPaydayDate: nextPaydayDate,
-      expectedAmount: Value(expectedAmount),
-      paydayBehavior: Value(enumToDb(paydayBehavior)),
-      isPaydayAnchor: Value(isPaydayAnchor),
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _repo.insert(
+      RecurringIncomesCompanion.insert(
+        id: id,
+        name: name.trim(),
+        frequency: Value(enumToDb(frequency)),
+        nextPaydayDate: nextPaydayDate,
+        expectedAmount: Value(expectedAmount),
+        paydayBehavior: Value(enumToDb(paydayBehavior)),
+        isPaydayAnchor: Value(isPaydayAnchor),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     return id;
   }
 

@@ -56,25 +56,30 @@ class SplitService {
 
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _entriesRepo.insert(SplitEntriesCompanion.insert(
-      id: id,
-      date: now,
-      description: description,
-      totalAmount: totalAmount,
-      paidBy: paidBy,
-      status: Value('open'),
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _entriesRepo.insert(
+      SplitEntriesCompanion.insert(
+        id: id,
+        date: now,
+        description: description,
+        totalAmount: totalAmount,
+        paidBy: paidBy,
+        status: Value('open'),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
 
-    final companions = shares
-        .map((s) => SplitSharesCompanion.insert(
-              id: _uuid.v4(),
-              splitEntryId: id,
-              personId: s.personId,
-              shareAmount: s.shareAmount,
-            ))
-        .toList();
+    final companions =
+        shares
+            .map(
+              (s) => SplitSharesCompanion.insert(
+                id: _uuid.v4(),
+                splitEntryId: id,
+                personId: s.personId,
+                shareAmount: s.shareAmount,
+              ),
+            )
+            .toList();
     await _sharesRepo.insertAll(companions);
     return id;
   }
@@ -121,16 +126,18 @@ class SplitService {
     }
 
     final allPersonIds = {...owedToYou.keys, ...youOwe.keys};
-    return Map.fromEntries(allPersonIds.map((id) {
-      return MapEntry(
-        id,
-        PersonBalance(
-          personId: id,
-          owedToYou: owedToYou[id] ?? 0,
-          youOwe: youOwe[id] ?? 0,
-        ),
-      );
-    }));
+    return Map.fromEntries(
+      allPersonIds.map((id) {
+        return MapEntry(
+          id,
+          PersonBalance(
+            personId: id,
+            owedToYou: owedToYou[id] ?? 0,
+            youOwe: youOwe[id] ?? 0,
+          ),
+        );
+      }),
+    );
   }
 
   Future<void> markSettled(String splitEntryId) async {
@@ -153,10 +160,7 @@ class SplitService {
     final now = DateTime.now();
     await _txnRepo.updateById(
       expenseId,
-      txn.copyWith(
-        linkedSplitEntryId: Value(splitEntryId),
-        updatedAt: now,
-      ),
+      txn.copyWith(linkedSplitEntryId: Value(splitEntryId), updatedAt: now),
     );
     await _entriesRepo.updateById(
       splitEntryId,
@@ -170,7 +174,9 @@ class SplitService {
   /// Call when user confirms "Update linked split too?" after editing expense.
   /// Updates split total to newAmount and rescales shares proportionally (keeps ratios).
   Future<void> updateSplitFromExpenseAmount(
-      String splitEntryId, double newAmount) async {
+    String splitEntryId,
+    double newAmount,
+  ) async {
     if (newAmount <= 0) return;
     final entry = await _entriesRepo.getById(splitEntryId);
     if (entry == null) return;

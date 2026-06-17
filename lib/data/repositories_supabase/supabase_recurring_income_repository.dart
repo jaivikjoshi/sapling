@@ -40,12 +40,13 @@ class SupabaseRecurringIncomeRepository implements RecurringIncomeRepository {
 
   @override
   Future<RecurringIncome> getById(String id) async {
-    final res = await _client
-        .from('recurring_incomes')
-        .select()
-        .eq('id', id)
-        .eq('user_id', _userId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from('recurring_incomes')
+            .select()
+            .eq('id', id)
+            .eq('user_id', _userId)
+            .maybeSingle();
     if (res == null) throw Exception('RecurringIncome not found: $id');
     return recurringIncomeFromSupabase(res);
   }
@@ -57,7 +58,10 @@ class SupabaseRecurringIncomeRepository implements RecurringIncomeRepository {
   }
 
   @override
-  Future<void> updateById(String id, RecurringIncomesCompanion companion) async {
+  Future<void> updateById(
+    String id,
+    RecurringIncomesCompanion companion,
+  ) async {
     final map = recurringIncomesCompanionToSupabase(companion, _userId);
     map.remove('id');
     map.remove('user_id');

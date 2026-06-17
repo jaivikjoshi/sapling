@@ -31,47 +31,50 @@ final reportsTransactionsInvalidationProvider = StreamProvider((ref) {
 
 final reportPeriodOptionsProvider =
     FutureProvider.family<List<ReportPeriodOption>, ReportTimeframe>((
-  ref,
-  timeframe,
-) async {
-  ref.watch(settingsStreamProvider);
-  ref.watch(recurringIncomesProvider);
-  final service = ref.watch(reportsServiceProvider);
-  return service.availablePeriods(timeframe);
-});
+      ref,
+      timeframe,
+    ) async {
+      ref.watch(settingsStreamProvider);
+      ref.watch(recurringIncomesProvider);
+      final service = ref.watch(reportsServiceProvider);
+      return service.availablePeriods(timeframe);
+    });
 
 final reportsSnapshotProvider =
-    FutureProvider.family<ReportsSnapshot, ReportsRequest>((ref, request) async {
-  ref.watch(reportsTransactionsInvalidationProvider);
-  ref.watch(categoriesProvider);
-  ref.watch(billsStreamProvider);
-  ref.watch(goalsStreamProvider);
-  ref.watch(recurringIncomesProvider);
-  ref.watch(settingsStreamProvider);
-  ref.watch(activeRecoveryPlanProvider);
-  ref.watch(closeoutsStreamProvider);
-  final service = ref.watch(reportsServiceProvider);
-  return service.buildSnapshot(request);
-});
+    FutureProvider.family<ReportsSnapshot, ReportsRequest>((
+      ref,
+      request,
+    ) async {
+      ref.watch(reportsTransactionsInvalidationProvider);
+      ref.watch(categoriesProvider);
+      ref.watch(billsStreamProvider);
+      ref.watch(goalsStreamProvider);
+      ref.watch(recurringIncomesProvider);
+      ref.watch(settingsStreamProvider);
+      ref.watch(activeRecoveryPlanProvider);
+      ref.watch(closeoutsStreamProvider);
+      final service = ref.watch(reportsServiceProvider);
+      return service.buildSnapshot(request);
+    });
 
 final reportDrilldownTransactionsProvider =
     FutureProvider.family<List<Transaction>, ReportDrilldownQuery>((
-  ref,
-  query,
-) async {
-  ref.watch(reportsTransactionsInvalidationProvider);
-  ref.watch(categoriesProvider);
-  final service = ref.watch(reportsServiceProvider);
-  return service.transactionsForDrilldown(query);
-});
+      ref,
+      query,
+    ) async {
+      ref.watch(reportsTransactionsInvalidationProvider);
+      ref.watch(categoriesProvider);
+      final service = ref.watch(reportsServiceProvider);
+      return service.transactionsForDrilldown(query);
+    });
 
 final reportBillRowsProvider =
     FutureProvider.family<List<ReportDrilldownRow>, ReportPeriodOption>((
-  ref,
-  period,
-) async {
-  ref.watch(reportsTransactionsInvalidationProvider);
-  ref.watch(billsStreamProvider);
-  final service = ref.watch(reportsServiceProvider);
-  return service.billDrilldownRows(period);
-});
+      ref,
+      period,
+    ) async {
+      ref.watch(reportsTransactionsInvalidationProvider);
+      ref.watch(billsStreamProvider);
+      final service = ref.watch(reportsServiceProvider);
+      return service.billDrilldownRows(period);
+    });

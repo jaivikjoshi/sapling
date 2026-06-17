@@ -13,10 +13,8 @@ class AppSettings extends Table {
   TextColumn get paydayAnchorRecurringIncomeId => text().nullable()();
   TextColumn get defaultPaydayBehavior =>
       text().withDefault(const Constant('confirm_actual_on_payday'))();
-  BoolColumn get paydayEnabled =>
-      boolean().withDefault(const Constant(true))();
-  BoolColumn get billsEnabled =>
-      boolean().withDefault(const Constant(true))();
+  BoolColumn get paydayEnabled => boolean().withDefault(const Constant(true))();
+  BoolColumn get billsEnabled => boolean().withDefault(const Constant(true))();
   BoolColumn get overspendEnabled =>
       boolean().withDefault(const Constant(true))();
   BoolColumn get cycleResetEnabled =>

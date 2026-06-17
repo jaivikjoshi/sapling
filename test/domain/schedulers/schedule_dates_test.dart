@@ -25,10 +25,7 @@ RecurringIncome _income({
   );
 }
 
-Bill _bill({
-  DateTime? nextDueDate,
-  int reminderLeadTimeDays = 3,
-}) {
+Bill _bill({DateTime? nextDueDate, int reminderLeadTimeDays = 3}) {
   return Bill(
     id: '1',
     name: 'Rent',

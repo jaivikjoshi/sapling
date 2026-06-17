@@ -53,52 +53,52 @@ LeafIntent leafIntentFromWire(String? value) {
 
 extension LeafIntentX on LeafIntent {
   String get wireValue => switch (this) {
-        LeafIntent.addExpense => 'add_expense',
-        LeafIntent.addIncome => 'add_income',
-        LeafIntent.markBillPaid => 'mark_bill_paid',
-        LeafIntent.createGoal => 'create_goal',
-        LeafIntent.setPrimaryGoal => 'set_primary_goal',
-        LeafIntent.addRecurringIncome => 'add_recurring_income',
-        LeafIntent.setAllowanceMode => 'set_allowance_mode',
-        LeafIntent.setCycleReset => 'set_cycle_reset',
-        LeafIntent.setSpendingBaseline => 'set_spending_baseline',
-        LeafIntent.reconcileBalance => 'reconcile_balance',
-        LeafIntent.createRecoveryPlan => 'create_recovery_plan',
-        LeafIntent.getAllowanceStatus => 'get_allowance_status',
-        LeafIntent.getSpendingSummary => 'get_spending_summary',
-        LeafIntent.getGoalProgress => 'get_goal_progress',
-        LeafIntent.getBillsDue => 'get_bills_due',
-        LeafIntent.getRecoveryStatus => 'get_recovery_status',
-        LeafIntent.getTransactions => 'get_transactions',
-        LeafIntent.clarify => 'clarify',
-        LeafIntent.unsupported => 'unsupported',
-        LeafIntent.smallTalk => 'small_talk',
-        LeafIntent.unknown => 'unknown',
-      };
+    LeafIntent.addExpense => 'add_expense',
+    LeafIntent.addIncome => 'add_income',
+    LeafIntent.markBillPaid => 'mark_bill_paid',
+    LeafIntent.createGoal => 'create_goal',
+    LeafIntent.setPrimaryGoal => 'set_primary_goal',
+    LeafIntent.addRecurringIncome => 'add_recurring_income',
+    LeafIntent.setAllowanceMode => 'set_allowance_mode',
+    LeafIntent.setCycleReset => 'set_cycle_reset',
+    LeafIntent.setSpendingBaseline => 'set_spending_baseline',
+    LeafIntent.reconcileBalance => 'reconcile_balance',
+    LeafIntent.createRecoveryPlan => 'create_recovery_plan',
+    LeafIntent.getAllowanceStatus => 'get_allowance_status',
+    LeafIntent.getSpendingSummary => 'get_spending_summary',
+    LeafIntent.getGoalProgress => 'get_goal_progress',
+    LeafIntent.getBillsDue => 'get_bills_due',
+    LeafIntent.getRecoveryStatus => 'get_recovery_status',
+    LeafIntent.getTransactions => 'get_transactions',
+    LeafIntent.clarify => 'clarify',
+    LeafIntent.unsupported => 'unsupported',
+    LeafIntent.smallTalk => 'small_talk',
+    LeafIntent.unknown => 'unknown',
+  };
 
   String get label => switch (this) {
-        LeafIntent.addExpense => 'Add expense',
-        LeafIntent.addIncome => 'Add income',
-        LeafIntent.markBillPaid => 'Mark bill paid',
-        LeafIntent.createGoal => 'Create goal',
-        LeafIntent.setPrimaryGoal => 'Set primary goal',
-        LeafIntent.addRecurringIncome => 'Add recurring income',
-        LeafIntent.setAllowanceMode => 'Set allowance mode',
-        LeafIntent.setCycleReset => 'Set cycle reset',
-        LeafIntent.setSpendingBaseline => 'Set spending baseline',
-        LeafIntent.reconcileBalance => 'Reconcile balance',
-        LeafIntent.createRecoveryPlan => 'Create recovery plan',
-        LeafIntent.getAllowanceStatus => 'Allowance status',
-        LeafIntent.getSpendingSummary => 'Spending summary',
-        LeafIntent.getGoalProgress => 'Goal progress',
-        LeafIntent.getBillsDue => 'Bills due',
-        LeafIntent.getRecoveryStatus => 'Recovery status',
-        LeafIntent.getTransactions => 'Transactions',
-        LeafIntent.clarify => 'Clarify',
-        LeafIntent.unsupported => 'Unsupported request',
-        LeafIntent.smallTalk => 'Small talk',
-        LeafIntent.unknown => 'Unknown action',
-      };
+    LeafIntent.addExpense => 'Add expense',
+    LeafIntent.addIncome => 'Add income',
+    LeafIntent.markBillPaid => 'Mark bill paid',
+    LeafIntent.createGoal => 'Create goal',
+    LeafIntent.setPrimaryGoal => 'Set primary goal',
+    LeafIntent.addRecurringIncome => 'Add recurring income',
+    LeafIntent.setAllowanceMode => 'Set allowance mode',
+    LeafIntent.setCycleReset => 'Set cycle reset',
+    LeafIntent.setSpendingBaseline => 'Set spending baseline',
+    LeafIntent.reconcileBalance => 'Reconcile balance',
+    LeafIntent.createRecoveryPlan => 'Create recovery plan',
+    LeafIntent.getAllowanceStatus => 'Allowance status',
+    LeafIntent.getSpendingSummary => 'Spending summary',
+    LeafIntent.getGoalProgress => 'Goal progress',
+    LeafIntent.getBillsDue => 'Bills due',
+    LeafIntent.getRecoveryStatus => 'Recovery status',
+    LeafIntent.getTransactions => 'Transactions',
+    LeafIntent.clarify => 'Clarify',
+    LeafIntent.unsupported => 'Unsupported request',
+    LeafIntent.smallTalk => 'Small talk',
+    LeafIntent.unknown => 'Unknown action',
+  };
 }
 
 enum LeafEnvelopeType {
@@ -122,12 +122,12 @@ LeafEnvelopeType leafEnvelopeTypeFromWire(String? value) {
 
 extension LeafEnvelopeTypeX on LeafEnvelopeType {
   String get wireValue => switch (this) {
-        LeafEnvelopeType.assistantMessage => 'assistant_message',
-        LeafEnvelopeType.clarificationRequest => 'clarification_request',
-        LeafEnvelopeType.actionPreview => 'action_preview',
-        LeafEnvelopeType.executionResult => 'execution_result',
-        LeafEnvelopeType.error => 'error',
-      };
+    LeafEnvelopeType.assistantMessage => 'assistant_message',
+    LeafEnvelopeType.clarificationRequest => 'clarification_request',
+    LeafEnvelopeType.actionPreview => 'action_preview',
+    LeafEnvelopeType.executionResult => 'execution_result',
+    LeafEnvelopeType.error => 'error',
+  };
 }
 
 class LeafPendingAction {
@@ -155,12 +155,12 @@ class LeafPendingAction {
     return LeafPendingAction(
       intent: leafIntentFromWire(json['intent'] as String?),
       confidence: (json['confidence'] as num?)?.toDouble() ?? 0,
-      requiresConfirmation:
-          (json['requires_confirmation'] as bool?) ?? true,
+      requiresConfirmation: (json['requires_confirmation'] as bool?) ?? true,
       isReadOnly: (json['is_read_only'] as bool?) ?? false,
-      missingFields: ((json['missing_fields'] as List?) ?? const [])
-          .whereType<String>()
-          .toList(),
+      missingFields:
+          ((json['missing_fields'] as List?) ?? const [])
+              .whereType<String>()
+              .toList(),
       reason: (json['reason'] as String?) ?? '',
       data: Map<String, dynamic>.from(
         (json['data'] as Map?) ?? const <String, dynamic>{},
@@ -211,11 +211,11 @@ class LeafClarificationOption {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'label': label,
-        if (subtitle != null) 'subtitle': subtitle,
-        'patch': patch,
-      };
+    'id': id,
+    'label': label,
+    if (subtitle != null) 'subtitle': subtitle,
+    'patch': patch,
+  };
 }
 
 class LeafAssistantEnvelope {
@@ -319,16 +319,20 @@ class LeafAssistantEnvelope {
   factory LeafAssistantEnvelope.fromJson(Map<String, dynamic> json) {
     final type = leafEnvelopeTypeFromWire(json['type'] as String?);
     final actionJson = json['action'];
-    final action = actionJson is Map<String, dynamic>
-        ? LeafPendingAction.fromJson(actionJson)
-        : null;
-    final options = ((json['clarification_options'] as List?) ?? const [])
-        .whereType<Map>()
-        .map((raw) => LeafClarificationOption.fromJson(
-              Map<String, dynamic>.from(raw),
-            ))
-        .where((option) => option.id.isNotEmpty && option.label.isNotEmpty)
-        .toList();
+    final action =
+        actionJson is Map<String, dynamic>
+            ? LeafPendingAction.fromJson(actionJson)
+            : null;
+    final options =
+        ((json['clarification_options'] as List?) ?? const [])
+            .whereType<Map>()
+            .map(
+              (raw) => LeafClarificationOption.fromJson(
+                Map<String, dynamic>.from(raw),
+              ),
+            )
+            .where((option) => option.id.isNotEmpty && option.label.isNotEmpty)
+            .toList();
     return LeafAssistantEnvelope(
       type: type,
       assistantMessage: (json['assistant_message'] as String?) ?? '',
@@ -337,13 +341,17 @@ class LeafAssistantEnvelope {
       ),
       action: action,
       success: json['success'] as bool?,
-      result: json['result'] is Map<String, dynamic>
-          ? Map<String, dynamic>.from(json['result'] as Map<String, dynamic>)
-          : null,
+      result:
+          json['result'] is Map<String, dynamic>
+              ? Map<String, dynamic>.from(
+                json['result'] as Map<String, dynamic>,
+              )
+              : null,
       errorCode: json['error_code'] as String?,
-      suggestedPrompts: ((json['suggested_prompts'] as List?) ?? const [])
-          .whereType<String>()
-          .toList(),
+      suggestedPrompts:
+          ((json['suggested_prompts'] as List?) ?? const [])
+              .whereType<String>()
+              .toList(),
       clarificationField: json['clarification_field'] as String?,
       clarificationOptions: options,
     );
@@ -414,10 +422,10 @@ class LeafAttachment {
   bool get isImage => mime.startsWith('image/');
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'mime': mime,
-        'data': dataBase64,
-      };
+    'name': name,
+    'mime': mime,
+    'data': dataBase64,
+  };
 }
 
 class LeafHistoryTurn {
@@ -443,11 +451,11 @@ class LeafEntityRef {
   final String? dueDate;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        if (amount != null) 'amount': amount,
-        if (dueDate != null) 'due_date': dueDate,
-      };
+    'id': id,
+    'name': name,
+    if (amount != null) 'amount': amount,
+    if (dueDate != null) 'due_date': dueDate,
+  };
 }
 
 class LeafBackendContext {

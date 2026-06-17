@@ -35,7 +35,8 @@ class SupabaseCategoriesRepository implements CategoriesRepository {
 
   @override
   Future<Category> getById(String id) async {
-    final res = await _client.from('categories').select().eq('id', id).maybeSingle();
+    final res =
+        await _client.from('categories').select().eq('id', id).maybeSingle();
     if (res == null) throw Exception('Category not found: $id');
     return categoryFromSupabase(res);
   }
@@ -68,12 +69,20 @@ class SupabaseCategoriesRepository implements CategoriesRepository {
     if (companion.isSystem.present) map['is_system'] = companion.isSystem.value;
     map['updated_at'] = DateTime.now().toIso8601String();
     if (map.length <= 1) return;
-    await _client.from('categories').update(map).eq('id', id).eq('user_id', _userId);
+    await _client
+        .from('categories')
+        .update(map)
+        .eq('id', id)
+        .eq('user_id', _userId);
   }
 
   @override
   Future<void> deleteById(String id) async {
-    await _client.from('categories').delete().eq('id', id).eq('user_id', _userId);
+    await _client
+        .from('categories')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', _userId);
   }
 
   Category _companionToCategory(CategoriesCompanion c) {

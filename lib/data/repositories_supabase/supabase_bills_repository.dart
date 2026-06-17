@@ -40,12 +40,13 @@ class SupabaseBillsRepository implements BillsRepository {
 
   @override
   Future<Bill> getById(String id) async {
-    final res = await _client
-        .from('bills')
-        .select()
-        .eq('id', id)
-        .eq('user_id', _userId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from('bills')
+            .select()
+            .eq('id', id)
+            .eq('user_id', _userId)
+            .maybeSingle();
     if (res == null) throw Exception('Bill not found: $id');
     return billFromSupabase(res);
   }

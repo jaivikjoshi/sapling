@@ -21,21 +21,19 @@ class DriftSplitEntriesRepository implements SplitEntriesRepository {
   @override
   Future<List<SplitEntry>> getAll() {
     return (_db.select(_db.splitEntries)
-          ..orderBy([(t) => OrderingTerm.desc(t.date)]))
-        .get();
+      ..orderBy([(t) => OrderingTerm.desc(t.date)])).get();
   }
 
   @override
   Stream<List<SplitEntry>> watchAll() {
     return (_db.select(_db.splitEntries)
-          ..orderBy([(t) => OrderingTerm.desc(t.date)]))
-        .watch();
+      ..orderBy([(t) => OrderingTerm.desc(t.date)])).watch();
   }
 
   @override
   Future<SplitEntry?> getById(String id) async {
-    return (_db.select(_db.splitEntries)..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    return (_db.select(_db.splitEntries)
+      ..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
   @override
@@ -61,8 +59,8 @@ class DriftSplitEntriesRepository implements SplitEntriesRepository {
 
   @override
   Future<void> updateById(String id, SplitEntriesCompanion companion) {
-    return (_db.update(_db.splitEntries)..where((t) => t.id.equals(id)))
-        .write(companion);
+    return (_db.update(_db.splitEntries)
+      ..where((t) => t.id.equals(id))).write(companion);
   }
 
   @override
@@ -72,8 +70,8 @@ class DriftSplitEntriesRepository implements SplitEntriesRepository {
 
   @override
   Future<SplitEntry?> getByLinkedExpenseId(String expenseId) async {
-    return (_db.select(_db.splitEntries)
-          ..where((t) => t.linkToExpenseTransactionId.equals(expenseId)))
-        .getSingleOrNull();
+    return (_db.select(_db.splitEntries)..where(
+      (t) => t.linkToExpenseTransactionId.equals(expenseId),
+    )).getSingleOrNull();
   }
 }

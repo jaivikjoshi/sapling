@@ -40,8 +40,10 @@ class PaydayAutoPoster {
     final amount = income.expectedAmount;
     if (amount == null || amount <= 0) return 0;
 
-    final freq =
-        enumFromDb<IncomeFrequency>(income.frequency, IncomeFrequency.values);
+    final freq = enumFromDb<IncomeFrequency>(
+      income.frequency,
+      IncomeFrequency.values,
+    );
     var payday = DateTime(
       income.nextPaydayDate.year,
       income.nextPaydayDate.month,
@@ -78,8 +80,10 @@ class PaydayAutoPoster {
   ) async {
     final dateEnd = dateStart.add(const Duration(days: 1));
     final txns = await _txnRepo.getByDateRange(dateStart, dateEnd);
-    return txns.any((t) =>
-        t.type == 'income' && t.linkedRecurringIncomeId == recurringIncomeId);
+    return txns.any(
+      (t) =>
+          t.type == 'income' && t.linkedRecurringIncomeId == recurringIncomeId,
+    );
   }
 
   Future<void> _postExpected(
@@ -89,17 +93,18 @@ class PaydayAutoPoster {
   ) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _txnRepo.insert(Transaction(
-      id: id,
-      type: enumToDb(TransactionType.income),
-      amount: amount,
-      date: date,
-      incomePostingType: enumToDb(IncomePostingType.autoPostedExpected),
-      linkedRecurringIncomeId: income.id,
-      note: 'Auto-posted: ${income.name}',
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _txnRepo.insert(
+      Transaction(
+        id: id,
+        type: enumToDb(TransactionType.income),
+        amount: amount,
+        date: date,
+        incomePostingType: enumToDb(IncomePostingType.autoPostedExpected),
+        linkedRecurringIncomeId: income.id,
+        note: 'Auto-posted: ${income.name}',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
   }
-
 }

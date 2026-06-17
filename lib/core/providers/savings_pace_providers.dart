@@ -163,10 +163,7 @@ List<SavingsPoint> _buildSavingsHistory({
   if (span < 0) {
     // Goal was created in the future — degenerate case; show a single point.
     return [
-      SavingsPoint(
-        date: startDate,
-        amount: _clampSaved(balance, targetAmount),
-      ),
+      SavingsPoint(date: startDate, amount: _clampSaved(balance, targetAmount)),
     ];
   }
 
@@ -174,13 +171,19 @@ List<SavingsPoint> _buildSavingsHistory({
   final stride = span <= 60 ? 1 : (span / 60).ceil();
   final points = <SavingsPoint>[];
   for (var dayOffset = 0; dayOffset <= span; dayOffset += stride) {
-    final cursor =
-        DateTime(startDate.year, startDate.month, startDate.day + dayOffset);
+    final cursor = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day + dayOffset,
+    );
     if (dayOffset > 0) {
       // Advance the balance through every day we just skipped.
       for (var i = dayOffset - stride + 1; i <= dayOffset; i++) {
-        final day =
-            DateTime(startDate.year, startDate.month, startDate.day + i);
+        final day = DateTime(
+          startDate.year,
+          startDate.month,
+          startDate.day + i,
+        );
         balance += dailyDelta[day] ?? 0;
       }
     }

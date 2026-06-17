@@ -40,12 +40,13 @@ class SupabaseSplitEntriesRepository implements SplitEntriesRepository {
 
   @override
   Future<SplitEntry?> getById(String id) async {
-    final res = await _client
-        .from('split_entries')
-        .select()
-        .eq('id', id)
-        .eq('user_id', _userId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from('split_entries')
+            .select()
+            .eq('id', id)
+            .eq('user_id', _userId)
+            .maybeSingle();
     return res == null ? null : splitEntryFromSupabase(res);
   }
 
@@ -98,12 +99,13 @@ class SupabaseSplitEntriesRepository implements SplitEntriesRepository {
 
   @override
   Future<SplitEntry?> getByLinkedExpenseId(String expenseId) async {
-    final res = await _client
-        .from('split_entries')
-        .select()
-        .eq('user_id', _userId)
-        .eq('link_to_expense_transaction_id', expenseId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from('split_entries')
+            .select()
+            .eq('user_id', _userId)
+            .eq('link_to_expense_transaction_id', expenseId)
+            .maybeSingle();
     return res == null ? null : splitEntryFromSupabase(res);
   }
 }

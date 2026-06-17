@@ -48,31 +48,34 @@ void main() {
       expect(reloaded.nextDueDate, due);
     });
 
-    test('posts expense and advances due date when autopay is enabled', () async {
-      final due = DateTime(2026, 5, 16);
-      await billsRepo.insert(
-        BillsCompanion.insert(
-          id: 'bill-auto',
-          name: 'Streaming',
-          amount: 15,
-          nextDueDate: due,
-          categoryId: 'cat-1',
-          autopay: const Value(true),
-          createdAt: DateTime(2026, 1, 1),
-          updatedAt: DateTime(2026, 1, 1),
-        ),
-      );
+    test(
+      'posts expense and advances due date when autopay is enabled',
+      () async {
+        final due = DateTime(2026, 5, 16);
+        await billsRepo.insert(
+          BillsCompanion.insert(
+            id: 'bill-auto',
+            name: 'Streaming',
+            amount: 15,
+            nextDueDate: due,
+            categoryId: 'cat-1',
+            autopay: const Value(true),
+            createdAt: DateTime(2026, 1, 1),
+            updatedAt: DateTime(2026, 1, 1),
+          ),
+        );
 
-      final posted = await poster.runForDate(DateTime(2026, 5, 16, 9, 0));
-      expect(posted, 1);
+        final posted = await poster.runForDate(DateTime(2026, 5, 16, 9, 0));
+        expect(posted, 1);
 
-      final txns = await txnRepo.getAll();
-      expect(txns, hasLength(1));
-      expect(txns.single.linkedBillId, 'bill-auto');
-      expect(txns.single.amount, 15);
+        final txns = await txnRepo.getAll();
+        expect(txns, hasLength(1));
+        expect(txns.single.linkedBillId, 'bill-auto');
+        expect(txns.single.amount, 15);
 
-      final reloaded = await billsRepo.getById('bill-auto');
-      expect(reloaded.nextDueDate, DateTime(2026, 6, 16));
-    });
+        final reloaded = await billsRepo.getById('bill-auto');
+        expect(reloaded.nextDueDate, DateTime(2026, 6, 16));
+      },
+    );
   });
 }

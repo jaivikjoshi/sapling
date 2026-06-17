@@ -29,20 +29,24 @@ class RecurringIncomeScreen extends ConsumerWidget {
       body: incomesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
-        data: (incomes) => incomes.isEmpty
-            ? const _EmptyState()
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: incomes.length,
-                itemBuilder: (ctx, i) => _IncomeTile(
-                  income: incomes[i],
-                  onEdit: () => _showForm(ctx, existing: incomes[i]),
-                  onDelete: () => _confirmDelete(ctx, service, incomes[i]),
-                  onSetAnchor: () async {
-                    await service.setPaydayAnchor(incomes[i].id);
-                  },
-                ),
-              ),
+        data:
+            (incomes) =>
+                incomes.isEmpty
+                    ? const _EmptyState()
+                    : ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: incomes.length,
+                      itemBuilder:
+                          (ctx, i) => _IncomeTile(
+                            income: incomes[i],
+                            onEdit: () => _showForm(ctx, existing: incomes[i]),
+                            onDelete:
+                                () => _confirmDelete(ctx, service, incomes[i]),
+                            onSetAnchor: () async {
+                              await service.setPaydayAnchor(incomes[i].id);
+                            },
+                          ),
+                    ),
       ),
     );
   }
@@ -65,24 +69,27 @@ class RecurringIncomeScreen extends ConsumerWidget {
   ) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Income Schedule'),
-        content: Text('Delete "${income.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete Income Schedule'),
+            content: Text('Delete "${income.name}"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await service.delete(income.id);
+                },
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: LekoColors.error),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await service.delete(income.id);
-            },
-            child: Text('Delete',
-                style: TextStyle(color: LekoColors.error)),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -96,14 +103,21 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.account_balance_wallet_outlined,
-              size: 64, color: LekoColors.textSecondary),
+          Icon(
+            Icons.account_balance_wallet_outlined,
+            size: 64,
+            color: LekoColors.textSecondary,
+          ),
           const SizedBox(height: 16),
-          Text('No recurring income yet',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'No recurring income yet',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
-          Text('Tap + to add an income schedule',
-              style: TextStyle(color: LekoColors.textSecondary)),
+          Text(
+            'Tap + to add an income schedule',
+            style: TextStyle(color: LekoColors.textSecondary),
+          ),
         ],
       ),
     );
@@ -138,8 +152,10 @@ class _IncomeTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         leading: _buildLeading(),
-        title: Text(income.name,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          income.name,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         subtitle: _buildSubtitle(freq, behavior),
         trailing: PopupMenuButton<String>(
           onSelected: (v) {
@@ -147,13 +163,16 @@ class _IncomeTile extends StatelessWidget {
             if (v == 'delete') onDelete();
             if (v == 'anchor') onSetAnchor();
           },
-          itemBuilder: (_) => [
-            const PopupMenuItem(value: 'edit', child: Text('Edit')),
-            if (!income.isPaydayAnchor)
-              const PopupMenuItem(
-                  value: 'anchor', child: Text('Set as Payday Anchor')),
-            const PopupMenuItem(value: 'delete', child: Text('Delete')),
-          ],
+          itemBuilder:
+              (_) => [
+                const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                if (!income.isPaydayAnchor)
+                  const PopupMenuItem(
+                    value: 'anchor',
+                    child: Text('Set as Payday Anchor'),
+                  ),
+                const PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ],
         ),
         onTap: onEdit,
       ),
@@ -187,7 +206,9 @@ class _IncomeTile extends StatelessWidget {
     if (income.isPaydayAnchor) {
       parts.add('⚓ Anchor');
     }
-    return Text(parts.join(' · '),
-        style: TextStyle(color: LekoColors.textSecondary, fontSize: 12));
+    return Text(
+      parts.join(' · '),
+      style: TextStyle(color: LekoColors.textSecondary, fontSize: 12),
+    );
   }
 }

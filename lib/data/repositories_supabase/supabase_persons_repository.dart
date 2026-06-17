@@ -40,12 +40,13 @@ class SupabasePersonsRepository implements PersonsRepository {
 
   @override
   Future<Person?> getById(String id) async {
-    final res = await _client
-        .from('persons')
-        .select()
-        .eq('id', id)
-        .eq('user_id', _userId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from('persons')
+            .select()
+            .eq('id', id)
+            .eq('user_id', _userId)
+            .maybeSingle();
     return res == null ? null : personFromSupabase(res);
   }
 
@@ -61,7 +62,11 @@ class SupabasePersonsRepository implements PersonsRepository {
     map.remove('id');
     map.remove('user_id');
     map['updated_at'] = DateTime.now().toIso8601String();
-    await _client.from('persons').update(map).eq('id', id).eq('user_id', _userId);
+    await _client
+        .from('persons')
+        .update(map)
+        .eq('id', id)
+        .eq('user_id', _userId);
   }
 
   @override

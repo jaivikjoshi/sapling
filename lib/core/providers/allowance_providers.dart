@@ -18,8 +18,9 @@ final allowanceEngineProvider = Provider<AllowanceEngine>((ref) {
 });
 
 /// Runtime mode state — defaults to user's preferred mode from settings.
-final allowanceModeOverrideProvider =
-    StateProvider<AllowanceMode?>((ref) => null);
+final allowanceModeOverrideProvider = StateProvider<AllowanceMode?>(
+  (ref) => null,
+);
 
 /// Effective mode: uses the override if set, otherwise the settings default.
 final effectiveAllowanceModeProvider = Provider<AllowanceMode>((ref) {
@@ -29,8 +30,9 @@ final effectiveAllowanceModeProvider = Provider<AllowanceMode>((ref) {
   return settings?.allowanceDefaultMode ?? AllowanceMode.paycheck;
 });
 
-final paycheckAllowanceProvider =
-    FutureProvider<PaycheckAllowanceResult?>((ref) async {
+final paycheckAllowanceProvider = FutureProvider<PaycheckAllowanceResult?>((
+  ref,
+) async {
   final settingsAsync = ref.watch(settingsStreamProvider);
   final settings = settingsAsync.valueOrNull;
   if (settings == null) return null;
@@ -43,8 +45,7 @@ final paycheckAllowanceProvider =
   return engine.computePaycheckMode(settings: settings);
 });
 
-final goalAllowanceProvider =
-    FutureProvider<GoalAllowanceResult?>((ref) async {
+final goalAllowanceProvider = FutureProvider<GoalAllowanceResult?>((ref) async {
   final settingsAsync = ref.watch(settingsStreamProvider);
   final settings = settingsAsync.valueOrNull;
   if (settings == null) return null;

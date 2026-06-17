@@ -7,8 +7,7 @@ class RecoveryPlans extends Table {
   RealColumn get overspendAmount => real()();
   TextColumn get planType => text()();
   TextColumn get parameters => text().withDefault(const Constant('{}'))();
-  TextColumn get status =>
-      text().withDefault(const Constant('active'))();
+  TextColumn get status => text().withDefault(const Constant('active'))();
 
   @override
   Set<Column> get primaryKey => {id};

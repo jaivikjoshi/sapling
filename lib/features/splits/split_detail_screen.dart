@@ -33,14 +33,16 @@ class SplitDetailScreen extends ConsumerWidget {
           onSettle: () => _showSettle(context, ref),
         );
       },
-      loading: () => Scaffold(
-        appBar: AppBar(title: const Text('Split')),
-        body: const Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, _) => Scaffold(
-        appBar: AppBar(title: const Text('Split')),
-        body: Center(child: Text('Error: $e')),
-      ),
+      loading:
+          () => Scaffold(
+            appBar: AppBar(title: const Text('Split')),
+            body: const Center(child: CircularProgressIndicator()),
+          ),
+      error:
+          (e, _) => Scaffold(
+            appBar: AppBar(title: const Text('Split')),
+            body: Center(child: Text('Error: $e')),
+          ),
     );
   }
 
@@ -68,9 +70,14 @@ class _SplitDetailBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dateFmt = DateFormat.yMMMd();
-    final paidByName = entry.paidBy == kSplitPaidByYou
-        ? 'You'
-        : persons.where((p) => p.id == entry.paidBy).map((p) => p.name).firstOrNull ?? entry.paidBy;
+    final paidByName =
+        entry.paidBy == kSplitPaidByYou
+            ? 'You'
+            : persons
+                    .where((p) => p.id == entry.paidBy)
+                    .map((p) => p.name)
+                    .firstOrNull ??
+                entry.paidBy;
 
     return Scaffold(
       appBar: AppBar(
@@ -81,10 +88,7 @@ class _SplitDetailBody extends ConsumerWidget {
         ),
         actions: [
           if (entry.status == 'open')
-            TextButton(
-              onPressed: onSettle,
-              child: const Text('Settle'),
-            ),
+            TextButton(onPressed: onSettle, child: const Text('Settle')),
         ],
       ),
       body: FutureBuilder<List<SplitShare>>(
@@ -122,14 +126,19 @@ class _SplitDetailBody extends ConsumerWidget {
               Text(
                 'Shares',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: LekoColors.textSecondary,
-                    ),
+                  color: LekoColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 8),
               ...shares.map((s) {
-                final name = s.personId == kSplitPaidByYou
-                    ? 'You'
-                    : persons.where((p) => p.id == s.personId).map((p) => p.name).firstOrNull ?? s.personId;
+                final name =
+                    s.personId == kSplitPaidByYou
+                        ? 'You'
+                        : persons
+                                .where((p) => p.id == s.personId)
+                                .map((p) => p.name)
+                                .firstOrNull ??
+                            s.personId;
                 return ListTile(
                   title: Text(name),
                   trailing: Text(formatCurrency(s.shareAmount)),

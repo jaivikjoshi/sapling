@@ -17,13 +17,13 @@ class DailySnapshot {
   });
 
   Map<String, dynamic> toJson() => {
-        'todayAllowance': todayAllowance,
-        'behindAmount': behindAmount,
-        'primaryGoalProgress': primaryGoalProgress,
-        'treeStage': treeStage,
-        'closeoutStatus': closeoutStatus,
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'todayAllowance': todayAllowance,
+    'behindAmount': behindAmount,
+    'primaryGoalProgress': primaryGoalProgress,
+    'treeStage': treeStage,
+    'closeoutStatus': closeoutStatus,
+    'timestamp': timestamp.toIso8601String(),
+  };
 
   static DailySnapshot? fromJson(Map<String, dynamic>? json) {
     if (json == null) return null;

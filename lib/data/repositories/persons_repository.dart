@@ -18,21 +18,19 @@ class DriftPersonsRepository implements PersonsRepository {
   @override
   Future<List<Person>> getAll() {
     return (_db.select(_db.persons)
-          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
-        .get();
+      ..orderBy([(t) => OrderingTerm.asc(t.name)])).get();
   }
 
   @override
   Stream<List<Person>> watchAll() {
     return (_db.select(_db.persons)
-          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
-        .watch();
+      ..orderBy([(t) => OrderingTerm.asc(t.name)])).watch();
   }
 
   @override
   Future<Person?> getById(String id) async {
-    return (_db.select(_db.persons)..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    return (_db.select(_db.persons)
+      ..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
   @override
@@ -42,8 +40,8 @@ class DriftPersonsRepository implements PersonsRepository {
 
   @override
   Future<void> updateById(String id, PersonsCompanion companion) {
-    return (_db.update(_db.persons)..where((t) => t.id.equals(id)))
-        .write(companion);
+    return (_db.update(_db.persons)
+      ..where((t) => t.id.equals(id))).write(companion);
   }
 
   @override

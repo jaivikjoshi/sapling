@@ -31,9 +31,7 @@ class OverspendDetector {
 
   /// PRD 5.12: After saving an expense, compute AllowanceToday and SpendToday.
   /// If SpendToday > AllowanceToday → overspend.
-  Future<OverspendResult> detect({
-    required UserSettings settings,
-  }) async {
+  Future<OverspendResult> detect({required UserSettings settings}) async {
     final result = await _engine.computePaycheckMode(settings: settings);
     final spendToday = await _computeSpendToday();
     final allowance = result.allowanceToday;

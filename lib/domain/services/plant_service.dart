@@ -29,21 +29,28 @@ class PlantService {
     if (!lastEval.isBefore(today)) return current;
 
     // Fetch the current streak to update longestStreak and currentStreak.
-    final streakResult = await _closeoutService.computeStreak(settings: settings);
+    final streakResult = await _closeoutService.computeStreak(
+      settings: settings,
+    );
 
     var state = current;
 
     // Walk each day from (lastEval + 1) through today.
     var date = lastEval.add(const Duration(days: 1));
     while (!date.isAfter(today)) {
-      final withinBudget =
-          await _allowanceEngine.wasWithinBudgetOnDate(date, settings);
+      final withinBudget = await _allowanceEngine.wasWithinBudgetOnDate(
+        date,
+        settings,
+      );
       state = evaluateDay(state, withinBudget);
       date = date.add(const Duration(days: 1));
     }
 
     // Sync streak values from the live computation.
-    final newLongest = math.max(state.longestStreak, streakResult.currentStreak);
+    final newLongest = math.max(
+      state.longestStreak,
+      streakResult.currentStreak,
+    );
 
     return state.copyWith(
       currentStreak: streakResult.currentStreak,

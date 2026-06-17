@@ -23,25 +23,23 @@ class DriftDailyCloseoutsRepository implements DailyCloseoutsRepository {
   Future<DailyCloseout?> getByDateBucket(DateTime dateBucket) async {
     final start = DateTime(dateBucket.year, dateBucket.month, dateBucket.day);
     final end = start.add(const Duration(days: 1));
-    return (_db.select(_db.dailyCloseouts)
-          ..where((t) =>
-              t.date.isBiggerOrEqualValue(start) & t.date.isSmallerThanValue(end)))
-        .getSingleOrNull();
+    return (_db.select(_db.dailyCloseouts)..where(
+      (t) =>
+          t.date.isBiggerOrEqualValue(start) & t.date.isSmallerThanValue(end),
+    )).getSingleOrNull();
   }
 
   /// All closeouts ordered by date desc (for streak: most recent first).
   @override
   Future<List<DailyCloseout>> getAllOrderedByDateDesc() {
     return (_db.select(_db.dailyCloseouts)
-          ..orderBy([(t) => OrderingTerm.desc(t.date)]))
-        .get();
+      ..orderBy([(t) => OrderingTerm.desc(t.date)])).get();
   }
 
   @override
   Stream<List<DailyCloseout>> watchAllOrderedByDateDesc() {
     return (_db.select(_db.dailyCloseouts)
-          ..orderBy([(t) => OrderingTerm.desc(t.date)]))
-        .watch();
+      ..orderBy([(t) => OrderingTerm.desc(t.date)])).watch();
   }
 
   @override

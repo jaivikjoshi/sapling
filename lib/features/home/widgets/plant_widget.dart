@@ -94,15 +94,12 @@ class _PlantPainter extends CustomPainter {
   void _paintGlow(Canvas canvas, double cx, double cy, Size size) {
     final opacity = (state.healthNormalized * 0.25).clamp(0.05, 0.25);
     final radius = 60.0 + state.growthStage * 12.0;
-    final paint = Paint()
-      ..shader = ui.Gradient.radial(
-        Offset(cx, cy),
-        radius,
-        [
-          const Color(0xFF3B9797).withValues(alpha: opacity),
-          const Color(0xFF3B9797).withValues(alpha: 0.0),
-        ],
-      );
+    final paint =
+        Paint()
+          ..shader = ui.Gradient.radial(Offset(cx, cy), radius, [
+            const Color(0xFF3B9797).withValues(alpha: opacity),
+            const Color(0xFF3B9797).withValues(alpha: 0.0),
+          ]);
     canvas.drawCircle(Offset(cx, cy), radius, paint);
   }
 
@@ -113,37 +110,44 @@ class _PlantPainter extends CustomPainter {
     final rimHeight = 8.0;
 
     // Pot body (tapered trapezoid)
-    final potPath = Path()
-      ..moveTo(cx - potWidth / 2, bottom - potHeight)
-      ..lineTo(cx - potWidth / 2 + 6, bottom)
-      ..quadraticBezierTo(cx, bottom + 3, cx + potWidth / 2 - 6, bottom)
-      ..lineTo(cx + potWidth / 2, bottom - potHeight)
-      ..close();
+    final potPath =
+        Path()
+          ..moveTo(cx - potWidth / 2, bottom - potHeight)
+          ..lineTo(cx - potWidth / 2 + 6, bottom)
+          ..quadraticBezierTo(cx, bottom + 3, cx + potWidth / 2 - 6, bottom)
+          ..lineTo(cx + potWidth / 2, bottom - potHeight)
+          ..close();
 
-    final potGradient = Paint()
-      ..shader = ui.Gradient.linear(
-        Offset(cx - potWidth / 2, bottom - potHeight),
-        Offset(cx + potWidth / 2, bottom),
-        [const Color(0xFFD4A574), const Color(0xFFC08B5C)],
-      );
+    final potGradient =
+        Paint()
+          ..shader = ui.Gradient.linear(
+            Offset(cx - potWidth / 2, bottom - potHeight),
+            Offset(cx + potWidth / 2, bottom),
+            [const Color(0xFFD4A574), const Color(0xFFC08B5C)],
+          );
     canvas.drawPath(potPath, potGradient);
 
     // Pot rim
     final rimRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(cx - potWidth / 2 - 3, bottom - potHeight - rimHeight / 2,
-          potWidth + 6, rimHeight),
+      Rect.fromLTWH(
+        cx - potWidth / 2 - 3,
+        bottom - potHeight - rimHeight / 2,
+        potWidth + 6,
+        rimHeight,
+      ),
       const Radius.circular(4),
     );
-    canvas.drawRRect(
-      rimRect,
-      Paint()..color = const Color(0xFFD4A574),
-    );
+    canvas.drawRRect(rimRect, Paint()..color = const Color(0xFFD4A574));
 
     // Subtle inner shadow
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx - potWidth / 2 - 3, bottom - potHeight - rimHeight / 2,
-            potWidth + 6, 3),
+        Rect.fromLTWH(
+          cx - potWidth / 2 - 3,
+          bottom - potHeight - rimHeight / 2,
+          potWidth + 6,
+          3,
+        ),
         const Radius.circular(4),
       ),
       Paint()..color = const Color(0xFFBB8A55),
@@ -158,26 +162,36 @@ class _PlantPainter extends CustomPainter {
     // Soil color depends on health
     final healthyColor = const Color(0xFF6B4226);
     final dryColor = const Color(0xFFB0967A);
-    final soilColor = Color.lerp(dryColor, healthyColor, state.healthNormalized)!;
+    final soilColor =
+        Color.lerp(dryColor, healthyColor, state.healthNormalized)!;
 
-    final soilPath = Path()
-      ..addOval(Rect.fromCenter(
-        center: Offset(cx, soilTop + 2),
-        width: soilWidth,
-        height: 8,
-      ));
+    final soilPath =
+        Path()..addOval(
+          Rect.fromCenter(
+            center: Offset(cx, soilTop + 2),
+            width: soilWidth,
+            height: 8,
+          ),
+        );
     canvas.drawPath(soilPath, Paint()..color = soilColor);
 
     // Cracks when health is low
     if (state.healthStage <= 2) {
-      final crackPaint = Paint()
-        ..color = const Color(0xFFA08060).withValues(alpha: 0.6)
-        ..strokeWidth = 0.8
-        ..style = PaintingStyle.stroke;
+      final crackPaint =
+          Paint()
+            ..color = const Color(0xFFA08060).withValues(alpha: 0.6)
+            ..strokeWidth = 0.8
+            ..style = PaintingStyle.stroke;
       canvas.drawLine(
-          Offset(cx - 12, soilTop + 2), Offset(cx - 6, soilTop + 5), crackPaint);
+        Offset(cx - 12, soilTop + 2),
+        Offset(cx - 6, soilTop + 5),
+        crackPaint,
+      );
       canvas.drawLine(
-          Offset(cx + 8, soilTop + 1), Offset(cx + 14, soilTop + 4), crackPaint);
+        Offset(cx + 8, soilTop + 1),
+        Offset(cx + 14, soilTop + 4),
+        crackPaint,
+      );
     }
   }
 
@@ -190,12 +204,17 @@ class _PlantPainter extends CustomPainter {
       paint,
     );
     // Tiny sprout hint
-    final sproutPaint = Paint()
-      ..color = const Color(0xFF7CB342).withValues(alpha: 0.5)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(cx, seedY - 2), Offset(cx + 2, seedY - 6), sproutPaint);
+    final sproutPaint =
+        Paint()
+          ..color = const Color(0xFF7CB342).withValues(alpha: 0.5)
+          ..strokeWidth = 1.5
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(cx, seedY - 2),
+      Offset(cx + 2, seedY - 6),
+      sproutPaint,
+    );
   }
 
   // ── Trunk ──
@@ -208,42 +227,48 @@ class _PlantPainter extends CustomPainter {
     final trunkBase = 3.0 + stage * 1.2;
     final trunkTop = 2.0 + stage * 0.6;
 
-    final trunkPath = Path()
-      ..moveTo(cx - trunkBase, potTop)
-      ..quadraticBezierTo(
-        cx - trunkTop * 1.2,
-        potTop - trunkHeight * 0.6,
-        cx - trunkTop * 0.5,
-        potTop - trunkHeight,
-      )
-      ..lineTo(cx + trunkTop * 0.5, potTop - trunkHeight)
-      ..quadraticBezierTo(
-        cx + trunkTop * 1.2,
-        potTop - trunkHeight * 0.6,
-        cx + trunkBase,
-        potTop,
-      )
-      ..close();
+    final trunkPath =
+        Path()
+          ..moveTo(cx - trunkBase, potTop)
+          ..quadraticBezierTo(
+            cx - trunkTop * 1.2,
+            potTop - trunkHeight * 0.6,
+            cx - trunkTop * 0.5,
+            potTop - trunkHeight,
+          )
+          ..lineTo(cx + trunkTop * 0.5, potTop - trunkHeight)
+          ..quadraticBezierTo(
+            cx + trunkTop * 1.2,
+            potTop - trunkHeight * 0.6,
+            cx + trunkBase,
+            potTop,
+          )
+          ..close();
 
     // Gradient from dark base to lighter tip
-    final trunkGradient = Paint()
-      ..shader = ui.Gradient.linear(
-        Offset(cx, potTop),
-        Offset(cx, potTop - trunkHeight),
-        [
-          const Color(0xFF5D4037),
-          Color.lerp(const Color(0xFF5D4037), const Color(0xFF7CB342),
-              stage >= 3 ? 0.0 : 0.3)!,
-        ],
-      );
+    final trunkGradient =
+        Paint()
+          ..shader = ui.Gradient.linear(
+            Offset(cx, potTop),
+            Offset(cx, potTop - trunkHeight),
+            [
+              const Color(0xFF5D4037),
+              Color.lerp(
+                const Color(0xFF5D4037),
+                const Color(0xFF7CB342),
+                stage >= 3 ? 0.0 : 0.3,
+              )!,
+            ],
+          );
     canvas.drawPath(trunkPath, trunkGradient);
 
     // Trunk texture lines
     if (stage >= 3) {
-      final texturePaint = Paint()
-        ..color = const Color(0xFF4E342E).withValues(alpha: 0.3)
-        ..strokeWidth = 0.5
-        ..style = PaintingStyle.stroke;
+      final texturePaint =
+          Paint()
+            ..color = const Color(0xFF4E342E).withValues(alpha: 0.3)
+            ..strokeWidth = 0.5
+            ..style = PaintingStyle.stroke;
       for (int i = 1; i <= math.min(stage, 4); i++) {
         final y = potTop - trunkHeight * (i / (stage + 1));
         canvas.drawLine(
@@ -291,15 +316,16 @@ class _PlantPainter extends CustomPainter {
         Paint()..color = shadowColor.withValues(alpha: 0.15),
       );
       // Main shape
-      final clusterPaint = Paint()
-        ..shader = ui.Gradient.radial(
-          cluster.center - const Offset(3, 3),
-          cluster.shortestSide,
-          [
-            leafColor.withValues(alpha: 0.95),
-            shadowColor.withValues(alpha: 0.85),
-          ],
-        );
+      final clusterPaint =
+          Paint()
+            ..shader = ui.Gradient.radial(
+              cluster.center - const Offset(3, 3),
+              cluster.shortestSide,
+              [
+                leafColor.withValues(alpha: 0.95),
+                shadowColor.withValues(alpha: 0.85),
+              ],
+            );
       canvas.drawOval(cluster, clusterPaint);
     }
 
@@ -315,45 +341,80 @@ class _PlantPainter extends CustomPainter {
       final lx = cx + math.cos(angle) * dist;
       final ly = canopyCenter + math.sin(angle) * dist * (canopyH / canopyW);
       final leafSize = 6.0 + rng.nextDouble() * 5.0;
-      final tint = Color.lerp(leafColor, const Color(0xFF81C784), rng.nextDouble() * 0.4)!;
+      final tint =
+          Color.lerp(
+            leafColor,
+            const Color(0xFF81C784),
+            rng.nextDouble() * 0.4,
+          )!;
 
       _drawLeaf(canvas, lx, ly, angle, leafSize, leafSize * 0.55, tint);
     }
   }
 
   List<Rect> _canopyClusters(
-      double cx, double cy, double w, double h, int stage) {
+    double cx,
+    double cy,
+    double w,
+    double h,
+    int stage,
+  ) {
     final clusters = <Rect>[];
 
     // Central mass
-    clusters.add(Rect.fromCenter(center: Offset(cx, cy), width: w * 0.7, height: h * 0.7));
+    clusters.add(
+      Rect.fromCenter(center: Offset(cx, cy), width: w * 0.7, height: h * 0.7),
+    );
 
     if (stage >= 3) {
       // Side clusters
-      clusters.add(Rect.fromCenter(
-          center: Offset(cx - w * 0.3, cy + 5), width: w * 0.5, height: h * 0.55));
-      clusters.add(Rect.fromCenter(
-          center: Offset(cx + w * 0.3, cy + 5), width: w * 0.5, height: h * 0.55));
+      clusters.add(
+        Rect.fromCenter(
+          center: Offset(cx - w * 0.3, cy + 5),
+          width: w * 0.5,
+          height: h * 0.55,
+        ),
+      );
+      clusters.add(
+        Rect.fromCenter(
+          center: Offset(cx + w * 0.3, cy + 5),
+          width: w * 0.5,
+          height: h * 0.55,
+        ),
+      );
     }
     if (stage >= 4) {
       // Top cluster
-      clusters.add(Rect.fromCenter(
-          center: Offset(cx, cy - h * 0.3), width: w * 0.45, height: h * 0.4));
+      clusters.add(
+        Rect.fromCenter(
+          center: Offset(cx, cy - h * 0.3),
+          width: w * 0.45,
+          height: h * 0.4,
+        ),
+      );
     }
     if (stage >= 5) {
       // Extra side width
-      clusters.add(Rect.fromCenter(
-          center: Offset(cx - w * 0.4, cy - 3), width: w * 0.4, height: h * 0.45));
-      clusters.add(Rect.fromCenter(
-          center: Offset(cx + w * 0.4, cy - 3), width: w * 0.4, height: h * 0.45));
+      clusters.add(
+        Rect.fromCenter(
+          center: Offset(cx - w * 0.4, cy - 3),
+          width: w * 0.4,
+          height: h * 0.45,
+        ),
+      );
+      clusters.add(
+        Rect.fromCenter(
+          center: Offset(cx + w * 0.4, cy - 3),
+          width: w * 0.4,
+          height: h * 0.45,
+        ),
+      );
     }
 
     // Droop effect at low health: shift clusters down
     if (state.healthStage <= 2) {
       final droop = (3 - state.healthStage) * 4.0;
-      return clusters
-          .map((r) => r.translate(0, droop))
-          .toList();
+      return clusters.map((r) => r.translate(0, droop)).toList();
     }
 
     return clusters;
@@ -378,20 +439,23 @@ class _PlantPainter extends CustomPainter {
       final fy = canopyCenter + math.sin(angle) * dist * (canopyH / canopyW);
 
       // Flower petals
-      final petalColor = state.healthStage >= 4
-          ? const Color(0xFFE28B78) // coral
-          : const Color(0xFFD4A08A).withValues(alpha: 0.6);
+      final petalColor =
+          state.healthStage >= 4
+              ? const Color(0xFFE28B78) // coral
+              : const Color(0xFFD4A08A).withValues(alpha: 0.6);
 
       for (int p = 0; p < 5; p++) {
         final pa = p * math.pi * 2 / 5;
         final px = fx + math.cos(pa) * 4;
         final py = fy + math.sin(pa) * 4;
-        canvas.drawCircle(
-            Offset(px, py), 2.5, Paint()..color = petalColor);
+        canvas.drawCircle(Offset(px, py), 2.5, Paint()..color = petalColor);
       }
       // Center
       canvas.drawCircle(
-          Offset(fx, fy), 2, Paint()..color = const Color(0xFFFFF8E1));
+        Offset(fx, fy),
+        2,
+        Paint()..color = const Color(0xFFFFF8E1),
+      );
     }
   }
 
@@ -441,22 +505,31 @@ class _PlantPainter extends CustomPainter {
   // ── Helpers ──
 
   Color _healthAdjustedGreen({bool darker = false}) {
-    final baseGreen = darker ? const Color(0xFF388E3C) : const Color(0xFF66BB6A);
+    final baseGreen =
+        darker ? const Color(0xFF388E3C) : const Color(0xFF66BB6A);
     final wilted = darker ? const Color(0xFF8D8D6D) : const Color(0xFFB0BEA5);
     return Color.lerp(wilted, baseGreen, state.healthNormalized)!;
   }
 
-  void _drawLeaf(Canvas canvas, double x, double y, double angle,
-      double length, double width, Color color) {
+  void _drawLeaf(
+    Canvas canvas,
+    double x,
+    double y,
+    double angle,
+    double length,
+    double width,
+    Color color,
+  ) {
     canvas.save();
     canvas.translate(x, y);
     canvas.rotate(angle);
 
-    final path = Path()
-      ..moveTo(0, 0)
-      ..quadraticBezierTo(length * 0.3, -width, length, 0)
-      ..quadraticBezierTo(length * 0.3, width, 0, 0)
-      ..close();
+    final path =
+        Path()
+          ..moveTo(0, 0)
+          ..quadraticBezierTo(length * 0.3, -width, length, 0)
+          ..quadraticBezierTo(length * 0.3, width, 0, 0)
+          ..close();
 
     canvas.drawPath(path, Paint()..color = color);
 
@@ -509,8 +582,10 @@ class _StageLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gName = _growthNames[state.growthStage.clamp(0, _growthNames.length - 1)];
-    final hName = _healthNames[state.healthStage.clamp(0, _healthNames.length - 1)];
+    final gName =
+        _growthNames[state.growthStage.clamp(0, _growthNames.length - 1)];
+    final hName =
+        _healthNames[state.healthStage.clamp(0, _healthNames.length - 1)];
 
     return Text(
       '$gName · $hName',

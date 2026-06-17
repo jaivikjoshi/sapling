@@ -7,8 +7,7 @@ class SplitEntries extends Table {
   RealColumn get totalAmount => real()();
   TextColumn get paidBy => text()();
   TextColumn get linkToExpenseTransactionId => text().nullable()();
-  TextColumn get status =>
-      text().withDefault(const Constant('open'))();
+  TextColumn get status => text().withDefault(const Constant('open'))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
