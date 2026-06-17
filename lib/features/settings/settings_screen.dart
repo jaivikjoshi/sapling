@@ -100,6 +100,19 @@ class _PrototypeSettingsBody extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         _PrototypeSettingsGroup(
+          title: 'PREMIUM',
+          children: [
+            _PrototypeSettingsRow(
+              icon: Icons.workspace_premium_rounded,
+              title: 'Leko Premium',
+              subtitle: 'Subscriptions, bank review, OCR, voice, reports',
+              isLast: true,
+              onTap: () => context.push('/premium'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _PrototypeSettingsGroup(
           title: 'ACCOUNT',
           children: [
             _PrototypeSettingsRow(

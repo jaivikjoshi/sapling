@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'core/config/supabase_dart_defines.dart';
 import 'core/notifications/closeout_notification_service.dart';
+import 'core/observability/production_observability.dart';
 
 /// Process auth deep link when app was launched from email verification or OAuth callback.
 Future<void> _handleAuthDeepLink() async {
@@ -31,6 +32,10 @@ bool _isAuthCallback(Uri uri) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await ProductionObservability.run(_bootstrapAndRun);
+}
+
+Future<void> _bootstrapAndRun() async {
   final url = SupabaseDartDefines.url;
   final anonKey = SupabaseDartDefines.anonKey;
   if (url.isEmpty || anonKey.isEmpty) {

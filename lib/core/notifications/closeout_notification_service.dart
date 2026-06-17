@@ -9,9 +9,11 @@ import '../../data/db/leko_database.dart';
 /// Schedules closeout, payday, bill, and overspend notifications.
 class CloseoutNotificationService {
   CloseoutNotificationService._();
-  static final CloseoutNotificationService instance = CloseoutNotificationService._();
+  static final CloseoutNotificationService instance =
+      CloseoutNotificationService._();
 
-  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
   static const int _closeoutId = 1;
   static const int _paydayIdBase = 10;
   static const int _billIdBase = 100;
@@ -46,19 +48,17 @@ class CloseoutNotificationService {
     if (Platform.isAndroid) {
       return await _plugin
               .resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin>()
+                AndroidFlutterLocalNotificationsPlugin
+              >()
               ?.requestNotificationsPermission() ??
           false;
     }
     if (Platform.isIOS) {
       return await _plugin
               .resolvePlatformSpecificImplementation<
-                  IOSFlutterLocalNotificationsPlugin>()
-              ?.requestPermissions(
-                alert: true,
-                badge: false,
-                sound: true,
-              ) ??
+                IOSFlutterLocalNotificationsPlugin
+              >()
+              ?.requestPermissions(alert: true, badge: false, sound: true) ??
           false;
     }
     return true;
@@ -75,8 +75,17 @@ class CloseoutNotificationService {
     final hour = parts.isNotEmpty ? int.tryParse(parts[0]) ?? 21 : 21;
     final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
     final now = tz.TZDateTime.now(tz.local);
-    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
-    if (scheduled.isBefore(now)) scheduled = scheduled.add(const Duration(days: 1));
+    var scheduled = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+    if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
 
     const android = AndroidNotificationDetails(
       'closeout_channel',
@@ -97,7 +106,8 @@ class CloseoutNotificationService {
       NotificationDetails(android: android, iOS: ios),
       matchDateTimeComponents: DateTimeComponents.time,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
@@ -110,7 +120,10 @@ class CloseoutNotificationService {
   int _billNotificationId(String billId) =>
       _billIdBase + (billId.hashCode.abs() % 99);
 
-  Future<void> schedulePaydayReminder(RecurringIncome income, DateTime at) async {
+  Future<void> schedulePaydayReminder(
+    RecurringIncome income,
+    DateTime at,
+  ) async {
     if (!income.reminderEnabled) return;
     final tzAt = tz.TZDateTime.from(at, tz.local);
     if (tzAt.isBefore(tz.TZDateTime.now(tz.local))) return;
@@ -131,7 +144,8 @@ class CloseoutNotificationService {
       tzAt,
       const NotificationDetails(android: android, iOS: ios),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
@@ -160,7 +174,8 @@ class CloseoutNotificationService {
       tzAt,
       const NotificationDetails(android: android, iOS: ios),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
@@ -188,7 +203,8 @@ class CloseoutNotificationService {
       tzAt,
       const NotificationDetails(android: android, iOS: ios),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 

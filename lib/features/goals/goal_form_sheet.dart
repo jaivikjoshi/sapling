@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/analytics/leko_analytics.dart';
+import '../../core/providers/analytics_providers.dart';
 import '../../core/providers/goals_providers.dart';
 import '../../core/theme/leko_colors.dart';
 import '../../core/utils/enum_serialization.dart';
@@ -364,6 +366,12 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
         targetDate: _targetDate,
         savingStyle: _style,
       );
+      ref
+          .read(lekoAnalyticsProvider)
+          .track(
+            LekoAnalyticsEvent.goalCreated,
+            properties: {'saving_style': _style.name},
+          );
     }
 
     if (mounted) Navigator.pop(context);

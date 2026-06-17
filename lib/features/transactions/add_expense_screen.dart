@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/analytics/leko_analytics.dart';
+import '../../core/providers/analytics_providers.dart';
 import '../../core/providers/ledger_providers.dart';
 import '../../core/providers/recovery_providers.dart';
 import '../../core/providers/scheduler_providers.dart';
@@ -233,6 +235,12 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           );
 
       if (!mounted) return;
+      ref
+          .read(lekoAnalyticsProvider)
+          .track(
+            LekoAnalyticsEvent.expenseCreated,
+            properties: {'label': _effectiveLabel.name},
+          );
       await _checkOverspend(txnId);
       ref.read(snapshotWriterProvider).writeSnapshot();
     } finally {

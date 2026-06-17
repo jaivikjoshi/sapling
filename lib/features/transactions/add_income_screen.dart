@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/analytics/leko_analytics.dart';
+import '../../core/providers/analytics_providers.dart';
 import '../../core/providers/ledger_providers.dart';
 import '../../core/providers/recurring_income_providers.dart';
 import '../../core/providers/widget_snapshot_providers.dart';
@@ -229,6 +231,15 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
           );
 
       ref.read(snapshotWriterProvider).writeSnapshot();
+      ref
+          .read(lekoAnalyticsProvider)
+          .track(
+            LekoAnalyticsEvent.incomeCreated,
+            properties: {
+              'is_recurring': _isRecurring,
+              'frequency': _isRecurring ? _recurringFrequency.name : 'one_time',
+            },
+          );
       if (mounted) _leaveScreen();
     } finally {
       if (mounted) setState(() => _saving = false);

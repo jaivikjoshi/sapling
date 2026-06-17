@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/analytics/leko_analytics.dart';
+import '../../core/providers/analytics_providers.dart';
 import '../../core/providers/allowance_providers.dart';
 import '../../core/providers/badge_providers.dart';
 import '../../core/providers/auth_providers.dart';
@@ -58,6 +60,7 @@ class HomeScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 14, 24, 128),
           children: [
+            const _HomeAnalyticsPing(),
             _Header(onNotifications: () => context.push('/closeout')),
             const SizedBox(height: 22),
             const _SafeToSpendHero(),
@@ -69,9 +72,33 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 14),
             _QuickActionsRow(
-              onAddExpense: () => context.push('/add-expense'),
-              onAddIncome: () => context.push('/add-income'),
-              onAddGoal: () => context.go('/goals?add=1'),
+              onAddExpense: () {
+                ref
+                    .read(lekoAnalyticsProvider)
+                    .track(
+                      LekoAnalyticsEvent.quickActionStarted,
+                      properties: const {'action': 'add_expense'},
+                    );
+                context.push('/add-expense');
+              },
+              onAddIncome: () {
+                ref
+                    .read(lekoAnalyticsProvider)
+                    .track(
+                      LekoAnalyticsEvent.quickActionStarted,
+                      properties: const {'action': 'add_income'},
+                    );
+                context.push('/add-income');
+              },
+              onAddGoal: () {
+                ref
+                    .read(lekoAnalyticsProvider)
+                    .track(
+                      LekoAnalyticsEvent.quickActionStarted,
+                      properties: const {'action': 'add_goal'},
+                    );
+                context.go('/goals?add=1');
+              },
             ),
             const SizedBox(height: 18),
             _UpcomingBillsSection(onViewAll: () => context.push('/bills')),
@@ -92,6 +119,27 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _HomeAnalyticsPing extends ConsumerStatefulWidget {
+  const _HomeAnalyticsPing();
+
+  @override
+  ConsumerState<_HomeAnalyticsPing> createState() => _HomeAnalyticsPingState();
+}
+
+class _HomeAnalyticsPingState extends ConsumerState<_HomeAnalyticsPing> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () =>
+          ref.read(lekoAnalyticsProvider).track(LekoAnalyticsEvent.homeViewed),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 class _BadgesSection extends ConsumerWidget {
@@ -429,7 +477,15 @@ class _SafeToSpendHero extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           _HeroWhyButton(
-            onTap: () => _showAllowanceBreakdown(context, snapshot),
+            onTap: () {
+              ref
+                  .read(lekoAnalyticsProvider)
+                  .track(
+                    LekoAnalyticsEvent.safeToSpendExplained,
+                    properties: {'ready': snapshot.isReady},
+                  );
+              _showAllowanceBreakdown(context, snapshot);
+            },
           ),
           const SizedBox(height: 12),
           Row(

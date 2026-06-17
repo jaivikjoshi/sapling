@@ -11,6 +11,7 @@ import '../../features/goals/goals_screen.dart';
 import '../../features/household/household_screen.dart';
 import '../../features/imports/import_review_screen.dart';
 import '../../features/leaf/leaf_screen.dart';
+import '../../features/monetization/paywall_screen.dart';
 import '../../features/reports/reports_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/auth/login_screen.dart';
@@ -147,6 +148,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/imports',
         builder: (context, state) => const ImportReviewScreen(),
+      ),
+      GoRoute(
+        path: '/premium',
+        builder: (context, state) => const PaywallScreen(),
       ),
       GoRoute(
         path: '/household',

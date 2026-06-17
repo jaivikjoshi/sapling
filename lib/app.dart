@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/notifications/closeout_notification_service.dart';
+import 'core/observability/production_observability.dart';
+import 'core/analytics/leko_analytics.dart';
+import 'core/providers/analytics_providers.dart';
 import 'core/providers/auth_providers.dart';
 import 'core/providers/bills_providers.dart';
 import 'core/providers/recurring_income_providers.dart';
@@ -42,6 +45,9 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    Future.microtask(
+      () => ref.read(lekoAnalyticsProvider).track(LekoAnalyticsEvent.appOpened),
+    );
     _deepLinkSubscription = AppLinks().uriLinkStream.listen((uri) {
       if (_isAuthCallback(uri)) {
         Supabase.instance.client.auth.getSessionFromUrl(uri).ignore();
@@ -116,6 +122,11 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
       _schedulerRunCoordinator.markRunFinished(today: today, userId: userId);
     } catch (e, st) {
       debugPrint('[Scheduler] error: $e\n$st');
+      await ProductionObservability.reportError(
+        e,
+        st,
+        reason: 'daily scheduler run failed',
+      );
       _schedulerRunCoordinator.markRunEndedWithoutSuccess();
     } finally {
       _scheduleRerunIfNeeded();
