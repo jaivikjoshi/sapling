@@ -117,7 +117,10 @@ class BillsService {
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final existing = await _findLinkedExpenseInCurrentCycle(bill);
+    final existing = await _findLinkedExpenseInCurrentCycle(
+      bill,
+      effectiveDate: effectiveDate,
+    );
     if (existing != null) {
       return MarkPaidResult(
         transactionId: existing.id,
@@ -168,21 +171,55 @@ class BillsService {
     return advanceByBillFrequency(current, frequency);
   }
 
-  Future<Transaction?> _findLinkedExpenseInCurrentCycle(Bill bill) async {
+  Future<Transaction?> _findLinkedExpenseInCurrentCycle(
+    Bill bill, {
+    required DateTime effectiveDate,
+  }) async {
     final freq = enumFromDb<BillFrequency>(
       bill.frequency,
       BillFrequency.values,
     );
-    final cycleEnd = DateTime(
+    final dueDay = DateTime(
       bill.nextDueDate.year,
       bill.nextDueDate.month,
       bill.nextDueDate.day,
     );
-    final cycleStart = retreatByBillFrequency(cycleEnd, freq);
-    final cycleTxns = await _txnRepo.getByDateRange(cycleStart, cycleEnd);
-    for (final t in cycleTxns) {
+    final paidDay = DateTime(
+      effectiveDate.year,
+      effectiveDate.month,
+      effectiveDate.day,
+    );
+
+    for (final day in {paidDay, dueDay}) {
+      final match = await _findLinkedExpenseOnDay(bill.id, day);
+      if (match != null) return match;
+    }
+
+    // When confirming before the due date, treat any linked payment in the
+    // current billing window as satisfying markPaid (e.g. autopay on the 1st,
+    // user taps Mark Paid on the 3rd while nextDueDate already advanced).
+    if (paidDay.isBefore(dueDay)) {
+      final cycleStart = retreatByBillFrequency(dueDay, freq);
+      final cycleEnd = dueDay.add(const Duration(days: 1));
+      final cycleTxns = await _txnRepo.getByDateRange(cycleStart, cycleEnd);
+      for (final t in cycleTxns) {
+        if (t.type == enumToDb(TransactionType.expense) &&
+            t.linkedBillId == bill.id) {
+          return t;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  Future<Transaction?> _findLinkedExpenseOnDay(String billId, DateTime day) async {
+    final dayStart = DateTime(day.year, day.month, day.day);
+    final dayEnd = dayStart.add(const Duration(days: 1));
+    final dayTxns = await _txnRepo.getByDateRange(dayStart, dayEnd);
+    for (final t in dayTxns) {
       if (t.type == enumToDb(TransactionType.expense) &&
-          t.linkedBillId == bill.id) {
+          t.linkedBillId == billId) {
         return t;
       }
     }

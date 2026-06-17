@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -45,6 +45,41 @@ void main() {
   tearDown(() => db.close());
 
   group('createSplit', () {
+    test('creates the you person row when missing', () async {
+      final freshDb = LekoDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(freshDb.close);
+      final freshPersons = DriftPersonsRepository(freshDb);
+      final freshService = SplitService(
+        DriftSplitEntriesRepository(freshDb),
+        DriftSplitSharesRepository(freshDb),
+        DriftTransactionsRepository(freshDb),
+        freshPersons,
+      );
+
+      await freshPersons.insert(
+        PersonsCompanion.insert(
+          id: 'person_a',
+          name: 'Alice',
+          createdAt: DateTime(2025, 1, 15),
+          updatedAt: DateTime(2025, 1, 15),
+        ),
+      );
+
+      await freshService.createSplit(
+        description: 'Coffee',
+        totalAmount: 20,
+        paidBy: kSplitPaidByYou,
+        shares: [
+          (personId: kSplitPaidByYou, shareAmount: 10),
+          (personId: 'person_a', shareAmount: 10),
+        ],
+      );
+
+      final you = await freshPersons.getById(kSplitPaidByYou);
+      expect(you, isNotNull);
+      expect(you!.name, 'You');
+    });
+
     test('equal split produces correct share amounts and sum equals total', () async {
       final id = await service.createSplit(
         description: 'Dinner',

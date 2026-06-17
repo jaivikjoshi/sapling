@@ -52,5 +52,19 @@ void main() {
       expect(coordinator.consumeRerunPending(), isTrue);
       expect(coordinator.consumeRerunPending(), isFalse);
     });
+
+    test('sign-out clears dedupe state so schedulers can rerun', () {
+      final coordinator = SchedulerRunCoordinator();
+
+      coordinator.markRunStarted();
+      coordinator.markRunFinished(today: '2026-06-16', userId: 'user-a');
+      coordinator.lastRunDate = null;
+      coordinator.lastUserId = null;
+
+      expect(
+        coordinator.requestRun(today: '2026-06-16', userId: 'user-a'),
+        isTrue,
+      );
+    });
   });
 }

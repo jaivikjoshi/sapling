@@ -109,6 +109,10 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
       await ref.read(billAutoPosterProvider).runForDate(now);
       await ref.read(notificationSchedulerProvider).rescheduleAll();
       await ref.read(snapshotWriterProvider).writeSnapshot();
+      if (ref.read(currentUserProvider)?.id != userId) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       _schedulerRunCoordinator.markRunFinished(today: today, userId: userId);
     } catch (e, st) {
       debugPrint('[Scheduler] error: $e\n$st');
@@ -129,7 +133,12 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     // cases: (1) Supabase session being restored after the first build fires,
     // and (2) the user explicitly signing in from the auth screen.
     ref.listen(currentUserProvider, (previous, current) {
-      if (current?.id != _schedulerRunCoordinator.lastUserId) {
+      if (current == null) {
+        _schedulerRunCoordinator.lastRunDate = null;
+        _schedulerRunCoordinator.lastUserId = null;
+        return;
+      }
+      if (current.id != _schedulerRunCoordinator.lastUserId) {
         _maybeRunSchedulers(forceUser: true);
       }
     });
