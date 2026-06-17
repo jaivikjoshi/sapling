@@ -30,6 +30,7 @@ import '../../features/closeout/closeout_screen.dart';
 import '../../features/recovery/recovery_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../providers/auth_providers.dart';
+import '../widgets/leko_mark.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final user = ref.watch(currentUserProvider);
@@ -280,6 +281,12 @@ class _GlassNavBar extends StatelessWidget {
                   _NavBarItem(
                     activeIcon: Icons.energy_savings_leaf_rounded,
                     inactiveIcon: Icons.energy_savings_leaf_outlined,
+                    iconBuilder:
+                        (color) => LekoMark(
+                          size: currentIndex == 2 ? 25 : 23,
+                          color: color,
+                          semanticLabel: 'Leaf AI',
+                        ),
                     isSelected: currentIndex == 2,
                     onTap: () => onTap(2),
                   ),
@@ -311,12 +318,14 @@ class _NavBarItem extends StatelessWidget {
     required this.inactiveIcon,
     required this.isSelected,
     required this.onTap,
+    this.iconBuilder,
   });
 
   final IconData activeIcon;
   final IconData inactiveIcon;
   final bool isSelected;
   final VoidCallback onTap;
+  final Widget Function(Color color)? iconBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -335,11 +344,13 @@ class _NavBarItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Center(
-          child: Icon(
-            isSelected ? activeIcon : inactiveIcon,
-            color: isSelected ? activeColor : inactiveColor,
-            size: 22,
-          ),
+          child:
+              iconBuilder?.call(isSelected ? activeColor : inactiveColor) ??
+              Icon(
+                isSelected ? activeIcon : inactiveIcon,
+                color: isSelected ? activeColor : inactiveColor,
+                size: 22,
+              ),
         ),
       ),
     );

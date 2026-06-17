@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/providers/auth_providers.dart';
 import '../../core/providers/settings_providers.dart';
+import '../../core/theme/leko_colors.dart';
+import '../../core/widgets/leko_mark.dart';
 import '../../domain/models/settings_model.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -125,37 +127,41 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     });
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          // Vertical gradient from warm white to a soft minty-green wash
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFBF9F6), // Leko warm cream top
-              Color(0xFFEAF6F2), // Very subtle mint midpoint
-              Color(0xFFCBEDE3), // Soft green wash at bottom
-            ],
-            stops: [0.0, 0.55, 1.0],
-          ),
-        ),
+      backgroundColor: LekoColors.background,
+      body: SizedBox.expand(
         child: FadeTransition(
           opacity: _fadeIn,
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // The wordmark in the same serif font used on the home page
+                Container(
+                  width: 104,
+                  height: 104,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF013333),
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1A0E1830),
+                        blurRadius: 26,
+                        offset: Offset(0, 14),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: LekoMark(size: 64, color: Color(0xFFB4B6B7)),
+                  ),
+                ),
+                const SizedBox(height: 18),
                 const Text(
                   'leko',
                   style: TextStyle(
                     fontFamily: 'Georgia',
-                    fontSize: 42,
+                    fontSize: 34,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1B3B42), // LekoColors.primary
-                    letterSpacing: -1.0,
+                    color: LekoColors.primary,
+                    letterSpacing: 0,
                   ),
                 ),
               ],
