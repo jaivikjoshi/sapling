@@ -20,3 +20,5 @@ Last updated: 2026-06-16
 - Keep provider boundaries clean through `BankProvider`, `NotificationProvider`, and `TransactionImporter`.
 - Add platform-specific permission copy before enabling notification access.
 - Explain trusted aggregator consent before opening bank-link flows.
+- Keep real Supabase, bank aggregator, OCR, speech, and notification provider credentials out of source control.
+- Add account deletion, data export, and retention language before App Store submission.

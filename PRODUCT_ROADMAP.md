@@ -93,7 +93,8 @@ Leaf should avoid sounding like a professional financial adviser. Use language s
 ## Current Product Gaps
 
 - Currency selection exists, but not every money display is setting-aware yet.
-- Attachment upload exists in Leaf, but transaction-level persistence and OCR are not complete.
-- Voice input is visible as a placeholder, not implemented.
-- Bank and notification import are scaffolds only.
+- Attachment upload exists in Leaf, but transaction-level persistence, PDF parsing, and production-grade OCR extraction are not complete.
+- Voice input has provider wiring and routes into the Leaf draft flow, but still needs platform permission hardening and real-device QA.
+- Bank aggregator and notification import paths have contracts and review-first UI, but real production providers are not connected yet.
 - Gamification and goal icons need a small, cohesive design pass.
+- The mobile app builds for iOS simulator and Android debug; web is not ready until Drift/sqlite native FFI is split behind a web-compatible database implementation.
