@@ -135,25 +135,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 104,
-                  height: 104,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF013333),
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x1A0E1830),
-                        blurRadius: 26,
-                        offset: Offset(0, 14),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: LekoMark(size: 64, color: Color(0xFFB4B6B7)),
-                  ),
+                const LekoMark(
+                  size: 128,
+                  color: Color(0xFF013333),
+                  semanticLabel: 'Leko logo',
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 22),
                 const Text(
                   'leko',
                   style: TextStyle(

@@ -71,6 +71,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     210.0,
                     360.0,
                   );
+                  final logoSize = isShort ? 168.0 : 196.0;
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(28, 8, 28, bottomPad + 18),
                     child: ConstrainedBox(
@@ -81,31 +82,12 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           SizedBox(
-                            height: isShort ? 190 : heroHeight,
+                            height: isShort ? 210 : heroHeight,
                             child: Center(
-                              child: Container(
-                                width: isShort ? 150 : 178,
-                                height: isShort ? 150 : 178,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(42),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.09),
-                                  ),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0x26000000),
-                                      blurRadius: 30,
-                                      offset: Offset(0, 16),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: LekoMark(
-                                    size: 98,
-                                    color: Color(0xFFB4B6B7),
-                                  ),
-                                ),
+                              child: LekoMark(
+                                size: logoSize,
+                                color: const Color(0xFFB4B6B7),
+                                semanticLabel: 'Leko logo',
                               ),
                             ),
                           ),
