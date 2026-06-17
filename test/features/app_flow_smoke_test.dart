@@ -46,19 +46,19 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Today\'s money'), findsOneWidget);
 
-        await tester.tap(find.text('Expense'));
+        await tester.tap(find.text('Add Expense'));
         await tester.pumpAndSettle();
         expect(find.text('Add Expense'), findsOneWidget);
 
         router.go('/home');
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Income'));
+        await tester.tap(find.text('Add Income'));
         await tester.pumpAndSettle();
         expect(find.text('Add Income'), findsOneWidget);
 
         router.go('/home');
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Goal'));
+        await tester.tap(find.text('Add Goal'));
         await tester.pumpAndSettle();
         expect(find.text('New Goal'), findsOneWidget);
         expect(tester.takeException(), isNull);
