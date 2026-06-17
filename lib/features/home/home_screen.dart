@@ -16,6 +16,7 @@ import '../../core/utils/currency_formatter.dart';
 import '../../data/db/leko_database.dart';
 import '../../domain/models/enums.dart';
 import '../goals/goals_screen.dart' show GoalInsight, goalInsightsProvider;
+import 'widgets/savings_pace_card.dart';
 
 final _currentWeekTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
   final now = DateTime.now();
@@ -53,6 +54,8 @@ class HomeScreen extends ConsumerWidget {
               onAddExpense: () => context.push('/add-expense'),
               onAddGoal: () => context.go('/goals'),
             ),
+            const SizedBox(height: 18),
+            const SavingsPaceCard(),
             const SizedBox(height: 18),
             const _WeeklySpendingCard(),
             const SizedBox(height: 24),
@@ -460,15 +463,15 @@ class _WeeklySpendingCard extends ConsumerWidget {
     final bars = _weeklySpendBars(currentWeek);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x120F172A),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: Color(0x0F0F172A),
+            blurRadius: 8,
+            offset: Offset(0, 3),
           ),
         ],
       ),
@@ -478,26 +481,13 @@ class _WeeklySpendingCard extends ConsumerWidget {
           Row(
             children: [
               const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Spending this week',
-                      style: TextStyle(
-                        color: _HomePalette.textPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Mon to Sun',
-                      style: TextStyle(
-                        color: _HomePalette.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Spending this week',
+                  style: TextStyle(
+                    color: _HomePalette.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               Text(
@@ -506,15 +496,15 @@ class _WeeklySpendingCard extends ConsumerWidget {
                   color: trend == null || trend <= 0
                       ? _HomePalette.positive
                       : _HomePalette.alert,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           SizedBox(
-            height: 96,
+            height: 64,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -524,13 +514,13 @@ class _WeeklySpendingCard extends ConsumerWidget {
                       alignment: Alignment.bottomCenter,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
-                        width: 14,
-                        height: math.max(bars[i], 6),
+                        width: 10,
+                        height: math.max(bars[i] * 0.72, 4),
                         decoration: BoxDecoration(
                           color: i == 3
                               ? _HomePalette.summaryCard
                               : _HomePalette.chartBar,
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                     ),
@@ -539,7 +529,7 @@ class _WeeklySpendingCard extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           const Row(
             children: [
               _WeekdayLabel('M'),

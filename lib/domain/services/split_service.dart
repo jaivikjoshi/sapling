@@ -44,6 +44,7 @@ class SplitService {
     required String paidBy,
     required List<({String personId, double shareAmount})> shares,
   }) async {
+    await _ensureYouPersonExists();
     if (totalAmount <= 0) throw ArgumentError('totalAmount must be > 0');
     final sum = shares.fold<double>(0, (s, e) => s + e.shareAmount);
     if ((sum - totalAmount).abs() > 0.01) {
@@ -76,6 +77,22 @@ class SplitService {
         .toList();
     await _sharesRepo.insertAll(companions);
     return id;
+  }
+
+  /// Supabase enforces FK from split rows to [persons]. Local Drift does not,
+  /// but cloud users need a stable "you" row before any split is created.
+  Future<void> _ensureYouPersonExists() async {
+    final existing = await _personsRepo.getById(kSplitPaidByYou);
+    if (existing != null) return;
+    final now = DateTime.now();
+    await _personsRepo.insert(
+      PersonsCompanion.insert(
+        id: kSplitPaidByYou,
+        name: 'You',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
   }
 
   /// Returns balances per person for open splits only.

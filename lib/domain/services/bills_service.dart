@@ -45,20 +45,22 @@ class BillsService {
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _billsRepo.insert(BillsCompanion.insert(
-      id: id,
-      name: name.trim(),
-      amount: amount,
-      frequency: Value(enumToDb(frequency)),
-      nextDueDate: nextDueDate,
-      categoryId: categoryId,
-      defaultLabel: Value(enumToDb(defaultLabel)),
-      autopay: Value(autopay),
-      reminderEnabled: Value(reminderEnabled),
-      reminderLeadTimeDays: Value(reminderLeadTimeDays),
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _billsRepo.insert(
+      BillsCompanion.insert(
+        id: id,
+        name: name.trim(),
+        amount: amount,
+        frequency: Value(enumToDb(frequency)),
+        nextDueDate: nextDueDate,
+        categoryId: categoryId,
+        defaultLabel: Value(enumToDb(defaultLabel)),
+        autopay: Value(autopay),
+        reminderEnabled: Value(reminderEnabled),
+        reminderLeadTimeDays: Value(reminderLeadTimeDays),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     return id;
   }
 
@@ -84,12 +86,14 @@ class BillsService {
         categoryId: Value(categoryId),
         defaultLabel: Value(enumToDb(defaultLabel)),
         autopay: autopay != null ? Value(autopay) : const Value.absent(),
-        reminderEnabled: reminderEnabled != null
-            ? Value(reminderEnabled)
-            : const Value.absent(),
-        reminderLeadTimeDays: reminderLeadTimeDays != null
-            ? Value(reminderLeadTimeDays)
-            : const Value.absent(),
+        reminderEnabled:
+            reminderEnabled != null
+                ? Value(reminderEnabled)
+                : const Value.absent(),
+        reminderLeadTimeDays:
+            reminderLeadTimeDays != null
+                ? Value(reminderLeadTimeDays)
+                : const Value.absent(),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -113,48 +117,43 @@ class BillsService {
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final paidDayStart = DateTime(
-      effectiveDate.year,
-      effectiveDate.month,
-      effectiveDate.day,
+    final existing = await _findLinkedExpenseInCurrentCycle(
+      bill,
+      effectiveDate: effectiveDate,
     );
-    final paidDayEnd = paidDayStart.add(const Duration(days: 1));
-    final sameDayTxns = await _txnRepo.getByDateRange(paidDayStart, paidDayEnd);
-    for (final t in sameDayTxns) {
-      if (t.type == enumToDb(TransactionType.expense) &&
-          t.linkedBillId == billId) {
-        return MarkPaidResult(
-          transactionId: t.id,
-          updatedBill: bill,
-          paidAmount: t.amount,
-        );
-      }
+    if (existing != null) {
+      return MarkPaidResult(
+        transactionId: existing.id,
+        updatedBill: bill,
+        paidAmount: existing.amount,
+      );
     }
 
     final txnId = _uuid.v4();
     final now = DateTime.now();
-    await _txnRepo.insert(Transaction(
-      id: txnId,
-      type: enumToDb(TransactionType.expense),
-      amount: effectiveAmount,
-      date: effectiveDate,
-      categoryId: bill.categoryId,
-      label: enumToDb(label),
-      note: 'Bill paid: ${bill.name}',
-      linkedBillId: billId,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _txnRepo.insert(
+      Transaction(
+        id: txnId,
+        type: enumToDb(TransactionType.expense),
+        amount: effectiveAmount,
+        date: effectiveDate,
+        categoryId: bill.categoryId,
+        label: enumToDb(label),
+        note: 'Bill paid: ${bill.name}',
+        linkedBillId: billId,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
 
-    final freq =
-        enumFromDb<BillFrequency>(bill.frequency, BillFrequency.values);
+    final freq = enumFromDb<BillFrequency>(
+      bill.frequency,
+      BillFrequency.values,
+    );
     final nextDue = advanceByBillFrequency(bill.nextDueDate, freq);
     await _billsRepo.updateById(
       billId,
-      BillsCompanion(
-        nextDueDate: Value(nextDue),
-        updatedAt: Value(now),
-      ),
+      BillsCompanion(nextDueDate: Value(nextDue), updatedAt: Value(now)),
     );
 
     final updated = await _billsRepo.getById(billId);
@@ -170,6 +169,61 @@ class BillsService {
     BillFrequency frequency,
   ) {
     return advanceByBillFrequency(current, frequency);
+  }
+
+  Future<Transaction?> _findLinkedExpenseInCurrentCycle(
+    Bill bill, {
+    required DateTime effectiveDate,
+  }) async {
+    final freq = enumFromDb<BillFrequency>(
+      bill.frequency,
+      BillFrequency.values,
+    );
+    final dueDay = DateTime(
+      bill.nextDueDate.year,
+      bill.nextDueDate.month,
+      bill.nextDueDate.day,
+    );
+    final paidDay = DateTime(
+      effectiveDate.year,
+      effectiveDate.month,
+      effectiveDate.day,
+    );
+
+    for (final day in {paidDay, dueDay}) {
+      final match = await _findLinkedExpenseOnDay(bill.id, day);
+      if (match != null) return match;
+    }
+
+    // When confirming before the due date, treat any linked payment in the
+    // current billing window as satisfying markPaid (e.g. autopay on the 1st,
+    // user taps Mark Paid on the 3rd while nextDueDate already advanced).
+    if (paidDay.isBefore(dueDay)) {
+      final cycleStart = retreatByBillFrequency(dueDay, freq);
+      final cycleEnd = dueDay.add(const Duration(days: 1));
+      final cycleTxns = await _txnRepo.getByDateRange(cycleStart, cycleEnd);
+      for (final t in cycleTxns) {
+        if (t.type == enumToDb(TransactionType.expense) &&
+            t.linkedBillId == bill.id) {
+          return t;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  Future<Transaction?> _findLinkedExpenseOnDay(String billId, DateTime day) async {
+    final dayStart = DateTime(day.year, day.month, day.day);
+    final dayEnd = dayStart.add(const Duration(days: 1));
+    final dayTxns = await _txnRepo.getByDateRange(dayStart, dayEnd);
+    for (final t in dayTxns) {
+      if (t.type == enumToDb(TransactionType.expense) &&
+          t.linkedBillId == billId) {
+        return t;
+      }
+    }
+    return null;
   }
 }
 

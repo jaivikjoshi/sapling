@@ -26,6 +26,7 @@ class BillAutoPoster {
   BillAutoPoster(this._billsRepo, this._txnRepo);
 
   /// Posts and advances every autopay bill up to and including [today].
+  /// Only processes bills whose [Bill.autopay] flag is true.
   /// Returns the number of expense transactions created across those bills.
   Future<int> runForDate(DateTime today) async {
     final bills = await _billsRepo.getAll();
@@ -33,6 +34,7 @@ class BillAutoPoster {
     int postedCount = 0;
 
     for (final bill in bills) {
+      if (!bill.autopay) continue;
       postedCount += await _runForBill(bill, todayStart);
     }
     return postedCount;

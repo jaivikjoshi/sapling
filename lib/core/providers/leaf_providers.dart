@@ -488,14 +488,14 @@ class LeafConversationController extends StateNotifier<LeafConversationState> {
     );
   }
 
-  /// Last ~8 turns so Gemini gets continuity without blowing the token budget.
+  /// Last ~20 turns so Gemini maintains a continuous session without blowing
+  /// the token budget. The backend schema caps inbound history at 20 turns.
   List<LeafHistoryTurn> _buildHistory() {
     final trimmed = <LeafHistoryTurn>[];
     final source = state.messages;
-    // Keep the last 8 turns before the current pending one was added.
-    final recent = source.length <= 8
+    final recent = source.length <= 20
         ? source
-        : source.sublist(source.length - 8);
+        : source.sublist(source.length - 20);
     for (final message in recent) {
       final text = message.text.trim();
       if (text.isEmpty) continue;

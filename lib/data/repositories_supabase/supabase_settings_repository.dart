@@ -53,11 +53,12 @@ class SupabaseSettingsRepository implements SettingsRepository {
   }
 
   Future<AppSetting> _ensureAndGetImpl() async {
-    final res = await _client
-        .from('app_settings')
-        .select()
-        .eq('user_id', _userId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from('app_settings')
+            .select()
+            .eq('user_id', _userId)
+            .maybeSingle();
     if (res != null) {
       return appSettingFromSupabase(res);
     }
@@ -69,18 +70,17 @@ class SupabaseSettingsRepository implements SettingsRepository {
     map['updated_at'] = now.toIso8601String();
     map.remove('id');
     try {
-      await _client.from('app_settings').upsert(
-        map,
-        onConflict: 'user_id',
-        ignoreDuplicates: true,
-      );
+      await _client
+          .from('app_settings')
+          .upsert(map, onConflict: 'user_id', ignoreDuplicates: true);
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
-        final retry = await _client
-            .from('app_settings')
-            .select()
-            .eq('user_id', _userId)
-            .maybeSingle();
+        final retry =
+            await _client
+                .from('app_settings')
+                .select()
+                .eq('user_id', _userId)
+                .maybeSingle();
         if (retry != null) return appSettingFromSupabase(retry);
         rethrow;
       }
@@ -109,6 +109,8 @@ class SupabaseSettingsRepository implements SettingsRepository {
 
   @override
   Future<void> update(AppSettingsCompanion companion) async {
+    await _ensureAndGet();
+
     final updateMap = <String, dynamic>{};
     if (companion.baseCurrency.present) {
       updateMap['base_currency'] = companion.baseCurrency.value;
@@ -117,10 +119,12 @@ class SupabaseSettingsRepository implements SettingsRepository {
       updateMap['rollover_reset_type'] = companion.rolloverResetType.value;
     }
     if (companion.spendingBaselineDays.present) {
-      updateMap['spending_baseline_days'] = companion.spendingBaselineDays.value;
+      updateMap['spending_baseline_days'] =
+          companion.spendingBaselineDays.value;
     }
     if (companion.allowanceDefaultMode.present) {
-      updateMap['allowance_default_mode'] = companion.allowanceDefaultMode.value;
+      updateMap['allowance_default_mode'] =
+          companion.allowanceDefaultMode.value;
     }
     if (companion.primaryGoalId.present) {
       updateMap['primary_goal_id'] = companion.primaryGoalId.value;
@@ -157,16 +161,11 @@ class SupabaseSettingsRepository implements SettingsRepository {
     }
     if (updateMap.isEmpty) return;
     updateMap['updated_at'] = DateTime.now().toIso8601String();
-    await _client
-        .from('app_settings')
-        .update(updateMap)
-        .eq('user_id', _userId);
+    await _client.from('app_settings').update(updateMap).eq('user_id', _userId);
   }
 
   @override
   Future<void> markOnboardingComplete() async {
-    await update(
-      const AppSettingsCompanion(onboardingCompleted: Value(true)),
-    );
+    await update(const AppSettingsCompanion(onboardingCompleted: Value(true)));
   }
 }
