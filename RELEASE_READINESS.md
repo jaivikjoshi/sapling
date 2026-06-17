@@ -31,6 +31,11 @@ I also launched the iOS simulator build successfully during the flow audit. Manu
 - Added production-flow widget smoke tests for Home quick actions, primary tabs, utility screens, Add Expense validation, and Add Income ledger writes.
 - Preserved mobile app group setup while guarding `HomeWidget.setAppGroupId` to mobile platforms.
 - Added macOS initialization support for local notification settings.
+- Added a canonical `FinanceSummaryService` foundation for balance, cycle totals, daily allowance, safe-to-spend, and explainable inputs.
+- Added privacy-first Sentry observability wiring behind `SENTRY_DSN`.
+- Added a RevenueCat subscription/paywall scaffold behind public SDK dart-defines.
+- Added GitHub Actions mobile CI for analyze, tests, and Android debug build.
+- Added production growth, analytics, and monetization setup docs.
 
 ## Flow Coverage
 
@@ -62,6 +67,7 @@ I also launched the iOS simulator build successfully during the flow audit. Manu
 - Data export/delete account flows should be verified before launch.
 - Real iPhone and iPad device QA is still required for onboarding, auth, notifications, OCR, speech, deep links, and offline/poor-network behavior.
 - The web target is not release-ready until the Drift database layer is split to a web-compatible implementation.
+- Sentry, RevenueCat, App Store Connect, and provider keys must be configured outside source control before public beta.
 
 ## Next Changes
 
@@ -91,4 +97,5 @@ I also launched the iOS simulator build successfully during the flow audit. Manu
    - Finalize privacy nutrition labels.
    - Produce App Store screenshots from production-like empty and real-user-entered flows.
    - Run TestFlight with a clean production backend.
-
+   - Configure RevenueCat products and the `premium` entitlement.
+   - Track activation, retention, import review, and subscription funnels without sending personal financial details.
