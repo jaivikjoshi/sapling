@@ -20,7 +20,6 @@ class _Tok {
   _Tok._();
   static const double rCard = 24;
   static const double rChip = 18;
-  static const double rCta = 22;
 
   static const bgTop = Color(0xFFF7F6F3);
   static const cardBg = Color(0xFFFCFCFA);
@@ -735,38 +734,77 @@ class _SaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = isValid && !isSaving;
     return SizedBox(
       width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isValid ? _Tok.ctaEnabled : _Tok.ctaDisabled,
-          foregroundColor: isValid ? _Tok.ctaTextEnabled : _Tok.ctaTextDisabled,
-          elevation: isValid ? 4 : 0,
-          shadowColor: _Tok.ctaEnabled.withValues(alpha: 0.25),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_Tok.rCta),
+      height: 60,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: enabled ? _Tok.ctaEnabled : _Tok.ctaDisabled,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(
+            color:
+                enabled
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.transparent,
+          ),
+          boxShadow:
+              enabled
+                  ? [
+                    BoxShadow(
+                      color: _Tok.ctaEnabled.withValues(alpha: 0.2),
+                      blurRadius: 22,
+                      offset: const Offset(0, 10),
+                    ),
+                  ]
+                  : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: enabled ? onPressed : null,
+            borderRadius: BorderRadius.circular(26),
+            child: Center(
+              child:
+                  isSaving
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.payments_outlined,
+                            size: 20,
+                            color:
+                                enabled
+                                    ? _Tok.ctaTextEnabled
+                                    : _Tok.ctaTextDisabled,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Save Income',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color:
+                                  enabled
+                                      ? _Tok.ctaTextEnabled
+                                      : _Tok.ctaTextDisabled,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                        ],
+                      ),
+            ),
           ),
         ),
-        onPressed: isValid && !isSaving ? onPressed : null,
-        child:
-            isSaving
-                ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                )
-                : const Text(
-                  'Save Income',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.3,
-                  ),
-                ),
       ),
     );
   }

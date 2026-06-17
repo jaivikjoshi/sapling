@@ -78,26 +78,14 @@ class AuthScaffold extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            Center(
-                              child: Container(
-                                width: 68,
-                                height: 68,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(22),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.09),
-                                  ),
-                                ),
-                                child: const Center(
-                                  child: LekoMark(
-                                    size: 42,
-                                    color: Color(0xFFB4B6B7),
-                                  ),
-                                ),
+                            const Center(
+                              child: LekoMark(
+                                size: 96,
+                                color: Color(0xFFB4B6B7),
+                                semanticLabel: 'Leko logo',
                               ),
                             ),
-                            const SizedBox(height: 18),
+                            const SizedBox(height: 22),
                             Text(
                               title,
                               textAlign: TextAlign.center,

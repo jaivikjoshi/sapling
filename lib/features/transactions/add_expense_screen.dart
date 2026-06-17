@@ -26,7 +26,6 @@ class _Tok {
   // Radii
   static const double rCard = 24;
   static const double rChip = 18;
-  static const double rCta = 22;
 
   // Colors
   static const bgTop = Color(0xFFF7F6F3); // App background
@@ -958,17 +957,23 @@ class _SaveButton extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: double.infinity,
-        height: 56,
+        height: 60,
         decoration: BoxDecoration(
           color: enabled ? _Tok.ctaEnabled : _Tok.ctaDisabled,
-          borderRadius: BorderRadius.circular(_Tok.rCta),
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(
+            color:
+                enabled
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.transparent,
+          ),
           boxShadow:
               enabled
                   ? [
                     BoxShadow(
-                      color: _Tok.ctaEnabled.withValues(alpha: 0.15),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+                      color: _Tok.ctaEnabled.withValues(alpha: 0.2),
+                      blurRadius: 22,
+                      offset: const Offset(0, 10),
                     ),
                   ]
                   : null,
@@ -984,15 +989,31 @@ class _SaveButton extends StatelessWidget {
                       color: Colors.white,
                     ),
                   )
-                  : Text(
-                    'Save Expense',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color:
-                          enabled ? _Tok.ctaTextEnabled : _Tok.ctaTextDisabled,
-                      letterSpacing: 0.2,
-                    ),
+                  : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_circle_outline_rounded,
+                        size: 20,
+                        color:
+                            enabled
+                                ? _Tok.ctaTextEnabled
+                                : _Tok.ctaTextDisabled,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Save Expense',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color:
+                              enabled
+                                  ? _Tok.ctaTextEnabled
+                                  : _Tok.ctaTextDisabled,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ],
                   ),
         ),
       ),

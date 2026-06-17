@@ -1017,6 +1017,11 @@ class _QuickActionsRow extends StatelessWidget {
           child: _ActionCard(
             label: 'Add Expense',
             icon: Icons.add_rounded,
+            background: _HomePalette.summaryCard,
+            textColor: Colors.white,
+            iconBackground: Colors.white.withValues(alpha: 0.12),
+            iconAccent: Colors.white,
+            borderColor: Colors.transparent,
             onTap: onAddExpense,
           ),
         ),
@@ -1026,7 +1031,10 @@ class _QuickActionsRow extends StatelessWidget {
             label: 'Add Income',
             icon: Icons.payments_outlined,
             background: _HomePalette.incomeCard,
+            textColor: _HomePalette.textPrimary,
+            iconBackground: Colors.white.withValues(alpha: 0.58),
             iconAccent: _HomePalette.incomeAccent,
+            borderColor: const Color(0xFFDDE8E0),
             onTap: onAddIncome,
           ),
         ),
@@ -1036,7 +1044,10 @@ class _QuickActionsRow extends StatelessWidget {
             label: 'Add Goal',
             icon: Icons.gps_fixed_rounded,
             background: _HomePalette.mintCard,
+            textColor: _HomePalette.textPrimary,
+            iconBackground: Colors.white.withValues(alpha: 0.58),
             iconAccent: _HomePalette.mintAccent,
+            borderColor: const Color(0xFFD9EAE3),
             onTap: onAddGoal,
           ),
         ),
@@ -1051,14 +1062,20 @@ class _ActionCard extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.background = Colors.white,
+    this.textColor = _HomePalette.textPrimary,
+    this.iconBackground = _HomePalette.iconCircle,
     this.iconAccent = _HomePalette.iconCircle,
+    this.borderColor = _HomePalette.line,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback onTap;
   final Color background;
+  final Color textColor;
+  final Color iconBackground;
   final Color iconAccent;
+  final Color borderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1066,19 +1083,19 @@ class _ActionCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         child: Ink(
-          height: 86,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          height: 94,
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: background,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: _HomePalette.line),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: borderColor),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x120F172A),
-                blurRadius: 10,
-                offset: Offset(0, 4),
+                color: Color(0x140F172A),
+                blurRadius: 18,
+                offset: Offset(0, 8),
               ),
             ],
           ),
@@ -1086,24 +1103,34 @@ class _ActionCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: _HomePalette.iconCircle,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(icon, color: iconAccent, size: 17),
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: iconBackground,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(icon, color: iconAccent, size: 18),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.north_east_rounded,
+                    color: textColor.withValues(alpha: 0.58),
+                    size: 16,
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
               Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: _HomePalette.textPrimary,
+                style: TextStyle(
+                  color: textColor,
                   fontSize: 14,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   height: 1.1,
                 ),
               ),
