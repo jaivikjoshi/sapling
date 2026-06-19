@@ -172,7 +172,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                 ]),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 104)),
+            const SliverToBoxAdapter(child: SizedBox(height: 124)),
           ],
         ),
       ),
@@ -259,7 +259,7 @@ class _AmountHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
+      padding: const EdgeInsets.fromLTRB(28, 28, 28, 28),
       decoration: BoxDecoration(
         color: _Tok.cardBg,
         borderRadius: BorderRadius.circular(28),
@@ -303,7 +303,7 @@ class _AmountHeroCard extends StatelessWidget {
             autofocus: true,
             onChanged: (_) => onChanged(),
             style: const TextStyle(
-              fontSize: 48,
+              fontSize: 46,
               fontWeight: FontWeight.w700,
               color: Color(0xFF1F2E33),
               letterSpacing: 0,
@@ -316,7 +316,7 @@ class _AmountHeroCard extends StatelessWidget {
                 child: Text(
                   '\$',
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 30,
                     fontWeight: FontWeight.w600,
                     color: _Tok.textPlaceholder,
                   ),
@@ -325,7 +325,7 @@ class _AmountHeroCard extends StatelessWidget {
               prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
               hintText: '0.00',
               hintStyle: TextStyle(
-                fontSize: 48,
+                fontSize: 46,
                 fontWeight: FontWeight.w500,
                 color: _Tok.textPlaceholder,
                 letterSpacing: 0,
@@ -344,7 +344,7 @@ class _AmountHeroCard extends StatelessWidget {
               ),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 16,
+                vertical: 12,
               ),
               isDense: true,
             ),

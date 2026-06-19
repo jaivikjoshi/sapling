@@ -156,33 +156,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
 
                   const SizedBox(height: 16),
 
-                  _ModePicker(
-                    isBill: _isBill,
-                    onChanged:
-                        (value) => setState(() {
-                          _isBill = value;
-                          if (value && _date.isBefore(_startOfToday())) {
-                            _date = DateTime.now();
-                          }
-                        }),
-                  ),
-
-                  const SizedBox(height: 16),
-
                   // ── Section 2: Details Card ──
                   _SectionCard(
                     children: [
-                      if (_isBill) ...[
-                        _TextEntryRow(
-                          icon: Icons.receipt_long_outlined,
-                          label: 'Bill Name',
-                          hint: 'What bill is this?',
-                          controller: _billNameCtrl,
-                          textCapitalization: TextCapitalization.words,
-                          onChanged: () => setState(() {}),
-                        ),
-                        const _CardDivider(),
-                      ],
                       // Category
                       categoriesAsync.when(
                         data:
@@ -213,7 +189,27 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                         date: _date,
                         onTap: _pickDate,
                       ),
+                      const _CardDivider(),
+                      _BillToggleRow(
+                        value: _isBill,
+                        onChanged:
+                            (value) => setState(() {
+                              _isBill = value;
+                              if (value && _date.isBefore(_startOfToday())) {
+                                _date = DateTime.now();
+                              }
+                            }),
+                      ),
                       if (_isBill) ...[
+                        const _CardDivider(),
+                        _TextEntryRow(
+                          icon: Icons.receipt_long_outlined,
+                          label: 'Bill Name',
+                          hint: 'What bill is this?',
+                          controller: _billNameCtrl,
+                          textCapitalization: TextCapitalization.words,
+                          onChanged: () => setState(() {}),
+                        ),
                         const _CardDivider(),
                         _BillFrequencyRow(
                           selected: _billFrequency,
@@ -248,11 +244,11 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                     onReset: () => setState(() => _labelOverride = null),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                 ]),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 104)),
+            const SliverToBoxAdapter(child: SizedBox(height: 124)),
           ],
         ),
       ),
@@ -386,7 +382,7 @@ class _AmountHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(28, 32, 28, 40),
+      padding: const EdgeInsets.fromLTRB(28, 28, 28, 28),
       decoration: BoxDecoration(
         color: _Tok.cardBg,
         borderRadius: BorderRadius.circular(28),
@@ -430,7 +426,7 @@ class _AmountHeroCard extends StatelessWidget {
             autofocus: true,
             onChanged: (_) => onChanged(),
             style: const TextStyle(
-              fontSize: 48,
+              fontSize: 46,
               fontWeight: FontWeight.w700,
               color: Color(0xFF1F2E33),
               letterSpacing: 0,
@@ -443,7 +439,7 @@ class _AmountHeroCard extends StatelessWidget {
                 child: Text(
                   '\$',
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 30,
                     fontWeight: FontWeight.w600,
                     color: _Tok.textPlaceholder,
                   ),
@@ -455,7 +451,7 @@ class _AmountHeroCard extends StatelessWidget {
               ),
               hintText: '0.00',
               hintStyle: const TextStyle(
-                fontSize: 48,
+                fontSize: 46,
                 fontWeight: FontWeight.w500,
                 color: _Tok.textPlaceholder,
                 letterSpacing: 0,
@@ -478,7 +474,7 @@ class _AmountHeroCard extends StatelessWidget {
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 16,
+                vertical: 12,
               ),
               isDense: true,
             ),
@@ -524,93 +520,6 @@ class _CardDivider extends StatelessWidget {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 20),
       child: Divider(height: 1, color: _Tok.divider),
-    );
-  }
-}
-
-class _ModePicker extends StatelessWidget {
-  const _ModePicker({required this.isBill, required this.onChanged});
-
-  final bool isBill;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _Tok.borderSubtle),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _ModeButton(
-              label: 'Expense',
-              icon: Icons.add_circle_outline_rounded,
-              selected: !isBill,
-              onTap: () => onChanged(false),
-            ),
-          ),
-          Expanded(
-            child: _ModeButton(
-              label: 'Bill',
-              icon: Icons.receipt_long_outlined,
-              selected: isBill,
-              onTap: () => onChanged(true),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModeButton extends StatelessWidget {
-  const _ModeButton({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? const Color(0xFFE9F4F1) : Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: selected ? LekoColors.secondary : _Tok.textSecondary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: selected ? _Tok.textPrimary : _Tok.textSecondary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -861,6 +770,69 @@ class _DateRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _BillToggleRow extends StatelessWidget {
+  const _BillToggleRow({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: _Tok.iconContainerBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.receipt_long_outlined,
+              size: 18,
+              color: LekoColors.secondary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Add as bill?',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: _Tok.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Create a recurring bill schedule',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _Tok.textSecondary,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: LekoColors.secondary,
+            activeTrackColor: LekoColors.secondary.withValues(alpha: 0.2),
+          ),
+        ],
       ),
     );
   }
