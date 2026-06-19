@@ -101,6 +101,17 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          child: _SaveButton(
+            isValid: _isValid,
+            isSaving: _saving,
+            onPressed: _save,
+          ),
+        ),
+      ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: CustomScrollView(
@@ -161,25 +172,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                 ]),
               ),
             ),
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    const SizedBox(height: 16),
-                    // ── CTA ──
-                    _SaveButton(
-                      isValid: _isValid,
-                      isSaving: _saving,
-                      onPressed: _save,
-                    ),
-                    const SizedBox(height: 32), // Generous bottom spacing
-                  ],
-                ),
-              ),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 104)),
           ],
         ),
       ),
@@ -316,6 +309,8 @@ class _AmountHeroCard extends StatelessWidget {
               letterSpacing: 0,
             ),
             decoration: const InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
               prefixIcon: Padding(
                 padding: EdgeInsets.only(right: 8, bottom: 2),
                 child: Text(
@@ -335,8 +330,22 @@ class _AmountHeroCard extends StatelessWidget {
                 color: _Tok.textPlaceholder,
                 letterSpacing: 0,
               ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(18)),
+                borderSide: BorderSide(color: LekoColors.secondary, width: 1.5),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(18)),
+                borderSide: BorderSide(color: LekoColors.secondary, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(18)),
+                borderSide: BorderSide(color: LekoColors.secondary, width: 1.5),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
               isDense: true,
             ),
           ),

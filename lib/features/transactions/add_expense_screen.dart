@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/analytics/leko_analytics.dart';
 import '../../core/providers/analytics_providers.dart';
+import '../../core/providers/bills_providers.dart';
 import '../../core/providers/ledger_providers.dart';
 import '../../core/providers/recovery_providers.dart';
 import '../../core/providers/scheduler_providers.dart';
@@ -65,10 +66,14 @@ class AddExpenseScreen extends ConsumerStatefulWidget {
 
 class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   final _amountCtrl = TextEditingController();
+  final _billNameCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
   DateTime _date = DateTime.now();
   Category? _selectedCategory;
   SpendLabel? _labelOverride;
+  bool _isBill = false;
+  BillFrequency _billFrequency = BillFrequency.monthly;
+  bool _billReminderEnabled = true;
   bool _saving = false;
 
   SpendLabel get _effectiveLabel {
@@ -82,6 +87,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   @override
   void dispose() {
     _amountCtrl.dispose();
+    _billNameCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
   }
@@ -89,7 +95,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   bool get _isValid =>
       _amountCtrl.text.isNotEmpty &&
       (double.tryParse(_amountCtrl.text) ?? 0) > 0 &&
-      _selectedCategory != null;
+      _selectedCategory != null &&
+      (!_isBill || _billNameCtrl.text.trim().isNotEmpty);
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +126,18 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          child: _SaveButton(
+            isValid: _isValid,
+            isSaving: _saving,
+            isBill: _isBill,
+            onPressed: _save,
+          ),
+        ),
+      ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: CustomScrollView(
@@ -132,13 +151,38 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                   _AmountHeroCard(
                     controller: _amountCtrl,
                     onChanged: () => setState(() {}),
+                    isEmphasized: !_isBill,
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+
+                  _ModePicker(
+                    isBill: _isBill,
+                    onChanged:
+                        (value) => setState(() {
+                          _isBill = value;
+                          if (value && _date.isBefore(_startOfToday())) {
+                            _date = DateTime.now();
+                          }
+                        }),
+                  ),
+
+                  const SizedBox(height: 16),
 
                   // ── Section 2: Details Card ──
                   _SectionCard(
                     children: [
+                      if (_isBill) ...[
+                        _TextEntryRow(
+                          icon: Icons.receipt_long_outlined,
+                          label: 'Bill Name',
+                          hint: 'What bill is this?',
+                          controller: _billNameCtrl,
+                          textCapitalization: TextCapitalization.words,
+                          onChanged: () => setState(() {}),
+                        ),
+                        const _CardDivider(),
+                      ],
                       // Category
                       categoriesAsync.when(
                         data:
@@ -164,10 +208,33 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                       ),
                       const _CardDivider(),
                       // Date
-                      _DateRow(date: _date, onTap: _pickDate),
-                      const _CardDivider(),
-                      // Note
-                      _NoteRow(controller: _noteCtrl),
+                      _DateRow(
+                        label: _isBill ? 'Next Due Date' : 'Date',
+                        date: _date,
+                        onTap: _pickDate,
+                      ),
+                      if (_isBill) ...[
+                        const _CardDivider(),
+                        _BillFrequencyRow(
+                          selected: _billFrequency,
+                          onChanged:
+                              (value) => setState(() => _billFrequency = value),
+                        ),
+                        const _CardDivider(),
+                        _ToggleRow(
+                          icon: Icons.notifications_active_outlined,
+                          label: 'Bill reminder',
+                          value: _billReminderEnabled,
+                          onChanged:
+                              (value) =>
+                                  setState(() => _billReminderEnabled = value),
+                        ),
+                      ],
+                      if (!_isBill) ...[
+                        const _CardDivider(),
+                        // Note
+                        _NoteRow(controller: _noteCtrl),
+                      ],
                     ],
                   ),
 
@@ -185,25 +252,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                 ]),
               ),
             ),
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    const SizedBox(height: 32),
-                    // ── CTA ──
-                    _SaveButton(
-                      isValid: _isValid,
-                      isSaving: _saving,
-                      onPressed: _save,
-                    ),
-                    const SizedBox(height: 48), // Generous bottom spacing
-                  ],
-                ),
-              ),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 104)),
           ],
         ),
       ),
@@ -215,7 +264,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       context: context,
       initialDate: _date,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: _isBill ? DateTime(2040) : DateTime.now(),
     );
     if (picked != null) setState(() => _date = picked);
   }
@@ -223,6 +272,34 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
+      if (_isBill) {
+        await ref
+            .read(billsServiceProvider)
+            .create(
+              name: _billNameCtrl.text.trim(),
+              amount: double.parse(_amountCtrl.text),
+              frequency: _billFrequency,
+              nextDueDate: _date,
+              categoryId: _selectedCategory!.id,
+              defaultLabel: _effectiveLabel,
+              reminderEnabled: _billReminderEnabled,
+            );
+
+        if (!mounted) return;
+        ref
+            .read(lekoAnalyticsProvider)
+            .track(
+              LekoAnalyticsEvent.expenseCreated,
+              properties: {
+                'label': _effectiveLabel.name,
+                'type': 'bill_schedule',
+              },
+            );
+        ref.read(snapshotWriterProvider).writeSnapshot();
+        _leaveScreen();
+        return;
+      }
+
       final txnId = await ref
           .read(ledgerServiceProvider)
           .addExpense(
@@ -287,14 +364,24 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   }
 }
 
+DateTime _startOfToday() {
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 //  Hero Amount Card
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _AmountHeroCard extends StatelessWidget {
-  const _AmountHeroCard({required this.controller, required this.onChanged});
+  const _AmountHeroCard({
+    required this.controller,
+    required this.onChanged,
+    required this.isEmphasized,
+  });
   final TextEditingController controller;
   final VoidCallback onChanged;
+  final bool isEmphasized;
 
   @override
   Widget build(BuildContext context) {
@@ -348,8 +435,10 @@ class _AmountHeroCard extends StatelessWidget {
               color: Color(0xFF1F2E33),
               letterSpacing: 0,
             ),
-            decoration: const InputDecoration(
-              prefixIcon: Padding(
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              prefixIcon: const Padding(
                 padding: EdgeInsets.only(right: 8, bottom: 2),
                 child: Text(
                   '\$',
@@ -360,16 +449,37 @@ class _AmountHeroCard extends StatelessWidget {
                   ),
                 ),
               ),
-              prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
+              prefixIconConstraints: const BoxConstraints(
+                minWidth: 0,
+                minHeight: 0,
+              ),
               hintText: '0.00',
-              hintStyle: TextStyle(
+              hintStyle: const TextStyle(
                 fontSize: 48,
                 fontWeight: FontWeight.w500,
                 color: _Tok.textPlaceholder,
                 letterSpacing: 0,
               ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
+              border: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(18)),
+                borderSide: BorderSide(color: _Tok.borderSubtle, width: 1),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: const BorderRadius.all(Radius.circular(18)),
+                borderSide: BorderSide(
+                  color:
+                      isEmphasized ? LekoColors.secondary : _Tok.borderSubtle,
+                  width: isEmphasized ? 1.5 : 1,
+                ),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(18)),
+                borderSide: BorderSide(color: LekoColors.secondary, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
               isDense: true,
             ),
           ),
@@ -414,6 +524,93 @@ class _CardDivider extends StatelessWidget {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 20),
       child: Divider(height: 1, color: _Tok.divider),
+    );
+  }
+}
+
+class _ModePicker extends StatelessWidget {
+  const _ModePicker({required this.isBill, required this.onChanged});
+
+  final bool isBill;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _Tok.borderSubtle),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ModeButton(
+              label: 'Expense',
+              icon: Icons.add_circle_outline_rounded,
+              selected: !isBill,
+              onTap: () => onChanged(false),
+            ),
+          ),
+          Expanded(
+            child: _ModeButton(
+              label: 'Bill',
+              icon: Icons.receipt_long_outlined,
+              selected: isBill,
+              onTap: () => onChanged(true),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModeButton extends StatelessWidget {
+  const _ModeButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? const Color(0xFFE9F4F1) : Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: selected ? LekoColors.secondary : _Tok.textSecondary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? _Tok.textPrimary : _Tok.textSecondary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -602,7 +799,12 @@ class _CategoryRow extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _DateRow extends StatelessWidget {
-  const _DateRow({required this.date, required this.onTap});
+  const _DateRow({
+    required this.label,
+    required this.date,
+    required this.onTap,
+  });
+  final String label;
   final DateTime date;
   final VoidCallback onTap;
 
@@ -632,9 +834,9 @@ class _DateRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Date',
-                    style: TextStyle(
+                  Text(
+                    label,
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: _Tok.textSecondary,
@@ -659,6 +861,271 @@ class _DateRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TextEntryRow extends StatelessWidget {
+  const _TextEntryRow({
+    required this.icon,
+    required this.label,
+    required this.hint,
+    required this.controller,
+    required this.textCapitalization,
+    this.onChanged,
+  });
+
+  final IconData icon;
+  final String label;
+  final String hint;
+  final TextEditingController controller;
+  final TextCapitalization textCapitalization;
+  final VoidCallback? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: _Tok.iconContainerBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: LekoColors.secondary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: _Tok.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: controller,
+                  textCapitalization: textCapitalization,
+                  onChanged: (_) => onChanged?.call(),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: _Tok.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    hintStyle: const TextStyle(
+                      fontSize: 14,
+                      color: _Tok.textPlaceholder,
+                    ),
+                    filled: true,
+                    fillColor: _Tok.bgTop.withValues(alpha: 0.6),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: _Tok.borderSubtle,
+                        width: 0.5,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: _Tok.borderSubtle,
+                        width: 0.5,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: LekoColors.secondary,
+                        width: 1,
+                      ),
+                    ),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BillFrequencyRow extends StatelessWidget {
+  const _BillFrequencyRow({required this.selected, required this.onChanged});
+
+  final BillFrequency selected;
+  final ValueChanged<BillFrequency> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _Tok.iconContainerBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.autorenew_rounded,
+                  size: 18,
+                  color: LekoColors.secondary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Text(
+                'Frequency',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: _Tok.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                BillFrequency.values.map((frequency) {
+                  final isSelected = selected == frequency;
+                  return _FrequencyChip(
+                    label: _billFrequencyLabel(frequency),
+                    selected: isSelected,
+                    onTap: () => onChanged(frequency),
+                  );
+                }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FrequencyChip extends StatelessWidget {
+  const _FrequencyChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              selected
+                  ? LekoColors.secondary.withValues(alpha: 0.12)
+                  : Colors.white,
+          borderRadius: BorderRadius.circular(_Tok.rChip),
+          border: Border.all(
+            color:
+                selected
+                    ? LekoColors.secondary.withValues(alpha: 0.45)
+                    : _Tok.borderSubtle,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? LekoColors.secondary : _Tok.textSecondary,
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _billFrequencyLabel(BillFrequency frequency) {
+  return switch (frequency) {
+    BillFrequency.weekly => 'Weekly',
+    BillFrequency.biweekly => 'Bi-weekly',
+    BillFrequency.monthly => 'Monthly',
+    BillFrequency.quarterly => 'Quarterly',
+    BillFrequency.yearly => 'Yearly',
+  };
+}
+
+class _ToggleRow extends StatelessWidget {
+  const _ToggleRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: _Tok.iconContainerBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: LekoColors.secondary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: _Tok.textPrimary,
+              ),
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: LekoColors.secondary,
+            activeTrackColor: LekoColors.secondary.withValues(alpha: 0.2),
+          ),
+        ],
       ),
     );
   }
@@ -941,11 +1408,13 @@ class _SaveButton extends StatelessWidget {
   const _SaveButton({
     required this.isValid,
     required this.isSaving,
+    required this.isBill,
     required this.onPressed,
   });
 
   final bool isValid;
   final bool isSaving;
+  final bool isBill;
   final VoidCallback onPressed;
 
   @override
@@ -1002,7 +1471,7 @@ class _SaveButton extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'Save Expense',
+                        isBill ? 'Save Bill' : 'Save Expense',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
