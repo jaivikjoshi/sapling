@@ -69,6 +69,47 @@ void main() {
     expect(drafts.single.reviewStatus, ImportReviewStatus.pending);
   });
 
+  test('drops preview drafts with missing or invalid amount or date', () async {
+    final provider = HttpBankProvider(
+      client: MockClient((request) async {
+        return http.Response('''
+          {
+            "drafts": [
+              {
+                "sourceId": "bad_amount",
+                "amount": null,
+                "date": "2026-06-16"
+              },
+              {
+                "sourceId": "bad_date",
+                "amount": 10,
+                "date": "not-a-date"
+              },
+              {
+                "sourceId": "negative",
+                "amount": -5,
+                "date": "2026-06-16"
+              },
+              {
+                "sourceId": "good",
+                "amount": 4.25,
+                "date": "2026-06-16",
+                "merchant": "Cafe"
+              }
+            ]
+          }
+          ''', 200);
+      }),
+      baseUri: Uri.parse('https://api.example.com'),
+    );
+
+    final drafts = await provider.preview();
+
+    expect(drafts, hasLength(1));
+    expect(drafts.single.sourceId, 'good');
+    expect(drafts.single.amount, 4.25);
+  });
+
   test(
     'serializes approved transactions back to backend import endpoint',
     () async {

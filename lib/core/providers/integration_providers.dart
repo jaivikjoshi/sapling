@@ -132,7 +132,15 @@ class TransactionReviewController
     required String mimeType,
     required String dataBase64,
   }) async {
-    final bytes = base64Decode(dataBase64);
+    late final List<int> bytes;
+    try {
+      bytes = base64Decode(dataBase64);
+    } on FormatException {
+      state = state.copyWith(
+        message: () => 'Receipt file could not be read. Try attaching it again.',
+      );
+      return null;
+    }
     final result = await _ref
         .read(receiptOcrProvider)
         .extract(
@@ -207,6 +215,10 @@ class TransactionReviewController
           _ref.read(categoriesProvider).valueOrNull ?? const <Category>[];
 
       for (final draft in approved) {
+        if (!draft.isImportable) {
+          skipped += 1;
+          continue;
+        }
         final importNote = _importNote(draft);
         if (importedNotes.contains(importNote)) {
           skipped += 1;

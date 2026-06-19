@@ -95,24 +95,37 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     Future.microtask(() => _runSchedulers(ref, today: today, userId: userId!));
   }
 
+  /// Returns true when the signed-in user changed mid-run (e.g. sign-out).
+  /// Repositories switch between Supabase and Drift on auth changes, so later
+  /// scheduler steps must not run under a different session.
+  bool _abortSchedulerIfUserChanged(WidgetRef ref, String userId) {
+    if (ref.read(currentUserProvider)?.id != userId) {
+      _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+      return true;
+    }
+    return false;
+  }
+
   Future<void> _runSchedulers(
     WidgetRef ref, {
     required String today,
     required String userId,
   }) async {
     try {
+      if (_abortSchedulerIfUserChanged(ref, userId)) return;
       await ref
           .read(cycleBoundaryWatcherProvider)
           .checkAndUpdate(DateTime.now());
+      if (_abortSchedulerIfUserChanged(ref, userId)) return;
       final now = DateTime.now();
       await ref.read(paydayAutoPosterProvider).runForDate(now);
+      if (_abortSchedulerIfUserChanged(ref, userId)) return;
       await ref.read(billAutoPosterProvider).runForDate(now);
+      if (_abortSchedulerIfUserChanged(ref, userId)) return;
       await ref.read(notificationSchedulerProvider).rescheduleAll();
+      if (_abortSchedulerIfUserChanged(ref, userId)) return;
       await ref.read(snapshotWriterProvider).writeSnapshot();
-      if (ref.read(currentUserProvider)?.id != userId) {
-        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
-        return;
-      }
+      if (_abortSchedulerIfUserChanged(ref, userId)) return;
       _schedulerRunCoordinator.markRunFinished(today: today, userId: userId);
     } catch (e, st) {
       debugPrint('[Scheduler] error: $e\n$st');

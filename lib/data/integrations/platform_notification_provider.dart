@@ -26,7 +26,8 @@ class PlatformNotificationProvider implements NotificationProvider {
     if (payload == null) return const [];
     return payload
         .whereType<Map>()
-        .map((draft) => ImportedTransactionDraftJson.fromJson(draft))
+        .map(ImportedTransactionDraftJson.tryFromJson)
+        .whereType<ImportedTransactionDraft>()
         .toList(growable: false);
   }
 
