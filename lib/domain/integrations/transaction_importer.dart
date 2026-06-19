@@ -68,6 +68,9 @@ class ImportedTransactionDraft {
 
   String get dedupeKey => '${source.name}:$sourceId';
 
+  /// Drafts must have a positive, finite amount before ledger import.
+  bool get isImportable => amount.isFinite && amount > 0;
+
   ImportedTransactionDraft copyWith({
     String? sourceId,
     TransactionImportSource? source,

@@ -64,7 +64,8 @@ class HttpBankProvider implements BankProvider {
     if (rawDrafts is! List) return const [];
     return rawDrafts
         .whereType<Map>()
-        .map((draft) => ImportedTransactionDraftJson.fromJson(draft))
+        .map(ImportedTransactionDraftJson.tryFromJson)
+        .whereType<ImportedTransactionDraft>()
         .toList(growable: false);
   }
 
@@ -98,8 +99,11 @@ class HttpBankProvider implements BankProvider {
 class ImportedTransactionDraftJson {
   const ImportedTransactionDraftJson._();
 
-  static ImportedTransactionDraft fromJson(Map<Object?, Object?> json) {
-    final amount = _asDouble(json['amount']);
+  static ImportedTransactionDraft? tryFromJson(Map<Object?, Object?> json) {
+    final amount = _optionalDouble(json['amount']);
+    if (amount == null || !amount.isFinite || amount <= 0) return null;
+    final date = _asDate(json['date']);
+    if (date == null) return null;
     final source =
         _tryEnum(json['source'], TransactionImportSource.values) ??
         TransactionImportSource.bankAggregator;
@@ -110,7 +114,7 @@ class ImportedTransactionDraftJson {
           '${source.name}:${json.hashCode}',
       source: source,
       amount: amount,
-      date: _asDate(json['date']) ?? DateTime.now(),
+      date: date,
       type:
           _tryEnum(json['type'], ImportedTransactionType.values) ??
           ImportedTransactionType.expense,
@@ -186,8 +190,6 @@ String? _optionalString(Object? value) {
   if (text == null || text.isEmpty) return null;
   return text;
 }
-
-double _asDouble(Object? value) => _optionalDouble(value) ?? 0;
 
 double? _optionalDouble(Object? value) {
   if (value is num) return value.toDouble();
