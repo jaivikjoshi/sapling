@@ -31,7 +31,8 @@ class BankNotificationListenerService : NotificationListenerService() {
             .put("source", "bank_notification")
             .put("amount", amount)
             .put("date", Instant.ofEpochMilli(sbn.postTime).toString())
-            .put("type", "expense")
+            .put("type", transactionTypeFrom(combined))
+            .put("rawText", combined)
             .put("merchant", merchantFrom(title, sbn.packageName))
             .put("categorySuggestion", categorySuggestion(combined))
             .put("confidence", 0.74)
@@ -103,6 +104,43 @@ class BankNotificationListenerService : NotificationListenerService() {
         private fun merchantFrom(title: String, packageName: String): String {
             return title.takeIf { it.isNotBlank() }
                 ?: packageName.substringAfterLast('.')
+        }
+
+        internal fun transactionTypeFrom(content: String): String {
+            val lower = content.lowercase(Locale.US)
+            val incomeSignals = listOf(
+                "received",
+                "deposited",
+                "deposit",
+                "credited to",
+                "credit to your",
+                "refund",
+                "reversal",
+                "payroll",
+                "salary",
+                "direct deposit",
+                "money received",
+                "e-transfer received",
+                "interac e-transfer: you received",
+            )
+            val expenseSignals = listOf(
+                "purchase",
+                "spent",
+                "withdrawal",
+                "withdrawn",
+                "debited",
+                "debit",
+                "paid to",
+                "payment to",
+                "you paid",
+                "you sent",
+                "e-transfer sent",
+                "charge at",
+                "charged",
+            )
+            val incomeScore = incomeSignals.count(lower::contains)
+            val expenseScore = expenseSignals.count(lower::contains)
+            return if (incomeScore > expenseScore) "income" else "expense"
         }
 
         private fun categorySuggestion(content: String): String {

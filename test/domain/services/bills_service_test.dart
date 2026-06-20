@@ -472,5 +472,32 @@ void main() {
         expect((await txnRepo.getAll()).length, 2);
       },
     );
+
+    test(
+      'concurrent markPaid calls only create one expense for the same bill',
+      () async {
+        final billId = await service.create(
+          name: 'Internet',
+          amount: 80,
+          frequency: BillFrequency.monthly,
+          nextDueDate: DateTime(2025, 8, 1),
+          categoryId: 'cat-1',
+          defaultLabel: SpendLabel.green,
+        );
+
+        final results = await Future.wait([
+          service.markPaid(billId: billId, paidDate: DateTime(2025, 8, 1)),
+          service.markPaid(billId: billId, paidDate: DateTime(2025, 8, 1)),
+        ]);
+
+        expect(results[0].transactionId, results[1].transactionId);
+        final txns = await txnRepo.getAll();
+        expect(txns.where((t) => t.linkedBillId == billId), hasLength(1));
+        expect(
+          (await billsRepo.getById(billId)).nextDueDate,
+          DateTime(2025, 9, 1),
+        );
+      },
+    );
   });
 }

@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/utils/date_helpers.dart';
 import '../../core/utils/enum_serialization.dart';
+import 'bill_payment_lock.dart';
 import '../../data/db/leko_database.dart';
 import '../../data/repositories/bills_repository.dart';
 import '../../data/repositories/transactions_repository.dart';
@@ -108,6 +109,21 @@ class BillsService {
   /// it returns that transaction without inserting a duplicate or advancing
   /// [nextDueDate] again.
   Future<MarkPaidResult> markPaid({
+    required String billId,
+    DateTime? paidDate,
+    double? amountOverride,
+  }) {
+    return BillPaymentLock.runForBill(
+      billId,
+      () => _markPaidUnlocked(
+        billId: billId,
+        paidDate: paidDate,
+        amountOverride: amountOverride,
+      ),
+    );
+  }
+
+  Future<MarkPaidResult> _markPaidUnlocked({
     required String billId,
     DateTime? paidDate,
     double? amountOverride,

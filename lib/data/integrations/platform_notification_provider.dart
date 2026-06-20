@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+import '../../domain/integrations/bank_notification_classifier.dart';
 import '../../domain/integrations/transaction_importer.dart';
 import 'http_bank_provider.dart';
 
@@ -26,8 +27,23 @@ class PlatformNotificationProvider implements NotificationProvider {
     if (payload == null) return const [];
     return payload
         .whereType<Map>()
-        .map((draft) => ImportedTransactionDraftJson.fromJson(draft))
+        .map((draft) => _draftFromPlatformJson(draft))
         .toList(growable: false);
+  }
+
+  ImportedTransactionDraft _draftFromPlatformJson(Map<Object?, Object?> json) {
+    final draft = ImportedTransactionDraftJson.fromJson(json);
+    final rawText = json['rawText']?.toString();
+    if (draft.source != TransactionImportSource.bankNotification ||
+        rawText == null ||
+        rawText.trim().isEmpty) {
+      return draft;
+    }
+    final type =
+        BankNotificationClassifier.typeFor(rawText) == 'income'
+            ? ImportedTransactionType.income
+            : ImportedTransactionType.expense;
+    return draft.copyWith(type: type);
   }
 
   @override
