@@ -7,6 +7,7 @@ import '../../data/db/leko_database.dart';
 import '../../data/repositories/bills_repository.dart';
 import '../../data/repositories/transactions_repository.dart';
 import '../models/enums.dart';
+import '../services/bill_payment_lock.dart';
 
 /// Automatically posts an expense transaction for each recurring bill on its
 /// due date and rolls the due date forward to the next cycle.
@@ -40,7 +41,14 @@ class BillAutoPoster {
     return postedCount;
   }
 
-  Future<int> _runForBill(Bill bill, DateTime todayStart) async {
+  Future<int> _runForBill(Bill bill, DateTime todayStart) {
+    return BillPaymentLock.runForBill(
+      bill.id,
+      () => _runForBillUnlocked(bill, todayStart),
+    );
+  }
+
+  Future<int> _runForBillUnlocked(Bill bill, DateTime todayStart) async {
     final freq = enumFromDb<BillFrequency>(
       bill.frequency,
       BillFrequency.values,

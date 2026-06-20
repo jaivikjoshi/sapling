@@ -102,6 +102,10 @@ class TransactionReviewController
 
   final Ref _ref;
 
+  /// Prevents overlapping [importApproved] runs (e.g. double-tap on Import)
+  /// from inserting duplicate ledger rows before the first await completes.
+  bool _importInFlight = false;
+
   Future<BankConnectionIntent> startBankConnection() async {
     return _ref.read(bankProviderProvider).startConnection();
   }
@@ -183,6 +187,14 @@ class TransactionReviewController
   }
 
   Future<TransactionImportResult> importApproved() async {
+    if (_importInFlight) {
+      return TransactionImportResult(
+        createdCount: 0,
+        skippedCount: 0,
+        message: state.message ?? 'Import already in progress.',
+      );
+    }
+
     final approved = _ref
         .read(transactionReviewQueueProvider)
         .approvedOnly(state.drafts);
@@ -194,6 +206,7 @@ class TransactionReviewController
       );
     }
 
+    _importInFlight = true;
     state = state.copyWith(isLoading: true, message: () => null);
     var created = 0;
     var skipped = 0;
@@ -207,6 +220,10 @@ class TransactionReviewController
           _ref.read(categoriesProvider).valueOrNull ?? const <Category>[];
 
       for (final draft in approved) {
+        if (draft.amount <= 0) {
+          skipped += 1;
+          continue;
+        }
         final importNote = _importNote(draft);
         if (importedNotes.contains(importNote)) {
           skipped += 1;
@@ -268,6 +285,8 @@ class TransactionReviewController
         skippedCount: skipped,
         message: state.message,
       );
+    } finally {
+      _importInFlight = false;
     }
   }
 
