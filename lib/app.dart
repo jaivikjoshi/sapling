@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/notifications/closeout_notification_service.dart';
 import 'core/providers/auth_providers.dart';
 import 'core/providers/bills_providers.dart';
+import 'core/providers/integration_providers.dart';
 import 'core/providers/recurring_income_providers.dart';
 import 'core/providers/scheduler_providers.dart';
 import 'core/providers/settings_providers.dart';
@@ -15,6 +17,7 @@ import 'core/providers/widget_snapshot_providers.dart';
 import 'core/routing/app_router.dart';
 import 'core/scheduling/scheduler_run_coordinator.dart';
 import 'core/theme/leko_theme.dart';
+import 'data/integrations/platform_notification_provider.dart';
 
 bool _isAuthCallback(Uri uri) {
   return uri.scheme == 'com.jaivik.leko' &&
@@ -30,6 +33,7 @@ class LekoApp extends ConsumerStatefulWidget {
 
 class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   bool _closeoutCallbackSet = false;
+  bool _notificationUserSynced = false;
 
   final _schedulerRunCoordinator = SchedulerRunCoordinator();
 
@@ -91,25 +95,58 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     )) {
       return;
     }
-    _schedulerRunCoordinator.markRunStarted();
-    Future.microtask(() => _runSchedulers(ref, today: today, userId: userId!));
+    final runToken = _schedulerRunCoordinator.markRunStarted();
+    Future.microtask(
+      () => _runSchedulers(
+        ref,
+        today: today,
+        userId: userId!,
+        runToken: runToken,
+      ),
+    );
+  }
+
+  bool _schedulerRunStillValid(WidgetRef ref, String userId, int runToken) {
+    if (!_schedulerRunCoordinator.isRunTokenActive(runToken)) return false;
+    return ref.read(currentUserProvider)?.id == userId;
   }
 
   Future<void> _runSchedulers(
     WidgetRef ref, {
     required String today,
     required String userId,
+    required int runToken,
   }) async {
     try {
+      if (!_schedulerRunStillValid(ref, userId, runToken)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       await ref
           .read(cycleBoundaryWatcherProvider)
           .checkAndUpdate(DateTime.now());
+      if (!_schedulerRunStillValid(ref, userId, runToken)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       final now = DateTime.now();
       await ref.read(paydayAutoPosterProvider).runForDate(now);
+      if (!_schedulerRunStillValid(ref, userId, runToken)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       await ref.read(billAutoPosterProvider).runForDate(now);
+      if (!_schedulerRunStillValid(ref, userId, runToken)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       await ref.read(notificationSchedulerProvider).rescheduleAll();
+      if (!_schedulerRunStillValid(ref, userId, runToken)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       await ref.read(snapshotWriterProvider).writeSnapshot();
-      if (ref.read(currentUserProvider)?.id != userId) {
+      if (!_schedulerRunStillValid(ref, userId, runToken)) {
         _schedulerRunCoordinator.markRunEndedWithoutSuccess();
         return;
       }
@@ -127,21 +164,41 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     _maybeRunSchedulers(forceUser: true);
   }
 
+  void _syncNotificationImportUser(WidgetRef ref, User? previous, User? current) {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    final provider = ref.read(notificationImportProvider);
+    if (provider is! PlatformNotificationProvider) return;
+    if (previous != null && (current == null || current.id != previous.id)) {
+      provider.clearDraftsForUser(previous.id).ignore();
+    }
+    provider.setActiveUserId(current?.id).ignore();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Re-run schedulers when the signed-in user changes. This covers two
     // cases: (1) Supabase session being restored after the first build fires,
     // and (2) the user explicitly signing in from the auth screen.
     ref.listen(currentUserProvider, (previous, current) {
+      _syncNotificationImportUser(ref, previous, current);
       if (current == null) {
+        _schedulerRunCoordinator.invalidateActiveRun();
         _schedulerRunCoordinator.lastRunDate = null;
         _schedulerRunCoordinator.lastUserId = null;
         return;
+      }
+      if (previous != null && current.id != previous.id) {
+        _schedulerRunCoordinator.invalidateActiveRun();
       }
       if (current.id != _schedulerRunCoordinator.lastUserId) {
         _maybeRunSchedulers(forceUser: true);
       }
     });
+
+    if (!_notificationUserSynced) {
+      _notificationUserSynced = true;
+      _syncNotificationImportUser(ref, null, ref.read(currentUserProvider));
+    }
 
     // Run on every build; no-op if already ran today for the same user.
     _maybeRunSchedulers();

@@ -7,6 +7,7 @@ import '../../data/db/leko_database.dart';
 import '../../data/repositories/bills_repository.dart';
 import '../../data/repositories/transactions_repository.dart';
 import '../models/enums.dart';
+import '../services/bill_expense_lock.dart';
 
 /// Automatically posts an expense transaction for each recurring bill on its
 /// due date and rolls the due date forward to the next cycle.
@@ -59,10 +60,14 @@ class BillAutoPoster {
     int guard = 0;
     while (!due.isAfter(todayStart) && guard < 1000) {
       guard++;
-      final already = await _alreadyPosted(bill.id, due);
-      if (!already) {
-        await _postExpense(bill, due, label);
-        posted++;
+      if (!await _alreadyPosted(bill.id, due)) {
+        var created = false;
+        await BillExpenseLock.run(bill.id, () async {
+          if (await _alreadyPosted(bill.id, due)) return;
+          await _postExpense(bill, due, label);
+          created = true;
+        });
+        if (created) posted++;
       }
       due = advanceByBillFrequency(due, freq);
     }

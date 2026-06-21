@@ -53,6 +53,16 @@ void main() {
       expect(coordinator.consumeRerunPending(), isFalse);
     });
 
+    test('invalidateActiveRun cancels in-flight token', () {
+      final coordinator = SchedulerRunCoordinator();
+      final runToken = coordinator.markRunStarted();
+
+      expect(coordinator.isRunTokenActive(runToken), isTrue);
+      coordinator.invalidateActiveRun();
+      expect(coordinator.isRunTokenActive(runToken), isFalse);
+      expect(coordinator.running, isFalse);
+    });
+
     test('sign-out clears dedupe state so schedulers can rerun', () {
       final coordinator = SchedulerRunCoordinator();
 

@@ -6,9 +6,11 @@ import 'http_bank_provider.dart';
 class PlatformNotificationProvider implements NotificationProvider {
   const PlatformNotificationProvider({
     MethodChannel channel = const MethodChannel(_channelName),
+    this.userId,
   }) : _channel = channel;
 
   final MethodChannel _channel;
+  final String? userId;
 
   @override
   Future<bool> hasPermission() async {
@@ -22,12 +24,26 @@ class PlatformNotificationProvider implements NotificationProvider {
 
   @override
   Future<List<ImportedTransactionDraft>> preview() async {
-    final payload = await _channel.invokeMethod<List<Object?>>('preview');
+    final payload = await _channel.invokeMethod<List<Object?>>(
+      'preview',
+      {'userId': userId},
+    );
     if (payload == null) return const [];
     return payload
         .whereType<Map>()
         .map((draft) => ImportedTransactionDraftJson.fromJson(draft))
         .toList(growable: false);
+  }
+
+  Future<void> setActiveUserId(String? userId) async {
+    await _channel.invokeMethod<void>('setActiveUserId', {'userId': userId});
+  }
+
+  Future<void> clearDraftsForUser(String userId) async {
+    await _channel.invokeMethod<void>(
+      'clearDraftsForUser',
+      {'userId': userId},
+    );
   }
 
   @override

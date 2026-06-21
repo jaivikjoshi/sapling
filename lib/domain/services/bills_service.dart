@@ -7,6 +7,7 @@ import '../../data/db/leko_database.dart';
 import '../../data/repositories/bills_repository.dart';
 import '../../data/repositories/transactions_repository.dart';
 import '../models/enums.dart';
+import 'bill_expense_lock.dart';
 
 class BillsService {
   final BillsRepository _billsRepo;
@@ -117,51 +118,53 @@ class BillsService {
     final effectiveAmount = amountOverride ?? bill.amount;
     final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final existing = await _findLinkedExpenseInCurrentCycle(
-      bill,
-      effectiveDate: effectiveDate,
-    );
-    if (existing != null) {
-      return MarkPaidResult(
-        transactionId: existing.id,
-        updatedBill: bill,
-        paidAmount: existing.amount,
+    return BillExpenseLock.run(billId, () async {
+      final existing = await _findLinkedExpenseInCurrentCycle(
+        bill,
+        effectiveDate: effectiveDate,
       );
-    }
+      if (existing != null) {
+        return MarkPaidResult(
+          transactionId: existing.id,
+          updatedBill: bill,
+          paidAmount: existing.amount,
+        );
+      }
 
-    final txnId = _uuid.v4();
-    final now = DateTime.now();
-    await _txnRepo.insert(
-      Transaction(
-        id: txnId,
-        type: enumToDb(TransactionType.expense),
-        amount: effectiveAmount,
-        date: effectiveDate,
-        categoryId: bill.categoryId,
-        label: enumToDb(label),
-        note: 'Bill paid: ${bill.name}',
-        linkedBillId: billId,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
+      final txnId = _uuid.v4();
+      final now = DateTime.now();
+      await _txnRepo.insert(
+        Transaction(
+          id: txnId,
+          type: enumToDb(TransactionType.expense),
+          amount: effectiveAmount,
+          date: effectiveDate,
+          categoryId: bill.categoryId,
+          label: enumToDb(label),
+          note: 'Bill paid: ${bill.name}',
+          linkedBillId: billId,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
-    final freq = enumFromDb<BillFrequency>(
-      bill.frequency,
-      BillFrequency.values,
-    );
-    final nextDue = advanceByBillFrequency(bill.nextDueDate, freq);
-    await _billsRepo.updateById(
-      billId,
-      BillsCompanion(nextDueDate: Value(nextDue), updatedAt: Value(now)),
-    );
+      final freq = enumFromDb<BillFrequency>(
+        bill.frequency,
+        BillFrequency.values,
+      );
+      final nextDue = advanceByBillFrequency(bill.nextDueDate, freq);
+      await _billsRepo.updateById(
+        billId,
+        BillsCompanion(nextDueDate: Value(nextDue), updatedAt: Value(now)),
+      );
 
-    final updated = await _billsRepo.getById(billId);
-    return MarkPaidResult(
-      transactionId: txnId,
-      updatedBill: updated,
-      paidAmount: effectiveAmount,
-    );
+      final updated = await _billsRepo.getById(billId);
+      return MarkPaidResult(
+        transactionId: txnId,
+        updatedBill: updated,
+        paidAmount: effectiveAmount,
+      );
+    });
   }
 
   static DateTime computeNextDueDate(

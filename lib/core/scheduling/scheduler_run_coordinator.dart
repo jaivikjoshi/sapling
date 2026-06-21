@@ -8,6 +8,7 @@ class SchedulerRunCoordinator {
   String? lastUserId;
   bool running = false;
   bool rerunPending = false;
+  int _activeRunToken = 0;
 
   bool requestRun({
     required String today,
@@ -25,8 +26,18 @@ class SchedulerRunCoordinator {
     return true;
   }
 
-  void markRunStarted() {
+  int markRunStarted() {
     running = true;
+    _activeRunToken += 1;
+    return _activeRunToken;
+  }
+
+  bool isRunTokenActive(int runToken) => running && runToken == _activeRunToken;
+
+  void invalidateActiveRun() {
+    if (!running) return;
+    _activeRunToken += 1;
+    running = false;
   }
 
   void markRunFinished({required String today, required String userId}) {
