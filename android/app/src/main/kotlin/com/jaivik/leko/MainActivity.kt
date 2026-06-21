@@ -20,9 +20,26 @@ class MainActivity : FlutterActivity() {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                     result.success(hasNotificationListenerAccess())
                 }
-                "preview" -> result.success(
-                    BankNotificationListenerService.readDrafts(this)
-                )
+                "preview" -> {
+                    val userId = call.argument<String>("userId")
+                    result.success(
+                        BankNotificationListenerService.readDrafts(this, userId)
+                    )
+                }
+                "setActiveUserId" -> {
+                    BankNotificationListenerService.setActiveUserId(
+                        this,
+                        call.argument<String>("userId")
+                    )
+                    result.success(null)
+                }
+                "clearDraftsForUser" -> {
+                    val userId = call.argument<String>("userId")
+                    if (!userId.isNullOrBlank()) {
+                        BankNotificationListenerService.clearDraftsForUser(this, userId)
+                    }
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         }

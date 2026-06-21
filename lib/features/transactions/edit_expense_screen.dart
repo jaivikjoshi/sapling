@@ -171,9 +171,6 @@ class _EditExpenseScreenState extends ConsumerState<EditExpenseScreen> {
 
     setState(() => _saving = true);
     try {
-      if (updateLinkedSplit && linkedId != null) {
-        await ref.read(splitServiceProvider).updateSplitFromExpenseAmount(linkedId, newAmount);
-      }
       await ref.read(ledgerServiceProvider).updateExpense(
             id: widget.transactionId,
             amount: newAmount,
@@ -182,6 +179,9 @@ class _EditExpenseScreenState extends ConsumerState<EditExpenseScreen> {
             label: _label,
             note: _noteCtrl.text.isEmpty ? null : _noteCtrl.text,
           );
+      if (updateLinkedSplit && linkedId != null) {
+        await ref.read(splitServiceProvider).updateSplitFromExpenseAmount(linkedId, newAmount);
+      }
       if (mounted) context.pop();
     } finally {
       if (mounted) setState(() => _saving = false);

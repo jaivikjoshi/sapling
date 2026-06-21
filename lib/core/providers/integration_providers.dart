@@ -14,6 +14,7 @@ import '../../domain/integrations/product_foundations.dart';
 import '../../domain/integrations/transaction_importer.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/services/category_service.dart';
+import 'auth_providers.dart';
 import 'ledger_providers.dart';
 
 final bankProviderProvider = Provider<BankProvider>((ref) {
@@ -39,7 +40,8 @@ final bankProviderProvider = Provider<BankProvider>((ref) {
 
 final notificationImportProvider = Provider<NotificationProvider>((ref) {
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-    return const PlatformNotificationProvider();
+    final userId = ref.watch(currentUserProvider)?.id;
+    return PlatformNotificationProvider(userId: userId);
   }
   return const UnsupportedNotificationProvider();
 });
