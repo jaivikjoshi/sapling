@@ -95,21 +95,49 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     Future.microtask(() => _runSchedulers(ref, today: today, userId: userId!));
   }
 
+  bool _isSameSchedulerUser(WidgetRef ref, String userId) =>
+      ref.read(currentUserProvider)?.id == userId;
+
   Future<void> _runSchedulers(
     WidgetRef ref, {
     required String today,
     required String userId,
   }) async {
     try {
+      if (!_isSameSchedulerUser(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       await ref
           .read(cycleBoundaryWatcherProvider)
           .checkAndUpdate(DateTime.now());
+
+      if (!_isSameSchedulerUser(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       final now = DateTime.now();
       await ref.read(paydayAutoPosterProvider).runForDate(now);
+
+      if (!_isSameSchedulerUser(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       await ref.read(billAutoPosterProvider).runForDate(now);
+
+      if (!_isSameSchedulerUser(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       await ref.read(notificationSchedulerProvider).rescheduleAll();
+
+      if (!_isSameSchedulerUser(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       await ref.read(snapshotWriterProvider).writeSnapshot();
-      if (ref.read(currentUserProvider)?.id != userId) {
+
+      if (!_isSameSchedulerUser(ref, userId)) {
         _schedulerRunCoordinator.markRunEndedWithoutSuccess();
         return;
       }

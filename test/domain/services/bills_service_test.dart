@@ -472,5 +472,76 @@ void main() {
         expect((await txnRepo.getAll()).length, 2);
       },
     );
+    test(
+      'markPaid updates existing autopay expense when amountOverride differs',
+      () async {
+        final billId = await service.create(
+          name: 'Electricity',
+          amount: 120,
+          frequency: BillFrequency.monthly,
+          nextDueDate: DateTime(2025, 4, 1),
+          categoryId: 'cat-utils',
+          defaultLabel: SpendLabel.green,
+        );
+
+        const autoTxnId = 'auto-posted-txn';
+        await txnRepo.insert(
+          Transaction(
+            id: autoTxnId,
+            type: enumToDb(TransactionType.expense),
+            amount: 120,
+            date: DateTime(2025, 4, 1),
+            categoryId: 'cat-utils',
+            label: enumToDb(SpendLabel.green),
+            note: 'Bill auto-posted: Electricity',
+            linkedBillId: billId,
+            createdAt: DateTime(2025, 4, 1),
+            updatedAt: DateTime(2025, 4, 1),
+          ),
+        );
+
+        final result = await service.markPaid(
+          billId: billId,
+          paidDate: DateTime(2025, 4, 1),
+          amountOverride: 142.50,
+        );
+
+        expect(result.transactionId, autoTxnId);
+        expect(result.paidAmount, 142.50);
+        expect(result.wasNewPayment, isFalse);
+
+        final txn = await txnRepo.getById(autoTxnId);
+        expect(txn.amount, 142.50);
+        expect((await txnRepo.getAll()).length, 1);
+      },
+    );
+
+    test(
+      'concurrent markPaid calls create only one linked expense',
+      () async {
+        final billId = await service.create(
+          name: 'Internet',
+          amount: 80,
+          frequency: BillFrequency.monthly,
+          nextDueDate: DateTime(2025, 5, 1),
+          categoryId: 'cat-1',
+          defaultLabel: SpendLabel.green,
+        );
+
+        final results = await Future.wait([
+          service.markPaid(
+            billId: billId,
+            paidDate: DateTime(2025, 5, 1),
+          ),
+          service.markPaid(
+            billId: billId,
+            paidDate: DateTime(2025, 5, 1),
+          ),
+        ]);
+
+        expect(results.where((r) => r.wasNewPayment).length, 1);
+        expect((await txnRepo.getAll()).length, 1);
+      },
+    );
   });
 }
