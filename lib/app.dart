@@ -95,21 +95,51 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     Future.microtask(() => _runSchedulers(ref, today: today, userId: userId!));
   }
 
+  bool _schedulerUserChanged(WidgetRef ref, String userId) =>
+      ref.read(currentUserProvider)?.id != userId;
+
   Future<void> _runSchedulers(
     WidgetRef ref, {
     required String today,
     required String userId,
   }) async {
+    if (_schedulerUserChanged(ref, userId)) {
+      _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+      return;
+    }
+
+    // Capture scheduler dependencies up front so a mid-run sign-out cannot
+    // redirect writes to the local Drift store via auth-aware providers.
+    final cycleWatcher = ref.read(cycleBoundaryWatcherProvider);
+    final paydayPoster = ref.read(paydayAutoPosterProvider);
+    final billPoster = ref.read(billAutoPosterProvider);
+    final notificationScheduler = ref.read(notificationSchedulerProvider);
+    final snapshotWriter = ref.read(snapshotWriterProvider);
+
     try {
-      await ref
-          .read(cycleBoundaryWatcherProvider)
-          .checkAndUpdate(DateTime.now());
+      await cycleWatcher.checkAndUpdate(DateTime.now());
+      if (_schedulerUserChanged(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       final now = DateTime.now();
-      await ref.read(paydayAutoPosterProvider).runForDate(now);
-      await ref.read(billAutoPosterProvider).runForDate(now);
-      await ref.read(notificationSchedulerProvider).rescheduleAll();
-      await ref.read(snapshotWriterProvider).writeSnapshot();
-      if (ref.read(currentUserProvider)?.id != userId) {
+      await paydayPoster.runForDate(now);
+      if (_schedulerUserChanged(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
+      await billPoster.runForDate(now);
+      if (_schedulerUserChanged(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
+      await notificationScheduler.rescheduleAll();
+      if (_schedulerUserChanged(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
+      await snapshotWriter.writeSnapshot();
+      if (_schedulerUserChanged(ref, userId)) {
         _schedulerRunCoordinator.markRunEndedWithoutSuccess();
         return;
       }

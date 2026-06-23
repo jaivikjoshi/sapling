@@ -436,6 +436,37 @@ void main() {
     );
 
     test(
+      'markPaid is idempotent when bill was paid early and user confirms on '
+      'the original due date',
+      () async {
+        final billId = await service.create(
+          name: 'Rent',
+          amount: 1000,
+          frequency: BillFrequency.monthly,
+          nextDueDate: DateTime(2025, 6, 1),
+          categoryId: 'cat-1',
+          defaultLabel: SpendLabel.green,
+        );
+
+        final early = await service.markPaid(
+          billId: billId,
+          paidDate: DateTime(2025, 5, 20),
+        );
+        expect(early.updatedBill.nextDueDate, DateTime(2025, 7, 1));
+
+        final countBefore = (await txnRepo.getAll()).length;
+        final onDueDate = await service.markPaid(
+          billId: billId,
+          paidDate: DateTime(2025, 6, 1),
+        );
+
+        expect(onDueDate.transactionId, early.transactionId);
+        expect(onDueDate.updatedBill.nextDueDate, DateTime(2025, 7, 1));
+        expect((await txnRepo.getAll()).length, countBefore);
+      },
+    );
+
+    test(
       'markPaid does not treat the previous cycle payment as the current one',
       () async {
         final billId = await service.create(

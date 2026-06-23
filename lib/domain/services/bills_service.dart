@@ -208,6 +208,23 @@ class BillsService {
           return t;
         }
       }
+
+      // Early payment advances nextDueDate; marking paid on the original due
+      // date (now cycleStart) should not create a second expense.
+      if (paidDay == cycleStart) {
+        final prevCycleStart = retreatByBillFrequency(cycleStart, freq);
+        final prevCycleEnd = cycleStart.add(const Duration(days: 1));
+        final prevCycleTxns = await _txnRepo.getByDateRange(
+          prevCycleStart,
+          prevCycleEnd,
+        );
+        for (final t in prevCycleTxns) {
+          if (t.type == enumToDb(TransactionType.expense) &&
+              t.linkedBillId == bill.id) {
+            return t;
+          }
+        }
+      }
     }
 
     return null;
