@@ -201,14 +201,19 @@ class TransactionReviewController
       final ledger = _ref.read(ledgerServiceProvider);
       final transactionsRepo = _ref.read(transactionsRepositoryProvider);
       final existing = await transactionsRepo.getAll();
-      final importedNotes =
-          existing.map((txn) => txn.note).whereType<String>().toSet();
+      final importedSourceTags = existing
+          .map((txn) => txn.note)
+          .whereType<String>()
+          .map(_importSourceTagFromNote)
+          .whereType<String>()
+          .toSet();
       final categories =
           _ref.read(categoriesProvider).valueOrNull ?? const <Category>[];
 
       for (final draft in approved) {
         final importNote = _importNote(draft);
-        if (importedNotes.contains(importNote)) {
+        final importSourceTag = _importSourceTag(draft);
+        if (importedSourceTags.contains(importSourceTag)) {
           skipped += 1;
           continue;
         }
@@ -233,7 +238,7 @@ class TransactionReviewController
             note: importNote,
           );
         }
-        importedNotes.add(importNote);
+        importedSourceTags.add(importSourceTag);
         created += 1;
       }
 
@@ -312,9 +317,19 @@ class TransactionReviewController
         draft.merchant!.trim(),
       if (draft.note != null && draft.note!.trim().isNotEmpty)
         draft.note!.trim(),
-      'Imported from ${enumToDb(draft.source)}:${draft.sourceId}',
+      _importSourceTag(draft),
     ];
     return parts.join(' • ');
+  }
+
+  String _importSourceTag(ImportedTransactionDraft draft) =>
+      'Imported from ${enumToDb(draft.source)}:${draft.sourceId}';
+
+  String? _importSourceTagFromNote(String note) {
+    const prefix = 'Imported from ';
+    final start = note.lastIndexOf(prefix);
+    if (start == -1) return null;
+    return note.substring(start).trim();
   }
 }
 

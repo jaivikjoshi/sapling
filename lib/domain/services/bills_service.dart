@@ -13,6 +13,10 @@ class BillsService {
   final TransactionsRepository _txnRepo;
   static const _uuid = Uuid();
 
+  /// Serializes bill payment operations so [markPaid] and [BillAutoPoster]
+  /// cannot both insert a linked expense for the same billing cycle.
+  static final Map<String, Future<Object?>> _billPaymentLocks = {};
+
   BillsService(this._billsRepo, this._txnRepo);
 
   Stream<List<Bill>> watchAll() => _billsRepo.watchAll();
@@ -106,8 +110,38 @@ class BillsService {
   /// If an expense for this bill already exists on the paid day (for example
   /// from [BillAutoPoster]), this call is a no-op for the ledger and schedule:
   /// it returns that transaction without inserting a duplicate or advancing
-  /// [nextDueDate] again.
+  /// [nextDueDate] again. When [amountOverride] differs from the existing
+  /// expense, the linked transaction amount is updated.
   Future<MarkPaidResult> markPaid({
+    required String billId,
+    DateTime? paidDate,
+    double? amountOverride,
+  }) {
+    return _withBillPaymentLock(billId, () async {
+      return _markPaidUnlocked(
+        billId: billId,
+        paidDate: paidDate,
+        amountOverride: amountOverride,
+      );
+    });
+  }
+
+  Future<T> _withBillPaymentLock<T>(
+    String billId,
+    Future<T> Function() action,
+  ) {
+    final previous = _billPaymentLocks[billId] ?? Future<Object?>.value(null);
+    late Future<T> result;
+    result = previous.then((_) => action()).whenComplete(() {
+      if (identical(_billPaymentLocks[billId], result)) {
+        _billPaymentLocks.remove(billId);
+      }
+    });
+    _billPaymentLocks[billId] = result;
+    return result;
+  }
+
+  Future<MarkPaidResult> _markPaidUnlocked({
     required String billId,
     DateTime? paidDate,
     double? amountOverride,
@@ -122,10 +156,25 @@ class BillsService {
       effectiveDate: effectiveDate,
     );
     if (existing != null) {
+      if (amountOverride != null &&
+          (existing.amount - amountOverride).abs() > 0.009) {
+        final now = DateTime.now();
+        await _txnRepo.updateById(
+          existing.id,
+          existing.copyWith(amount: amountOverride, updatedAt: now),
+        );
+        return MarkPaidResult(
+          transactionId: existing.id,
+          updatedBill: bill,
+          paidAmount: amountOverride,
+          wasNewPayment: false,
+        );
+      }
       return MarkPaidResult(
         transactionId: existing.id,
         updatedBill: bill,
         paidAmount: existing.amount,
+        wasNewPayment: false,
       );
     }
 
@@ -161,6 +210,7 @@ class BillsService {
       transactionId: txnId,
       updatedBill: updated,
       paidAmount: effectiveAmount,
+      wasNewPayment: true,
     );
   }
 
@@ -208,6 +258,39 @@ class BillsService {
           return t;
         }
       }
+
+      // Early payment advances nextDueDate; marking paid on the original due
+      // date (now cycleStart) should not create a second expense.
+      if (paidDay == cycleStart) {
+        final prevCycleStart = retreatByBillFrequency(cycleStart, freq);
+        final prevCycleEnd = cycleStart.add(const Duration(days: 1));
+        final prevCycleTxns = await _txnRepo.getByDateRange(
+          prevCycleStart,
+          prevCycleEnd,
+        );
+        for (final t in prevCycleTxns) {
+          if (t.type == enumToDb(TransactionType.expense) &&
+              t.linkedBillId == bill.id) {
+            return t;
+          }
+        }
+      }
+    }
+
+    // Late payment or retry after a partial failure: any linked expense in
+    // the outstanding cycle (after the previous due date) satisfies markPaid.
+    if (!paidDay.isBefore(dueDay)) {
+      final cycleStart = retreatByBillFrequency(dueDay, freq);
+      final cycleEnd = advanceByBillFrequency(dueDay, freq);
+      final cycleTxns = await _txnRepo.getByDateRange(cycleStart, cycleEnd);
+      for (final t in cycleTxns) {
+        final txnDay = DateTime(t.date.year, t.date.month, t.date.day);
+        if (t.type == enumToDb(TransactionType.expense) &&
+            t.linkedBillId == bill.id &&
+            txnDay.isAfter(cycleStart)) {
+          return t;
+        }
+      }
     }
 
     return null;
@@ -234,10 +317,12 @@ class MarkPaidResult {
   final String transactionId;
   final Bill updatedBill;
   final double paidAmount;
+  final bool wasNewPayment;
 
   const MarkPaidResult({
     required this.transactionId,
     required this.updatedBill,
     required this.paidAmount,
+    this.wasNewPayment = true,
   });
 }

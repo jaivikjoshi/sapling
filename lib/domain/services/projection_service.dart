@@ -39,8 +39,11 @@ abstract final class ProjectionService {
           final isAlreadyConfirmed = confirmedIncome.any((t) =>
               t.linkedRecurringIncomeId == schedule.id &&
               _sameDay(t.date, cursor));
+          final hasConfirmedOnDay = confirmedIncome.any(
+            (t) => _sameDay(t.date, cursor),
+          );
 
-          if (!isAlreadyConfirmed) {
+          if (!isAlreadyConfirmed && !hasConfirmedOnDay) {
             if (behavior == PaydayBehavior.autoPostExpected &&
                 schedule.expectedAmount != null) {
               total += schedule.expectedAmount!;

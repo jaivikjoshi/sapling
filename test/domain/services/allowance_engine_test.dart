@@ -173,6 +173,39 @@ void main() {
       expect(result.dailyAllowance, 0);
       expect(result.behindAmount, 500);
     });
+
+    test(
+      'manual income on payday does not double-count scheduled paycheck',
+      () async {
+        final now = DateTime.now();
+        await incomeRepo.insert(
+          RecurringIncomesCompanion.insert(
+            id: 'salary-1',
+            name: 'Salary',
+            frequency: const Value('monthly'),
+            nextPaydayDate: now,
+            expectedAmount: const Value(2000),
+            paydayBehavior: const Value('confirm_actual_on_payday'),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        await ledger.addIncome(
+          amount: 2000,
+          date: now,
+          postingType: IncomePostingType.manualOneTime,
+          source: 'Paycheck',
+        );
+
+        final result = await engine.computePaycheckMode(settings: baseSettings);
+
+        expect(result.balance, 2000);
+        expect(result.projectedIncome, 0);
+        expect(result.spendablePool, closeTo(2000, 0.01));
+        expect(result.dailyAllowance, closeTo(2000 / result.daysLeft, 0.01));
+      },
+    );
   });
 
   group('AllowanceEngine — payday_based cycle', () {
