@@ -6,18 +6,21 @@ import 'package:leko/data/db/leko_database.dart';
 import 'package:leko/data/repositories/bills_repository.dart';
 import 'package:leko/data/repositories/transactions_repository.dart';
 import 'package:leko/domain/schedulers/bill_auto_poster.dart';
+import 'package:leko/domain/services/bills_service.dart';
 
 void main() {
   late LekoDatabase db;
   late DriftBillsRepository billsRepo;
   late DriftTransactionsRepository txnRepo;
+  late BillsService billsService;
   late BillAutoPoster poster;
 
   setUp(() async {
     db = LekoDatabase.forTesting(NativeDatabase.memory());
     billsRepo = DriftBillsRepository(db);
     txnRepo = DriftTransactionsRepository(db);
-    poster = BillAutoPoster(billsRepo, txnRepo);
+    billsService = BillsService(billsRepo, txnRepo);
+    poster = BillAutoPoster(billsRepo, billsService);
   });
 
   tearDown(() => db.close());
@@ -73,6 +76,35 @@ void main() {
 
       final reloaded = await billsRepo.getById('bill-auto');
       expect(reloaded.nextDueDate, DateTime(2026, 6, 16));
+    });
+
+    test('concurrent autopost and markPaid create only one expense', () async {
+      final due = DateTime(2026, 5, 16);
+      await billsRepo.insert(
+        BillsCompanion.insert(
+          id: 'bill-race',
+          name: 'Insurance',
+          amount: 200,
+          nextDueDate: due,
+          categoryId: 'cat-1',
+          autopay: const Value(true),
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        ),
+      );
+
+      await Future.wait([
+        poster.runForDate(DateTime(2026, 5, 16, 9, 0)),
+        billsService.markPaid(
+          billId: 'bill-race',
+          paidDate: due,
+        ),
+      ]);
+
+      final txns = await txnRepo.getAll();
+      expect(txns, hasLength(1));
+      expect(txns.single.linkedBillId, 'bill-race');
+      expect(txns.single.amount, 200);
     });
   });
 }
