@@ -42,7 +42,7 @@ final paydayAutoPosterProvider = Provider<PaydayAutoPoster>((ref) {
 final billAutoPosterProvider = Provider<BillAutoPoster>((ref) {
   return BillAutoPoster(
     ref.watch(billsRepositoryProvider),
-    ref.watch(transactionsRepositoryProvider),
+    ref.watch(billsServiceProvider),
   );
 });
 
