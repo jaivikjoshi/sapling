@@ -1,12 +1,11 @@
 import 'package:drift/drift.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../core/utils/date_helpers.dart';
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/leko_database.dart';
 import '../../data/repositories/bills_repository.dart';
-import '../../data/repositories/transactions_repository.dart';
 import '../models/enums.dart';
+import '../services/bills_service.dart';
 
 /// Automatically posts an expense transaction for each recurring bill on its
 /// due date and rolls the due date forward to the next cycle.
@@ -20,10 +19,9 @@ import '../models/enums.dart';
 ///      caught up even if the user hasn't opened the app for a while.
 class BillAutoPoster {
   final BillsRepository _billsRepo;
-  final TransactionsRepository _txnRepo;
-  static const _uuid = Uuid();
+  final BillsService _billsService;
 
-  BillAutoPoster(this._billsRepo, this._txnRepo);
+  BillAutoPoster(this._billsRepo, this._billsService);
 
   /// Posts and advances every autopay bill up to and including [today].
   /// Only processes bills whose [Bill.autopay] flag is true.
@@ -59,11 +57,12 @@ class BillAutoPoster {
     int guard = 0;
     while (!due.isAfter(todayStart) && guard < 1000) {
       guard++;
-      final already = await _alreadyPosted(bill.id, due);
-      if (!already) {
-        await _postExpense(bill, due, label);
-        posted++;
-      }
+      final inserted = await _billsService.postAutopayExpenseIfNeeded(
+        bill: bill,
+        dueDate: due,
+        label: label,
+      );
+      if (inserted) posted++;
       due = advanceByBillFrequency(due, freq);
     }
 
@@ -77,34 +76,5 @@ class BillAutoPoster {
       );
     }
     return posted;
-  }
-
-  Future<bool> _alreadyPosted(String billId, DateTime dateStart) async {
-    final dateEnd = dateStart.add(const Duration(days: 1));
-    final txns = await _txnRepo.getByDateRange(dateStart, dateEnd);
-    return txns.any(
-      (t) =>
-          t.type == enumToDb(TransactionType.expense) &&
-          t.linkedBillId == billId,
-    );
-  }
-
-  Future<void> _postExpense(Bill bill, DateTime date, SpendLabel label) async {
-    final id = _uuid.v4();
-    final now = DateTime.now();
-    await _txnRepo.insert(
-      Transaction(
-        id: id,
-        type: enumToDb(TransactionType.expense),
-        amount: bill.amount,
-        date: date,
-        categoryId: bill.categoryId,
-        label: enumToDb(label),
-        note: 'Bill auto-posted: ${bill.name}',
-        linkedBillId: bill.id,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
   }
 }
