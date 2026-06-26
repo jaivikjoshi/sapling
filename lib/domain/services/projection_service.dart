@@ -37,8 +37,9 @@ abstract final class ProjectionService {
       while (cursor.isBefore(end)) {
         if (!cursor.isBefore(start)) {
           final isAlreadyConfirmed = confirmedIncome.any((t) =>
-              t.linkedRecurringIncomeId == schedule.id &&
-              _sameDay(t.date, cursor));
+              _sameDay(t.date, cursor) &&
+              (t.linkedRecurringIncomeId == schedule.id ||
+                  t.linkedRecurringIncomeId == null));
 
           if (!isAlreadyConfirmed) {
             if (behavior == PaydayBehavior.autoPostExpected &&
