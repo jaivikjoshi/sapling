@@ -95,21 +95,50 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     Future.microtask(() => _runSchedulers(ref, today: today, userId: userId!));
   }
 
+  bool _isSameSchedulerUser(WidgetRef ref, String userId) =>
+      ref.read(currentUserProvider)?.id == userId;
+
   Future<void> _runSchedulers(
     WidgetRef ref, {
     required String today,
     required String userId,
   }) async {
+    // Pin auth-bound dependencies so sign-out or account switch mid-run cannot
+    // redirect writes to Drift or another user's Supabase repos.
+    final cycleWatcher = ref.read(cycleBoundaryWatcherProvider);
+    final paydayPoster = ref.read(paydayAutoPosterProvider);
+    final billPoster = ref.read(billAutoPosterProvider);
+    final notificationScheduler = ref.read(notificationSchedulerProvider);
+    final snapshotWriter = ref.read(snapshotWriterProvider);
+
     try {
-      await ref
-          .read(cycleBoundaryWatcherProvider)
-          .checkAndUpdate(DateTime.now());
+      if (!_isSameSchedulerUser(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
+      await cycleWatcher.checkAndUpdate(DateTime.now());
+      if (!_isSameSchedulerUser(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
       final now = DateTime.now();
-      await ref.read(paydayAutoPosterProvider).runForDate(now);
-      await ref.read(billAutoPosterProvider).runForDate(now);
-      await ref.read(notificationSchedulerProvider).rescheduleAll();
-      await ref.read(snapshotWriterProvider).writeSnapshot();
-      if (ref.read(currentUserProvider)?.id != userId) {
+      await paydayPoster.runForDate(now);
+      if (!_isSameSchedulerUser(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
+      await billPoster.runForDate(now);
+      if (!_isSameSchedulerUser(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
+      await notificationScheduler.rescheduleAll();
+      if (!_isSameSchedulerUser(ref, userId)) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
+        return;
+      }
+      await snapshotWriter.writeSnapshot();
+      if (!_isSameSchedulerUser(ref, userId)) {
         _schedulerRunCoordinator.markRunEndedWithoutSuccess();
         return;
       }
@@ -134,6 +163,7 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     // and (2) the user explicitly signing in from the auth screen.
     ref.listen(currentUserProvider, (previous, current) {
       if (current == null) {
+        _schedulerRunCoordinator.markRunEndedWithoutSuccess();
         _schedulerRunCoordinator.lastRunDate = null;
         _schedulerRunCoordinator.lastUserId = null;
         return;
