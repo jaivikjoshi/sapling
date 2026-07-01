@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
@@ -12,6 +14,7 @@ class BillsService {
   final BillsRepository _billsRepo;
   final TransactionsRepository _txnRepo;
   static const _uuid = Uuid();
+  static final _billPaymentLocks = <String, Future<void>>{};
 
   BillsService(this._billsRepo, this._txnRepo);
 
@@ -112,56 +115,108 @@ class BillsService {
     DateTime? paidDate,
     double? amountOverride,
   }) async {
-    final bill = await _billsRepo.getById(billId);
-    final effectiveDate = paidDate ?? DateTime.now();
-    final effectiveAmount = amountOverride ?? bill.amount;
-    final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
+    return _withBillPaymentLock(billId, () async {
+      final bill = await _billsRepo.getById(billId);
+      final effectiveDate = paidDate ?? DateTime.now();
+      final effectiveAmount = amountOverride ?? bill.amount;
+      final label = enumFromDb<SpendLabel>(bill.defaultLabel, SpendLabel.values);
 
-    final existing = await _findLinkedExpenseInCurrentCycle(
-      bill,
-      effectiveDate: effectiveDate,
-    );
-    if (existing != null) {
-      return MarkPaidResult(
-        transactionId: existing.id,
-        updatedBill: bill,
-        paidAmount: existing.amount,
+      final existing = await _findLinkedExpenseInCurrentCycle(
+        bill,
+        effectiveDate: effectiveDate,
       );
+      if (existing != null) {
+        return MarkPaidResult(
+          transactionId: existing.id,
+          updatedBill: bill,
+          paidAmount: existing.amount,
+        );
+      }
+
+      final txnId = _uuid.v4();
+      final now = DateTime.now();
+      await _txnRepo.insert(
+        Transaction(
+          id: txnId,
+          type: enumToDb(TransactionType.expense),
+          amount: effectiveAmount,
+          date: effectiveDate,
+          categoryId: bill.categoryId,
+          label: enumToDb(label),
+          note: 'Bill paid: ${bill.name}',
+          linkedBillId: billId,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final freq = enumFromDb<BillFrequency>(
+        bill.frequency,
+        BillFrequency.values,
+      );
+      final nextDue = advanceByBillFrequency(bill.nextDueDate, freq);
+      await _billsRepo.updateById(
+        billId,
+        BillsCompanion(nextDueDate: Value(nextDue), updatedAt: Value(now)),
+      );
+
+      final updated = await _billsRepo.getById(billId);
+      return MarkPaidResult(
+        transactionId: txnId,
+        updatedBill: updated,
+        paidAmount: effectiveAmount,
+      );
+    });
+  }
+
+  /// Idempotent autopay insert used by [BillAutoPoster]. Shares the same
+  /// per-bill lock as [markPaid] so overlapping app-open autopost and manual
+  /// Mark Paid cannot both pass the existence check.
+  Future<bool> postAutopayExpenseIfNeeded({
+    required Bill bill,
+    required DateTime dueDate,
+    required SpendLabel label,
+  }) async {
+    return _withBillPaymentLock(bill.id, () async {
+      final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
+      final existing = await _findLinkedExpenseOnDay(bill.id, dueDay);
+      if (existing != null) return false;
+
+      final now = DateTime.now();
+      await _txnRepo.insert(
+        Transaction(
+          id: _uuid.v4(),
+          type: enumToDb(TransactionType.expense),
+          amount: bill.amount,
+          date: dueDay,
+          categoryId: bill.categoryId,
+          label: enumToDb(label),
+          note: 'Bill auto-posted: ${bill.name}',
+          linkedBillId: bill.id,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      return true;
+    });
+  }
+
+  Future<T> _withBillPaymentLock<T>(
+    String billId,
+    Future<T> Function() action,
+  ) async {
+    final previous = _billPaymentLocks[billId] ?? Future<void>.value();
+    final gate = Completer<void>();
+    _billPaymentLocks[billId] = gate.future;
+    await previous;
+    try {
+      return await action();
+    } finally {
+      gate.complete();
+      if (identical(_billPaymentLocks[billId], gate.future)) {
+        _billPaymentLocks.remove(billId);
+      }
     }
-
-    final txnId = _uuid.v4();
-    final now = DateTime.now();
-    await _txnRepo.insert(
-      Transaction(
-        id: txnId,
-        type: enumToDb(TransactionType.expense),
-        amount: effectiveAmount,
-        date: effectiveDate,
-        categoryId: bill.categoryId,
-        label: enumToDb(label),
-        note: 'Bill paid: ${bill.name}',
-        linkedBillId: billId,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
-
-    final freq = enumFromDb<BillFrequency>(
-      bill.frequency,
-      BillFrequency.values,
-    );
-    final nextDue = advanceByBillFrequency(bill.nextDueDate, freq);
-    await _billsRepo.updateById(
-      billId,
-      BillsCompanion(nextDueDate: Value(nextDue), updatedAt: Value(now)),
-    );
-
-    final updated = await _billsRepo.getById(billId);
-    return MarkPaidResult(
-      transactionId: txnId,
-      updatedBill: updated,
-      paidAmount: effectiveAmount,
-    );
   }
 
   static DateTime computeNextDueDate(
