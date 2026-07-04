@@ -85,7 +85,7 @@ void main() {
     });
 
     expect(first.sourceId, second.sourceId);
-    expect(first.sourceId, contains('bank_aggregator'));
+    expect(first.sourceId, contains('bankAggregator'));
   });
 
   test(
