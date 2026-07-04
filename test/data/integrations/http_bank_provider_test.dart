@@ -69,6 +69,25 @@ void main() {
     expect(drafts.single.reviewStatus, ImportReviewStatus.pending);
   });
 
+  test('uses stable fallback sourceId when provider omits ids', () {
+    final json = {
+      'amount': 12.50,
+      'date': '2026-06-16',
+      'type': 'expense',
+      'merchant': 'Lunch Spot',
+      'confidence': 0.91,
+    };
+
+    final first = ImportedTransactionDraftJson.fromJson(json);
+    final second = ImportedTransactionDraftJson.fromJson({
+      ...json,
+      'confidence': 0.42,
+    });
+
+    expect(first.sourceId, second.sourceId);
+    expect(first.sourceId, contains('bankAggregator'));
+  });
+
   test(
     'serializes approved transactions back to backend import endpoint',
     () async {
