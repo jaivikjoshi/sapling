@@ -136,7 +136,7 @@ class ImportedTransactionDraftJson {
     final date = _asDate(json['date'])?.toIso8601String().split('T').first ?? '';
     final merchant = _optionalString(json['merchant']) ?? '';
     final type = json['type']?.toString() ?? '';
-    return '${source.name}:$date:$amount:$merchant:$type';
+    return '${enumToDb(source)}:$date:$amount:$merchant:$type';
   }
 
   static Map<String, Object?> toJson(ImportedTransactionDraft draft) {
