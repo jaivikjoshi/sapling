@@ -4,18 +4,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:leko/core/utils/date_helpers.dart';
 import 'package:leko/data/db/leko_database.dart';
 import 'package:leko/data/repositories/recurring_income_repository.dart';
+import 'package:leko/data/repositories/transactions_repository.dart';
 import 'package:leko/domain/models/enums.dart';
 import 'package:leko/domain/services/recurring_income_service.dart';
 
 void main() {
   late LekoDatabase db;
   late RecurringIncomeRepository repo;
+  late DriftTransactionsRepository txnRepo;
   late RecurringIncomeService service;
 
   setUp(() {
     db = LekoDatabase.forTesting(NativeDatabase.memory());
     repo = DriftRecurringIncomeRepository(db);
-    service = RecurringIncomeService(repo);
+    txnRepo = DriftTransactionsRepository(db);
+    service = RecurringIncomeService(repo, txnRepo);
   });
 
   tearDown(() => db.close());
@@ -243,5 +246,46 @@ void main() {
       final all = await repo.getAll();
       expect(all.where((i) => i.id == id).isEmpty, true);
     });
+
+    test(
+      'postExpectedPaydayIfNeeded is idempotent and skips unlinked manual income',
+      () async {
+        final incomeId = await service.create(
+          name: 'Salary',
+          frequency: IncomeFrequency.monthly,
+          nextPaydayDate: DateTime(2025, 6, 15),
+          expectedAmount: 2000,
+          paydayBehavior: PaydayBehavior.autoPostExpected,
+        );
+        final income = await service.getById(incomeId);
+        final payday = DateTime(2025, 6, 15);
+
+        await txnRepo.insert(
+          Transaction(
+            id: 'manual-paycheck',
+            type: 'income',
+            amount: 2050,
+            date: payday,
+            createdAt: payday,
+            updatedAt: payday,
+          ),
+        );
+
+        final inserted = await service.postExpectedPaydayIfNeeded(
+          income: income,
+          payday: payday,
+          amount: 2000,
+        );
+        final duplicate = await service.postExpectedPaydayIfNeeded(
+          income: income,
+          payday: payday,
+          amount: 2000,
+        );
+
+        expect(inserted, isFalse);
+        expect(duplicate, isFalse);
+        expect((await txnRepo.getAll()).length, 1);
+      },
+    );
   });
 }
