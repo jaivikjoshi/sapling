@@ -35,14 +35,14 @@ final cycleBoundaryWatcherProvider = Provider<CycleBoundaryWatcher>((ref) {
 final paydayAutoPosterProvider = Provider<PaydayAutoPoster>((ref) {
   return PaydayAutoPoster(
     ref.watch(recurringIncomeRepositoryProvider),
-    ref.watch(transactionsRepositoryProvider),
+    ref.watch(recurringIncomeServiceProvider),
   );
 });
 
 final billAutoPosterProvider = Provider<BillAutoPoster>((ref) {
   return BillAutoPoster(
     ref.watch(billsRepositoryProvider),
-    ref.watch(transactionsRepositoryProvider),
+    ref.watch(billsServiceProvider),
   );
 });
 
