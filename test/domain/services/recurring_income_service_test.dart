@@ -4,18 +4,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:leko/core/utils/date_helpers.dart';
 import 'package:leko/data/db/leko_database.dart';
 import 'package:leko/data/repositories/recurring_income_repository.dart';
+import 'package:leko/data/repositories/transactions_repository.dart';
 import 'package:leko/domain/models/enums.dart';
 import 'package:leko/domain/services/recurring_income_service.dart';
 
 void main() {
   late LekoDatabase db;
   late RecurringIncomeRepository repo;
+  late DriftTransactionsRepository txnRepo;
   late RecurringIncomeService service;
 
   setUp(() {
     db = LekoDatabase.forTesting(NativeDatabase.memory());
     repo = DriftRecurringIncomeRepository(db);
-    service = RecurringIncomeService(repo);
+    txnRepo = DriftTransactionsRepository(db);
+    service = RecurringIncomeService(repo, txnRepo);
   });
 
   tearDown(() => db.close());
