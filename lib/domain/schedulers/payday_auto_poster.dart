@@ -1,20 +1,18 @@
 import 'package:drift/drift.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../core/utils/date_helpers.dart';
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/leko_database.dart';
 import '../../data/repositories/recurring_income_repository.dart';
-import '../../data/repositories/transactions_repository.dart';
 import '../models/enums.dart';
+import '../services/recurring_income_service.dart';
 
 /// On payday, auto-insert expected income when enabled and expectedAmount exists.
 class PaydayAutoPoster {
   final RecurringIncomeRepository _incomeRepo;
-  final TransactionsRepository _txnRepo;
-  static const _uuid = Uuid();
+  final RecurringIncomeService _incomeService;
 
-  PaydayAutoPoster(this._incomeRepo, this._txnRepo);
+  PaydayAutoPoster(this._incomeRepo, this._incomeService);
 
   /// Run for [today]. For each income with paydayBehavior == autoPostExpected
   /// and a positive expectedAmount, post the paycheck for every payday that
@@ -52,11 +50,12 @@ class PaydayAutoPoster {
     int guard = 0;
     while (!payday.isAfter(todayStart) && guard < 1000) {
       guard++;
-      final already = await _hasIncomeForRecurringOnDate(income.id, payday);
-      if (!already) {
-        await _postExpected(income, payday, amount);
-        posted++;
-      }
+      final inserted = await _incomeService.postExpectedPaydayIfNeeded(
+        income: income,
+        payday: payday,
+        amount: amount,
+      );
+      if (inserted) posted++;
       payday = advanceByIncomeFrequency(payday, freq);
     }
 
@@ -71,35 +70,4 @@ class PaydayAutoPoster {
     }
     return posted;
   }
-
-  Future<bool> _hasIncomeForRecurringOnDate(
-    String recurringIncomeId,
-    DateTime dateStart,
-  ) async {
-    final dateEnd = dateStart.add(const Duration(days: 1));
-    final txns = await _txnRepo.getByDateRange(dateStart, dateEnd);
-    return txns.any((t) =>
-        t.type == 'income' && t.linkedRecurringIncomeId == recurringIncomeId);
-  }
-
-  Future<void> _postExpected(
-    RecurringIncome income,
-    DateTime date,
-    double amount,
-  ) async {
-    final id = _uuid.v4();
-    final now = DateTime.now();
-    await _txnRepo.insert(Transaction(
-      id: id,
-      type: enumToDb(TransactionType.income),
-      amount: amount,
-      date: date,
-      incomePostingType: enumToDb(IncomePostingType.autoPostedExpected),
-      linkedRecurringIncomeId: income.id,
-      note: 'Auto-posted: ${income.name}',
-      createdAt: now,
-      updatedAt: now,
-    ));
-  }
-
 }
