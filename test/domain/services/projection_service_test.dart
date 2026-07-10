@@ -85,6 +85,37 @@ void main() {
       // Confirmed 2100, projected skipped because same day + same schedule
       expect(total, 2100);
     });
+
+    test(
+      'does not double-count unlinked manual income on a scheduled payday',
+      () {
+        final schedules = [
+          _fakeIncome(
+            id: 'sched-1',
+            nextPaydayDate: DateTime(2025, 6, 15),
+            frequency: 'monthly',
+            expectedAmount: 2000,
+            behavior: 'auto_post_expected',
+          ),
+        ];
+
+        final confirmedTxns = [
+          _fakeTxn(
+            type: 'income',
+            amount: 2050,
+            date: DateTime(2025, 6, 15),
+          ),
+        ];
+
+        final total = ProjectionService.projectIncome(
+          start: DateTime(2025, 6, 1),
+          end: DateTime(2025, 7, 1),
+          confirmedIncome: confirmedTxns,
+          schedules: schedules,
+        );
+        expect(total, 2050);
+      },
+    );
   });
 
   group('ProjectionService.projectBills', () {
