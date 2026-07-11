@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
@@ -5,13 +7,16 @@ import '../../core/utils/date_helpers.dart';
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/leko_database.dart';
 import '../../data/repositories/recurring_income_repository.dart';
+import '../../data/repositories/transactions_repository.dart';
 import '../models/enums.dart';
 
 class RecurringIncomeService {
   final RecurringIncomeRepository _repo;
+  final TransactionsRepository _txnRepo;
   static const _uuid = Uuid();
+  static final _paydayPostLocks = <String, Future<void>>{};
 
-  RecurringIncomeService(this._repo);
+  RecurringIncomeService(this._repo, this._txnRepo);
 
   Stream<List<RecurringIncome>> watchAll() => _repo.watchAll();
 
@@ -108,5 +113,67 @@ class RecurringIncomeService {
     IncomeFrequency frequency,
   ) {
     return advanceByIncomeFrequency(current, frequency);
+  }
+
+  /// Idempotent payday insert used by [PaydayAutoPoster]. Shares a per-income
+  /// lock so overlapping app-open autopost and manual income entry cannot both
+  /// pass the existence check.
+  Future<bool> postExpectedPaydayIfNeeded({
+    required RecurringIncome income,
+    required DateTime payday,
+    required double amount,
+  }) async {
+    return _withPaydayPostLock(income.id, () async {
+      final paydayDay = DateTime(payday.year, payday.month, payday.day);
+      if (await _hasIncomeOnPayday(income.id, paydayDay)) return false;
+
+      final now = DateTime.now();
+      await _txnRepo.insert(
+        Transaction(
+          id: _uuid.v4(),
+          type: enumToDb(TransactionType.income),
+          amount: amount,
+          date: paydayDay,
+          incomePostingType: enumToDb(IncomePostingType.autoPostedExpected),
+          linkedRecurringIncomeId: income.id,
+          note: 'Auto-posted: ${income.name}',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      return true;
+    });
+  }
+
+  Future<bool> _hasIncomeOnPayday(
+    String recurringIncomeId,
+    DateTime paydayDay,
+  ) async {
+    final dayEnd = paydayDay.add(const Duration(days: 1));
+    final txns = await _txnRepo.getByDateRange(paydayDay, dayEnd);
+    return txns.any(
+      (t) =>
+          t.type == enumToDb(TransactionType.income) &&
+          (t.linkedRecurringIncomeId == recurringIncomeId ||
+              t.linkedRecurringIncomeId == null),
+    );
+  }
+
+  Future<T> _withPaydayPostLock<T>(
+    String recurringIncomeId,
+    Future<T> Function() action,
+  ) async {
+    final previous = _paydayPostLocks[recurringIncomeId] ?? Future<void>.value();
+    final gate = Completer<void>();
+    _paydayPostLocks[recurringIncomeId] = gate.future;
+    await previous;
+    try {
+      return await action();
+    } finally {
+      gate.complete();
+      if (identical(_paydayPostLocks[recurringIncomeId], gate.future)) {
+        _paydayPostLocks.remove(recurringIncomeId);
+      }
+    }
   }
 }
