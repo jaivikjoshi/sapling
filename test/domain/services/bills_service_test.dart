@@ -472,5 +472,36 @@ void main() {
         expect((await txnRepo.getAll()).length, 2);
       },
     );
+
+    test(
+      'postAutopayExpenseIfNeeded is idempotent under shared bill lock',
+      () async {
+        final billId = await service.create(
+          name: 'Rent',
+          amount: 1000,
+          frequency: BillFrequency.monthly,
+          nextDueDate: DateTime(2025, 5, 1),
+          categoryId: 'cat-1',
+          defaultLabel: SpendLabel.green,
+          autopay: true,
+        );
+        final bill = await service.getById(billId);
+
+        final first = await service.postAutopayExpenseIfNeeded(
+          bill: bill,
+          dueDate: DateTime(2025, 5, 1),
+          label: SpendLabel.green,
+        );
+        final second = await service.postAutopayExpenseIfNeeded(
+          bill: bill,
+          dueDate: DateTime(2025, 5, 1),
+          label: SpendLabel.green,
+        );
+
+        expect(first, isTrue);
+        expect(second, isFalse);
+        expect((await txnRepo.getAll()).length, 1);
+      },
+    );
   });
 }
