@@ -18,6 +18,7 @@ class LedgerService {
     required String categoryId,
     required SpendLabel label,
     String? note,
+    String? source,
     String? linkedBillId,
     String? linkedSplitEntryId,
   }) async {
@@ -32,6 +33,7 @@ class LedgerService {
         categoryId: categoryId,
         label: enumToDb(label),
         note: note,
+        source: source,
         linkedBillId: linkedBillId,
         linkedSplitEntryId: linkedSplitEntryId,
         createdAt: now,

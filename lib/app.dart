@@ -11,6 +11,7 @@ import 'core/analytics/leko_analytics.dart';
 import 'core/providers/analytics_providers.dart';
 import 'core/providers/auth_providers.dart';
 import 'core/providers/bills_providers.dart';
+import 'core/providers/integration_providers.dart';
 import 'core/providers/recurring_income_providers.dart';
 import 'core/providers/scheduler_providers.dart';
 import 'core/providers/settings_providers.dart';
@@ -18,14 +19,21 @@ import 'core/providers/widget_snapshot_providers.dart';
 import 'core/routing/app_router.dart';
 import 'core/scheduling/scheduler_run_coordinator.dart';
 import 'core/theme/leko_theme.dart';
+import 'domain/integrations/transaction_importer.dart';
 
 bool _isAuthCallback(Uri uri) {
   return uri.scheme == 'com.jaivik.leko' &&
       (uri.host == 'auth-callback' || uri.host == 'login-callback');
 }
 
+bool _isBankCallback(Uri uri) {
+  return uri.scheme == 'com.jaivik.leko' && uri.host == 'bank-callback';
+}
+
 class LekoApp extends ConsumerStatefulWidget {
-  const LekoApp({super.key});
+  const LekoApp({super.key, this.initialDeepLink});
+
+  final Uri? initialDeepLink;
 
   @override
   ConsumerState<LekoApp> createState() => _LekoAppState();
@@ -48,11 +56,12 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     Future.microtask(
       () => ref.read(lekoAnalyticsProvider).track(LekoAnalyticsEvent.appOpened),
     );
-    _deepLinkSubscription = AppLinks().uriLinkStream.listen((uri) {
-      if (_isAuthCallback(uri)) {
-        Supabase.instance.client.auth.getSessionFromUrl(uri).ignore();
-      }
-    });
+    final appLinks = AppLinks();
+    _deepLinkSubscription = appLinks.uriLinkStream.listen(_handleDeepLink);
+    final initialLink = widget.initialDeepLink;
+    if (initialLink != null) {
+      Future.microtask(() => _handleDeepLink(initialLink));
+    }
   }
 
   @override
@@ -69,6 +78,27 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _maybeRunSchedulers();
+      final bankState = ref.read(transactionReviewControllerProvider);
+      if (bankState.connection.status == BankConnectionStatus.connecting) {
+        ref
+            .read(transactionReviewControllerProvider.notifier)
+            .loadBankState(force: true)
+            .ignore();
+      }
+    }
+  }
+
+  void _handleDeepLink(Uri uri) {
+    if (_isAuthCallback(uri)) {
+      Supabase.instance.client.auth.getSessionFromUrl(uri).ignore();
+      return;
+    }
+    if (_isBankCallback(uri)) {
+      ref
+          .read(transactionReviewControllerProvider.notifier)
+          .handleBankCallback(uri)
+          .ignore();
+      ref.read(routerProvider).go('/imports');
     }
   }
 
@@ -144,6 +174,11 @@ class _LekoAppState extends ConsumerState<LekoApp> with WidgetsBindingObserver {
     // cases: (1) Supabase session being restored after the first build fires,
     // and (2) the user explicitly signing in from the auth screen.
     ref.listen(currentUserProvider, (previous, current) {
+      if (previous?.id != current?.id) {
+        ref
+            .read(transactionReviewControllerProvider.notifier)
+            .resetForAuthChange();
+      }
       if (current == null) {
         _schedulerRunCoordinator.lastRunDate = null;
         _schedulerRunCoordinator.lastUserId = null;

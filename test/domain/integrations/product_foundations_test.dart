@@ -3,6 +3,18 @@ import 'package:leko/domain/integrations/product_foundations.dart';
 import 'package:leko/domain/integrations/transaction_importer.dart';
 
 void main() {
+  test('bank category suggestions map to Leko system categories', () {
+    const normalizer = ImportedCategoryNormalizer();
+
+    expect(normalizer.canonicalName('Restaurants & Dining'), 'Dining Out');
+    expect(normalizer.canonicalName('Gas Station'), 'Transportation');
+    expect(normalizer.canonicalName('Pharmacy'), 'Health & Medical');
+    expect(
+      normalizer.canonicalName('Unknown Provider Category'),
+      'Unknown Provider Category',
+    );
+  });
+
   test('transaction review queue dedupes and approves drafts', () {
     final queue = TransactionReviewQueue();
     final draft = ImportedTransactionDraft(

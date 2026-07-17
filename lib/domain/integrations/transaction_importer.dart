@@ -20,7 +20,17 @@ abstract interface class BankProvider extends TransactionImporter {
 
   Future<BankConnectionStatus> connectionStatus();
 
+  Future<BankConnectionDetails> connectionDetails();
+
   Future<BankConnectionIntent> startConnection();
+
+  Future<List<ImportedTransactionDraft>> savedDrafts();
+
+  Future<void> recordReviewDecision(String sourceId, ImportReviewStatus status);
+
+  Future<BankConnectionDetails> updateSelectedAccounts(Set<String> accountIds);
+
+  Future<void> disconnect();
 }
 
 abstract interface class NotificationProvider extends TransactionImporter {
@@ -51,6 +61,10 @@ class ImportedTransactionDraft {
     this.attachmentId,
     this.reviewStatus = ImportReviewStatus.pending,
     this.confidence,
+    this.accountId,
+    this.accountName,
+    this.pending = false,
+    this.ledgerTransactionId,
   });
 
   final String sourceId;
@@ -65,6 +79,10 @@ class ImportedTransactionDraft {
   final String? attachmentId;
   final ImportReviewStatus reviewStatus;
   final double? confidence;
+  final String? accountId;
+  final String? accountName;
+  final bool pending;
+  final String? ledgerTransactionId;
 
   String get dedupeKey => '${source.name}:$sourceId';
 
@@ -81,6 +99,10 @@ class ImportedTransactionDraft {
     String? Function()? attachmentId,
     ImportReviewStatus? reviewStatus,
     double? Function()? confidence,
+    String? Function()? accountId,
+    String? Function()? accountName,
+    bool? pending,
+    String? Function()? ledgerTransactionId,
   }) {
     return ImportedTransactionDraft(
       sourceId: sourceId ?? this.sourceId,
@@ -98,6 +120,13 @@ class ImportedTransactionDraft {
       attachmentId: attachmentId != null ? attachmentId() : this.attachmentId,
       reviewStatus: reviewStatus ?? this.reviewStatus,
       confidence: confidence != null ? confidence() : this.confidence,
+      accountId: accountId != null ? accountId() : this.accountId,
+      accountName: accountName != null ? accountName() : this.accountName,
+      pending: pending ?? this.pending,
+      ledgerTransactionId:
+          ledgerTransactionId != null
+              ? ledgerTransactionId()
+              : this.ledgerTransactionId,
     );
   }
 }
@@ -126,6 +155,54 @@ class BankConnectionIntent {
   final String displayName;
   final String consentCopy;
   final Uri? authorizationUrl;
+}
+
+class BankConnectionDetails {
+  const BankConnectionDetails({
+    required this.status,
+    this.providerId,
+    this.displayName,
+    this.institutionName,
+    this.accounts = const [],
+    this.lastSyncAt,
+    this.errorCode,
+  });
+
+  final BankConnectionStatus status;
+  final String? providerId;
+  final String? displayName;
+  final String? institutionName;
+  final List<BankAccountDetails> accounts;
+  final DateTime? lastSyncAt;
+  final String? errorCode;
+
+  bool get isConnected =>
+      status == BankConnectionStatus.connected ||
+      status == BankConnectionStatus.connecting;
+}
+
+class BankAccountDetails {
+  const BankAccountDetails({
+    required this.id,
+    required this.name,
+    this.mask,
+    this.type,
+    this.subtype,
+    this.currency,
+    this.currentBalance,
+    this.availableBalance,
+    this.isSelected = true,
+  });
+
+  final String id;
+  final String name;
+  final String? mask;
+  final String? type;
+  final String? subtype;
+  final String? currency;
+  final double? currentBalance;
+  final double? availableBalance;
+  final bool isSelected;
 }
 
 class ReceiptAttachment {
@@ -198,7 +275,7 @@ class TransactionReviewQueue {
   }) {
     final byKey = {for (final draft in existing) draft.dedupeKey: draft};
     for (final draft in incoming) {
-      byKey.putIfAbsent(draft.dedupeKey, () => draft);
+      byKey[draft.dedupeKey] = draft;
     }
     return byKey.values.toList(growable: false);
   }
@@ -240,6 +317,75 @@ class TransactionReviewQueue {
   }
 }
 
+class ImportedCategoryNormalizer {
+  const ImportedCategoryNormalizer();
+
+  String? canonicalName(String? suggestion) {
+    final normalized =
+        suggestion?.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();
+    if (normalized == null || normalized.isEmpty) return null;
+    if (_containsAny(normalized, const ['grocery', 'supermarket'])) {
+      return 'Groceries';
+    }
+    if (_containsAny(normalized, const [
+      'dining',
+      'restaurant',
+      'food drink',
+      'coffee',
+      'fast food',
+    ])) {
+      return 'Dining Out';
+    }
+    if (_containsAny(normalized, const ['rent', 'mortgage', 'housing'])) {
+      return 'Rent / Mortgage';
+    }
+    if (_containsAny(normalized, const [
+      'utility',
+      'internet',
+      'telephone',
+      'electric',
+      'water',
+    ])) {
+      return 'Utilities';
+    }
+    if (_containsAny(normalized, const [
+      'transport',
+      'transit',
+      'gas station',
+      'taxi',
+      'rideshare',
+      'parking',
+    ])) {
+      return 'Transportation';
+    }
+    if (_containsAny(normalized, const ['entertainment', 'recreation'])) {
+      return 'Entertainment';
+    }
+    if (_containsAny(normalized, const ['shopping', 'retail', 'clothing'])) {
+      return 'Shopping';
+    }
+    if (_containsAny(normalized, const ['subscription', 'recurring'])) {
+      return 'Subscriptions';
+    }
+    if (_containsAny(normalized, const [
+      'health',
+      'medical',
+      'pharmacy',
+      'dental',
+    ])) {
+      return 'Health & Medical';
+    }
+    if (_containsAny(normalized, const ['personal care', 'beauty'])) {
+      return 'Personal Care';
+    }
+    return suggestion?.trim();
+  }
+
+  bool _containsAny(String value, List<String> candidates) {
+    return candidates.any(value.contains);
+  }
+}
+
 enum BankConnectionStatus {
   disconnected,
   connecting,
@@ -277,6 +423,13 @@ class UnsupportedBankProvider implements BankProvider {
       BankConnectionStatus.unavailable;
 
   @override
+  Future<BankConnectionDetails> connectionDetails() async =>
+      const BankConnectionDetails(status: BankConnectionStatus.unavailable);
+
+  @override
+  Future<void> disconnect() async {}
+
+  @override
   Future<TransactionImportResult> importApproved(
     List<ImportedTransactionDraft> drafts,
   ) async {
@@ -291,6 +444,15 @@ class UnsupportedBankProvider implements BankProvider {
   Future<List<ImportedTransactionDraft>> preview() async => const [];
 
   @override
+  Future<void> recordReviewDecision(
+    String sourceId,
+    ImportReviewStatus status,
+  ) async {}
+
+  @override
+  Future<List<ImportedTransactionDraft>> savedDrafts() async => const [];
+
+  @override
   Future<BankConnectionIntent> startConnection() async {
     return const BankConnectionIntent(
       providerId: 'unsupported_bank_provider',
@@ -299,6 +461,12 @@ class UnsupportedBankProvider implements BankProvider {
           'Bank connections will use a trusted aggregator. Leko will never ask for or store bank credentials directly.',
     );
   }
+
+  @override
+  Future<BankConnectionDetails> updateSelectedAccounts(
+    Set<String> accountIds,
+  ) async =>
+      const BankConnectionDetails(status: BankConnectionStatus.unavailable);
 }
 
 class UnsupportedNotificationProvider implements NotificationProvider {

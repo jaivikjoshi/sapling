@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { handleBankRoute, type BankEnv } from './bank';
 import { generateGeminiJson, type GeminiEnv } from './gemini';
 import {
   buildMockMessageResponse,
@@ -21,7 +22,7 @@ import {
   type LeafEnvelope,
 } from './schemas';
 
-export interface Env extends GeminiEnv {
+export interface Env extends GeminiEnv, BankEnv {
   LEAF_DEV_MODE?: string;
 }
 
@@ -47,6 +48,9 @@ export function createLeafWorker(deps: WorkerDeps = {}): ExportedHandler<Env> {
         });
       }
 
+      const bankResponse = await handleBankRoute(request, env, { fetchImpl });
+      if (bankResponse != null) return withCors(bankResponse);
+
       if (request.method === 'POST' && url.pathname === '/assistant/message') {
         return handleAssistantMessage(request, env, fetchImpl);
       }
@@ -60,6 +64,16 @@ export function createLeafWorker(deps: WorkerDeps = {}): ExportedHandler<Env> {
           error: 'Not found',
           available_routes: [
             'GET /health',
+            'GET /bank/status',
+            'POST /bank/connect',
+            'GET /bank/transactions/drafts',
+            'GET /bank/transactions/preview',
+            'POST /bank/transactions/review',
+            'POST /bank/transactions/import',
+            'POST /bank/accounts/select',
+            'DELETE /bank/connection',
+            'GET /bank/callback',
+            'POST /bank/webhook',
             'POST /assistant/message',
             'POST /assistant/respond',
           ],
@@ -230,8 +244,9 @@ function jsonResponse(payload: unknown, status = 200): Response {
 function withCors(response: Response): Response {
   const headers = new Headers(response.headers);
   headers.set('access-control-allow-origin', '*');
-  headers.set('access-control-allow-methods', 'GET,POST,OPTIONS');
-  headers.set('access-control-allow-headers', 'content-type');
+  headers.set('access-control-allow-methods', 'GET,POST,DELETE,OPTIONS');
+  headers.set('access-control-allow-headers', 'authorization,content-type');
+  headers.set('access-control-max-age', '86400');
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

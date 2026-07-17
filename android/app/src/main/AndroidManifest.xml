@@ -33,6 +33,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="com.jaivik.leko" android:host="auth-callback" />
                 <data android:scheme="com.jaivik.leko" android:host="login-callback" />
+                <data android:scheme="com.jaivik.leko" android:host="bank-callback" />
             </intent-filter>
         </activity>
         <service

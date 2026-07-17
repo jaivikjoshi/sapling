@@ -2640,7 +2640,7 @@ const _privacySections = <({String heading, String body})>[
   (
     heading: 'Bank connections',
     body:
-        'Future bank connections should use a trusted provider and explicit consent. Leko should never store bank credentials directly in the app.',
+        'Bank connections are optional and use Flinks Connect. Leko does not receive your bank username or password. It stores encrypted connection identifiers, selected account metadata, balances, and transaction drafts needed for review. Disconnecting asks Flinks to delete linked bank data and removes unimported bank records from Leko.',
   ),
 ];
 

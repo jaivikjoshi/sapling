@@ -1,6 +1,6 @@
 # Leko Release Readiness Audit
 
-Last updated: 2026-06-16
+Last updated: 2026-07-17
 
 ## Current Status
 
@@ -49,7 +49,7 @@ I also launched the iOS simulator build successfully during the flow audit. Manu
 
 ## Product/Integration Status
 
-- Bank connection: backend/provider boundary exists, but no real trusted aggregator flow is connected in production yet.
+- Bank connection: production-grade authenticated Flinks/Supabase code is implemented, including encrypted per-user connection storage, documented Flinks authorization/polling, durable drafts, account selection, review audit, deep links, HMAC webhooks, and provider deletion. Public launch still requires deploying the migration, Flinks production credentials/whitelisting, legal review, and physical-device TestFlight QA.
 - Notification-based expense detection: provider-backed placeholder exists; real platform permissions/imports still need implementation and device QA.
 - OCR: ML Kit OCR wiring exists for image receipts, but PDF parsing and production-grade extraction still need provider hardening.
 - Voice input: Leaf voice provider and typed-flow routing exist, but platform speech permission and device behavior need production QA.
@@ -68,6 +68,7 @@ I also launched the iOS simulator build successfully during the flow audit. Manu
 - Real iPhone and iPad device QA is still required for onboarding, auth, notifications, OCR, speech, deep links, and offline/poor-network behavior.
 - The web target is not release-ready until the Drift database layer is split to a web-compatible implementation.
 - Sentry, RevenueCat, App Store Connect, and provider keys must be configured outside source control before public beta.
+- The bank feature must remain disabled in the App Store build until every gate in `docs/BANK_LAUNCH_RUNBOOK.md` is signed off. Code completion cannot substitute for Flinks production onboarding, Supabase production migration verification, legal approval, or real-bank deletion testing.
 
 ## Next Changes
 

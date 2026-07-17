@@ -1,0 +1,30 @@
+GEMINI_API_KEY="paste-your-gemini-api-key-here"
+GEMINI_MODEL="gemini-2.5-flash"
+
+# Optional: set to "mock" to exercise the Worker locally without calling Gemini.
+LEAF_DEV_MODE="live"
+
+# Optional: set to "mock" to exercise /bank/* locally without Flinks credentials.
+BANK_DEV_MODE="mock"
+BANK_PROVIDER="flinks"
+
+# Supabase bank storage/auth. Use current publishable and secret keys, not the
+# legacy anon/service_role keys. The secret key is Worker-only.
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_PUBLISHABLE_KEY="sb_publishable_..."
+SUPABASE_SECRET_KEY="sb_secret_..."
+
+# Base64-encoded random 32-byte AES key. Example generator:
+# openssl rand -base64 32
+BANK_TOKEN_ENCRYPTION_KEY=""
+
+# Flinks live/sandbox wiring. Keep all secrets in Worker secrets when deployed.
+FLINKS_API_BASE_URL="https://toolbox-api.private.fin.ag"
+FLINKS_CONNECT_URL="https://toolbox-iframe.private.fin.ag/v2/"
+FLINKS_CUSTOMER_ID=""
+FLINKS_SECRET_KEY=""
+FLINKS_X_API_KEY=""
+FLINKS_REDIRECT_URL=""
+FLINKS_APP_RETURN_URL="com.jaivik.leko://bank-callback"
+FLINKS_SANDBOX="true"
+FLINKS_WEBHOOK_HMAC_SECRET=""
