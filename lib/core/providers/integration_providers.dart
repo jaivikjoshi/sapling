@@ -133,7 +133,17 @@ class TransactionReviewController
     required String mimeType,
     required String dataBase64,
   }) async {
-    final bytes = base64Decode(dataBase64);
+    late final List<int> bytes;
+    try {
+      bytes = base64Decode(dataBase64);
+    } on FormatException {
+      state = state.copyWith(
+        message:
+            () =>
+                'Could not read receipt attachment. The file may be corrupted.',
+      );
+      return null;
+    }
     final result = await _ref
         .read(receiptOcrProvider)
         .extract(
