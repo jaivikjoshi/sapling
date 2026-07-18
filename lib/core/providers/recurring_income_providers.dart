@@ -6,6 +6,7 @@ import '../../data/repositories_supabase/supabase_recurring_income_repository.da
 import '../../domain/services/recurring_income_service.dart';
 import 'auth_providers.dart';
 import 'db_provider.dart';
+import 'ledger_providers.dart';
 
 final recurringIncomeRepositoryProvider =
     Provider<RecurringIncomeRepository>((ref) {
@@ -19,7 +20,10 @@ final recurringIncomeRepositoryProvider =
 
 final recurringIncomeServiceProvider =
     Provider<RecurringIncomeService>((ref) {
-  return RecurringIncomeService(ref.watch(recurringIncomeRepositoryProvider));
+  return RecurringIncomeService(
+    ref.watch(recurringIncomeRepositoryProvider),
+    ref.watch(transactionsRepositoryProvider),
+  );
 });
 
 final recurringIncomesProvider = StreamProvider<List<RecurringIncome>>((ref) {
