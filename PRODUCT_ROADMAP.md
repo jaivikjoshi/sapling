@@ -81,6 +81,9 @@ Leaf should avoid sounding like a professional financial adviser. Use language s
 - Goals now include a smooth savings-progress sparkline that can later be backed by explicit contribution history.
 - Reports now surface dynamic checks for bill variance, subscription drift, category anomalies, and weekly/monthly forecast.
 - `lib/features/household/household_screen.dart` stages shared budgeting roles without enabling shared ledgers before the individual flow is stable.
+- `FinanceSummaryService` now provides a single production-facing summary for balances, cycle totals, daily allowance, and safe-to-spend explanations.
+- `ProductionObservability` and the analytics event contract now prepare Leko for privacy-first beta measurement.
+- RevenueCat subscription scaffolding and the `/premium` screen now define the freemium path without requiring production keys in source.
 
 ## Technical Notes
 
@@ -98,3 +101,4 @@ Leaf should avoid sounding like a professional financial adviser. Use language s
 - Bank aggregator and notification import paths have contracts and review-first UI, but real production providers are not connected yet.
 - Gamification and goal icons need a small, cohesive design pass.
 - The mobile app builds for iOS simulator and Android debug; web is not ready until Drift/sqlite native FFI is split behind a web-compatible database implementation.
+- Sentry and RevenueCat are wired as optional production services, but real project keys, App Store products, and entitlement setup still need to be completed outside the repo.

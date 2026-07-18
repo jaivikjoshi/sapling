@@ -56,7 +56,11 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
   Future<void> _resend() async {
     final email = widget.email?.trim();
     if (email == null || email.isEmpty) {
-      setState(() => _resendError = 'Email address missing. Please go back and sign up again.');
+      setState(
+        () =>
+            _resendError =
+                'Email address missing. Please go back and sign up again.',
+      );
       return;
     }
     setState(() {
@@ -66,11 +70,14 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
       _linkExpired = false;
     });
     try {
-      await ref.read(supabaseClientProvider).auth.resend(
-        type: OtpType.signup,
-        email: email,
-        emailRedirectTo: 'com.jaivik.leko://auth-callback',
-      );
+      await ref
+          .read(supabaseClientProvider)
+          .auth
+          .resend(
+            type: OtpType.signup,
+            email: email,
+            emailRedirectTo: 'com.jaivik.leko://auth-callback',
+          );
       if (!mounted) return;
       setState(() {
         _resending = false;
@@ -84,9 +91,10 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
       final rateExceeded = msg.contains('rate') || msg.contains('limit');
       setState(() {
         _resending = false;
-        _resendError = expired
-            ? null
-            : rateExceeded
+        _resendError =
+            expired
+                ? null
+                : rateExceeded
                 ? 'Too many emails sent. Please wait about an hour and try again.'
                 : e.message;
         _linkExpired = expired;
@@ -97,9 +105,10 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
       final rateExceeded = msg.contains('rate') || msg.contains('limit');
       setState(() {
         _resending = false;
-        _resendError = rateExceeded
-            ? 'Too many emails sent. Please wait about an hour and try again.'
-            : e.toString();
+        _resendError =
+            rateExceeded
+                ? 'Too many emails sent. Please wait about an hour and try again.'
+                : e.toString();
       });
     }
   }
@@ -124,9 +133,7 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
       title: 'Confirm your email',
       subtitle: 'We sent a verification link to your inbox.',
       onBack: _verified ? null : () => context.go('/welcome'),
-      child: _verified
-          ? _buildSuccessState()
-          : _buildWaitingState(),
+      child: _verified ? _buildSuccessState() : _buildWaitingState(),
     );
   }
 
@@ -139,17 +146,11 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
           decoration: BoxDecoration(
             color: Colors.green.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.green.withValues(alpha: 0.4),
-            ),
+            border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
           ),
           child: const Column(
             children: [
-              Icon(
-                Icons.check_circle_rounded,
-                color: Colors.green,
-                size: 48,
-              ),
+              Icon(Icons.check_circle_rounded, color: Colors.green, size: 48),
               SizedBox(height: 12),
               Text(
                 'Email verified!',
@@ -163,10 +164,7 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
               Text(
                 'Taking you to get set up…',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AuthPalette.subtext,
-                  fontSize: 15,
-                ),
+                style: TextStyle(color: AuthPalette.subtext, fontSize: 15),
               ),
             ],
           ),
@@ -195,9 +193,7 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: Column(
             children: [
@@ -237,9 +233,7 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
             decoration: BoxDecoration(
               color: Colors.green.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.green.withValues(alpha: 0.4),
-              ),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
             ),
             child: const Row(
               children: [
@@ -307,19 +301,20 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
                 borderRadius: BorderRadius.circular(28),
               ),
             ),
-            child: _resending
-                ? const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AuthPalette.secondaryBtnText,
+            child:
+                _resending
+                    ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AuthPalette.secondaryBtnText,
+                      ),
+                    )
+                    : const Text(
+                      'Resend email',
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                  )
-                : const Text(
-                    'Resend email',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
           ),
         ),
         const SizedBox(height: 16),

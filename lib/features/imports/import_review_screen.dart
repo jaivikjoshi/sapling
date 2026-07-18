@@ -2,16 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/providers/integration_providers.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../domain/integrations/transaction_importer.dart';
 
-class ImportReviewScreen extends ConsumerWidget {
+class ImportReviewScreen extends ConsumerStatefulWidget {
   const ImportReviewScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ImportReviewScreen> createState() => _ImportReviewScreenState();
+}
+
+class _ImportReviewScreenState extends ConsumerState<ImportReviewScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () =>
+          ref
+              .read(transactionReviewControllerProvider.notifier)
+              .loadBankState(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(transactionReviewControllerProvider);
     final controller = ref.read(transactionReviewControllerProvider.notifier);
 
@@ -39,7 +56,13 @@ class ImportReviewScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
           children: [
-            _ConsentCard(onStartBank: controller.startBankConnection),
+            _BankConnectionCard(
+              connection: state.connection,
+              isLoading: state.isLoading,
+              onStartBank: controller.startBankConnection,
+              onSelectionChanged: controller.updateSelectedAccounts,
+              onDisconnect: controller.disconnectBank,
+            ),
             const SizedBox(height: 14),
             Row(
               children: [
@@ -48,7 +71,7 @@ class ImportReviewScreen extends ConsumerWidget {
                     icon: Icons.account_balance_rounded,
                     label: 'Preview bank',
                     onTap:
-                        state.isLoading
+                        state.isLoading || !state.connection.isConnected
                             ? null
                             : controller.previewBankTransactions,
                   ),
@@ -134,10 +157,20 @@ class ImportReviewScreen extends ConsumerWidget {
   }
 }
 
-class _ConsentCard extends StatelessWidget {
-  const _ConsentCard({required this.onStartBank});
+class _BankConnectionCard extends StatelessWidget {
+  const _BankConnectionCard({
+    required this.connection,
+    required this.isLoading,
+    required this.onStartBank,
+    required this.onSelectionChanged,
+    required this.onDisconnect,
+  });
 
+  final BankConnectionDetails connection;
+  final bool isLoading;
   final Future<BankConnectionIntent> Function() onStartBank;
+  final Future<void> Function(Set<String>) onSelectionChanged;
+  final Future<void> Function() onDisconnect;
 
   @override
   Widget build(BuildContext context) {
@@ -151,8 +184,8 @@ class _ConsentCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Connect safely, import deliberately',
+          Text(
+            _title,
             style: TextStyle(
               color: Color(0xFF24343A),
               fontSize: 18,
@@ -160,29 +193,154 @@ class _ConsentCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Bank connections should run through a trusted aggregator. Leko keeps imported transactions as drafts until you approve them.',
+          Text(
+            _description,
             style: TextStyle(
               color: Color(0xFF7D8C94),
               fontSize: 14,
               height: 1.45,
             ),
           ),
+          if (connection.accounts.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            for (final account in connection.accounts)
+              CheckboxListTile(
+                value: account.isSelected,
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                activeColor: const Color(0xFF2E8F88),
+                title: Text(
+                  '${account.name}${account.mask == null ? '' : ' ••••${account.mask}'}',
+                  style: const TextStyle(
+                    color: Color(0xFF24343A),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle:
+                    account.type == null && account.currency == null
+                        ? null
+                        : Text(
+                          [
+                            account.type,
+                            account.currency,
+                          ].whereType<String>().join(' • '),
+                        ),
+                onChanged:
+                    isLoading
+                        ? null
+                        : (selected) {
+                          final next =
+                              connection.accounts
+                                  .where(
+                                    (item) =>
+                                        item.id == account.id
+                                            ? selected == true
+                                            : item.isSelected,
+                                  )
+                                  .map((item) => item.id)
+                                  .toSet();
+                          onSelectionChanged(next);
+                        },
+              ),
+          ],
           const SizedBox(height: 14),
-          OutlinedButton.icon(
-            onPressed: () async {
-              final intent = await onStartBank();
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(intent.consentCopy)));
-            },
-            icon: const Icon(Icons.lock_outline_rounded, size: 18),
-            label: const Text('Aggregator consent'),
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            children: [
+              if (connection.status == BankConnectionStatus.disconnected ||
+                  connection.status == BankConnectionStatus.needsReauth)
+                OutlinedButton.icon(
+                  onPressed: isLoading ? null : () => _connect(context),
+                  icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                  label: Text(
+                    connection.status == BankConnectionStatus.needsReauth
+                        ? 'Reconnect bank'
+                        : 'Connect bank',
+                  ),
+                ),
+              if (connection.isConnected ||
+                  connection.status == BankConnectionStatus.needsReauth)
+                TextButton.icon(
+                  onPressed:
+                      isLoading ? null : () => _confirmDisconnect(context),
+                  icon: const Icon(Icons.link_off_rounded, size: 18),
+                  label: const Text('Disconnect & delete'),
+                ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  String get _title => switch (connection.status) {
+    BankConnectionStatus.connected =>
+      connection.institutionName ?? 'Bank connected',
+    BankConnectionStatus.connecting => 'Finishing bank connection',
+    BankConnectionStatus.needsReauth => 'Bank reconnection needed',
+    BankConnectionStatus.unavailable => 'Bank connection unavailable',
+    BankConnectionStatus.disconnected => 'Connect safely, import deliberately',
+  };
+
+  String get _description => switch (connection.status) {
+    BankConnectionStatus.connected =>
+      'Choose the accounts Leko can sync. Every transaction stays in review until you approve it.${connection.lastSyncAt == null ? '' : ' Last synced ${DateFormat.MMMd().add_jm().format(connection.lastSyncAt!.toLocal())}.'}',
+    BankConnectionStatus.connecting =>
+      'Your bank is preparing account data. Return here and tap Preview bank in a moment.',
+    BankConnectionStatus.needsReauth =>
+      'Your bank requires fresh authorization before transactions can sync again.',
+    BankConnectionStatus.unavailable =>
+      'This build does not have a production bank provider configured.',
+    BankConnectionStatus.disconnected =>
+      'Leko uses Flinks Connect for bank authorization and never receives your bank username or password. Imported transactions stay as drafts until you approve them.',
+  };
+
+  Future<void> _connect(BuildContext context) async {
+    try {
+      final intent = await onStartBank();
+      if (!context.mounted) return;
+      final authorizationUrl = intent.authorizationUrl;
+      if (authorizationUrl != null) {
+        final opened = await launchUrl(
+          authorizationUrl,
+          mode: LaunchMode.externalApplication,
+        );
+        if (opened || !context.mounted) return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(intent.consentCopy)));
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open bank connection: $error')),
+      );
+    }
+  }
+
+  Future<void> _confirmDisconnect(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Disconnect bank?'),
+            content: const Text(
+              'Leko will ask Flinks to delete the linked bank data, then remove account metadata and unimported drafts. Transactions you already approved stay in your ledger.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Disconnect & delete'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed == true) await onDisconnect();
   }
 }
 
@@ -267,7 +425,11 @@ class _DraftCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '${DateFormat.MMMd().format(draft.date)} • ${_sourceLabel(draft.source)}',
+            [
+              DateFormat.MMMd().format(draft.date),
+              _sourceLabel(draft.source),
+              if (draft.accountName != null) draft.accountName!,
+            ].join(' • '),
             style: const TextStyle(color: Color(0xFF7D8C94), fontSize: 13),
           ),
           if (draft.categorySuggestion != null) ...[
@@ -276,6 +438,17 @@ class _DraftCard extends StatelessWidget {
               'Suggested category: ${draft.categorySuggestion}',
               style: const TextStyle(
                 color: Color(0xFF3B9797),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          if (draft.pending) ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Pending at your bank • approval unlocks after it posts',
+              style: TextStyle(
+                color: Color(0xFFB06A35),
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
@@ -290,8 +463,14 @@ class _DraftCard extends StatelessWidget {
                 TextButton(onPressed: onReject, child: const Text('Dismiss')),
                 const SizedBox(width: 8),
                 FilledButton(
-                  onPressed: approved ? null : onApprove,
-                  child: Text(approved ? 'Approved' : 'Approve'),
+                  onPressed: approved || draft.pending ? null : onApprove,
+                  child: Text(
+                    approved
+                        ? 'Approved'
+                        : draft.pending
+                        ? 'Pending'
+                        : 'Approve',
+                  ),
                 ),
               ],
             ],

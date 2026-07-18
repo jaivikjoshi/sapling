@@ -43,16 +43,17 @@ class _SettleSplitSheetState extends ConsumerState<SettleSplitSheet> {
               const SizedBox(width: 8),
               FilledButton(
                 onPressed: _saving ? null : _settle,
-                child: _saving
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Settle'),
+                child:
+                    _saving
+                        ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text('Settle'),
               ),
             ],
           ),

@@ -42,17 +42,22 @@ class _RecurringIncomeFormSheetState
     _amountCtrl = TextEditingController(
       text: e?.expectedAmount?.toStringAsFixed(2) ?? '',
     );
-    _frequency = e != null
-        ? enumFromDb<IncomeFrequency>(e.frequency, IncomeFrequency.values)
-        : IncomeFrequency.monthly;
+    _frequency =
+        e != null
+            ? enumFromDb<IncomeFrequency>(e.frequency, IncomeFrequency.values)
+            : IncomeFrequency.monthly;
     final settingsAsync = ref.read(settingsStreamProvider);
     final settingsDefault = settingsAsync.maybeWhen<PaydayBehavior>(
       data: (s) => s.defaultPaydayBehavior,
       orElse: () => UserSettings.defaults.defaultPaydayBehavior,
     );
-    _behavior = e != null
-        ? enumFromDb<PaydayBehavior>(e.paydayBehavior, PaydayBehavior.values)
-        : settingsDefault;
+    _behavior =
+        e != null
+            ? enumFromDb<PaydayBehavior>(
+              e.paydayBehavior,
+              PaydayBehavior.values,
+            )
+            : settingsDefault;
     _nextPaydayDate = e?.nextPaydayDate ?? DateTime.now();
     _isAnchor = e?.isPaydayAnchor ?? false;
   }
@@ -96,8 +101,10 @@ class _RecurringIncomeFormSheetState
               _buildBehaviorPicker(),
               if (_autoPostError != null) ...[
                 const SizedBox(height: 4),
-                Text(_autoPostError!,
-                    style: TextStyle(color: LekoColors.error, fontSize: 12)),
+                Text(
+                  _autoPostError!,
+                  style: TextStyle(color: LekoColors.error, fontSize: 12),
+                ),
               ],
               const SizedBox(height: 12),
               _buildAnchorToggle(),
@@ -139,9 +146,10 @@ class _RecurringIncomeFormSheetState
     return DropdownButtonFormField<IncomeFrequency>(
       value: _frequency,
       decoration: const InputDecoration(labelText: 'Frequency'),
-      items: IncomeFrequency.values
-          .map((f) => DropdownMenuItem(value: f, child: Text(f.name)))
-          .toList(),
+      items:
+          IncomeFrequency.values
+              .map((f) => DropdownMenuItem(value: f, child: Text(f.name)))
+              .toList(),
       onChanged: (v) => setState(() => _frequency = v!),
     );
   }
@@ -168,27 +176,31 @@ class _RecurringIncomeFormSheetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Payday Behavior',
-            style: TextStyle(fontSize: 12, color: LekoColors.textSecondary)),
+        const Text(
+          'Payday Behavior',
+          style: TextStyle(fontSize: 12, color: LekoColors.textSecondary),
+        ),
         RadioListTile<PaydayBehavior>(
           value: PaydayBehavior.confirmActualOnPayday,
           groupValue: _behavior,
           title: const Text('Confirm actual on payday'),
           dense: true,
-          onChanged: (v) => setState(() {
-            _behavior = v!;
-            _autoPostError = null;
-          }),
+          onChanged:
+              (v) => setState(() {
+                _behavior = v!;
+                _autoPostError = null;
+              }),
         ),
         RadioListTile<PaydayBehavior>(
           value: PaydayBehavior.autoPostExpected,
           groupValue: _behavior,
           title: const Text('Auto-post expected'),
           dense: true,
-          onChanged: (v) => setState(() {
-            _behavior = v!;
-            _validateAutoPost();
-          }),
+          onChanged:
+              (v) => setState(() {
+                _behavior = v!;
+                _validateAutoPost();
+              }),
         ),
       ],
     );

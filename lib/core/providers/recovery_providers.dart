@@ -10,14 +10,17 @@ import 'auth_providers.dart';
 import 'db_provider.dart';
 import 'ledger_providers.dart';
 
-final recoveryPlansRepositoryProvider =
-    Provider<RecoveryPlansRepository>((ref) {
+final recoveryPlansRepositoryProvider = Provider<RecoveryPlansRepository>((
+  ref,
+) {
   final userId = ref.watch(currentUserProvider)?.id;
   if (userId == null) {
     return DriftRecoveryPlansRepository(ref.watch(databaseProvider));
   }
   return SupabaseRecoveryPlansRepository(
-      ref.watch(supabaseClientProvider), userId);
+    ref.watch(supabaseClientProvider),
+    userId,
+  );
 });
 
 final recoveryPlanServiceProvider = Provider<RecoveryPlanService>((ref) {

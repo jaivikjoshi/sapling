@@ -18,24 +18,28 @@ class LedgerService {
     required String categoryId,
     required SpendLabel label,
     String? note,
+    String? source,
     String? linkedBillId,
     String? linkedSplitEntryId,
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _repo.insert(Transaction(
-      id: id,
-      type: enumToDb(TransactionType.expense),
-      amount: amount,
-      date: date,
-      categoryId: categoryId,
-      label: enumToDb(label),
-      note: note,
-      linkedBillId: linkedBillId,
-      linkedSplitEntryId: linkedSplitEntryId,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _repo.insert(
+      Transaction(
+        id: id,
+        type: enumToDb(TransactionType.expense),
+        amount: amount,
+        date: date,
+        categoryId: categoryId,
+        label: enumToDb(label),
+        note: note,
+        source: source,
+        linkedBillId: linkedBillId,
+        linkedSplitEntryId: linkedSplitEntryId,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     return id;
   }
 
@@ -49,18 +53,20 @@ class LedgerService {
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _repo.insert(Transaction(
-      id: id,
-      type: enumToDb(TransactionType.income),
-      amount: amount,
-      date: date,
-      source: source,
-      incomePostingType: enumToDb(postingType),
-      note: note,
-      linkedRecurringIncomeId: linkedRecurringIncomeId,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _repo.insert(
+      Transaction(
+        id: id,
+        type: enumToDb(TransactionType.income),
+        amount: amount,
+        date: date,
+        source: source,
+        incomePostingType: enumToDb(postingType),
+        note: note,
+        linkedRecurringIncomeId: linkedRecurringIncomeId,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     return id;
   }
 
@@ -71,15 +77,17 @@ class LedgerService {
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _repo.insert(Transaction(
-      id: id,
-      type: enumToDb(TransactionType.adjustment),
-      amount: amount,
-      date: date,
-      note: note,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _repo.insert(
+      Transaction(
+        id: id,
+        type: enumToDb(TransactionType.adjustment),
+        amount: amount,
+        date: date,
+        note: note,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     return id;
   }
 
@@ -113,7 +121,8 @@ class LedgerService {
       existing.copyWith(
         amount: amount ?? existing.amount,
         date: date ?? existing.date,
-        categoryId: categoryId != null ? Value(categoryId) : const Value.absent(),
+        categoryId:
+            categoryId != null ? Value(categoryId) : const Value.absent(),
         label: label != null ? Value(enumToDb(label)) : const Value.absent(),
         note: note != null ? Value(note) : const Value.absent(),
         updatedAt: now,

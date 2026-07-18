@@ -16,13 +16,15 @@ import '../../domain/schedulers/payday_auto_poster.dart';
 
 final schedulerMetadataRepositoryProvider =
     Provider<SchedulerMetadataRepository>((ref) {
-  final userId = ref.watch(currentUserProvider)?.id;
-  if (userId == null) {
-    return DriftSchedulerMetadataRepository(ref.watch(databaseProvider));
-  }
-  return SupabaseSchedulerMetadataRepository(
-      ref.watch(supabaseClientProvider), userId);
-});
+      final userId = ref.watch(currentUserProvider)?.id;
+      if (userId == null) {
+        return DriftSchedulerMetadataRepository(ref.watch(databaseProvider));
+      }
+      return SupabaseSchedulerMetadataRepository(
+        ref.watch(supabaseClientProvider),
+        userId,
+      );
+    });
 
 final cycleBoundaryWatcherProvider = Provider<CycleBoundaryWatcher>((ref) {
   return CycleBoundaryWatcher(
@@ -46,7 +48,9 @@ final billAutoPosterProvider = Provider<BillAutoPoster>((ref) {
   );
 });
 
-final notificationSchedulerProvider = Provider<NotificationSchedulerImpl>((ref) {
+final notificationSchedulerProvider = Provider<NotificationSchedulerImpl>((
+  ref,
+) {
   return NotificationSchedulerImpl(
     CloseoutNotificationService.instance,
     ref.watch(settingsRepositoryProvider),

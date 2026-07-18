@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/analytics/leko_analytics.dart';
+import '../../core/providers/analytics_providers.dart';
 import '../../core/providers/ledger_providers.dart';
 import '../../core/providers/recurring_income_providers.dart';
 import '../../core/providers/widget_snapshot_providers.dart';
@@ -18,7 +20,6 @@ class _Tok {
   _Tok._();
   static const double rCard = 24;
   static const double rChip = 18;
-  static const double rCta = 22;
 
   static const bgTop = Color(0xFFF7F6F3);
   static const cardBg = Color(0xFFFCFCFA);
@@ -96,7 +97,18 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
             color: _Tok.textTitle,
             fontWeight: FontWeight.w700,
             fontSize: 18,
-            letterSpacing: -0.3,
+            letterSpacing: 0,
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          child: _SaveButton(
+            isValid: _isValid,
+            isSaving: _saving,
+            onPressed: _save,
           ),
         ),
       ),
@@ -160,25 +172,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                 ]),
               ),
             ),
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    const SizedBox(height: 16),
-                    // ── CTA ──
-                    _SaveButton(
-                      isValid: _isValid,
-                      isSaving: _saving,
-                      onPressed: _save,
-                    ),
-                    const SizedBox(height: 32), // Generous bottom spacing
-                  ],
-                ),
-              ),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 124)),
           ],
         ),
       ),
@@ -229,6 +223,15 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
           );
 
       ref.read(snapshotWriterProvider).writeSnapshot();
+      ref
+          .read(lekoAnalyticsProvider)
+          .track(
+            LekoAnalyticsEvent.incomeCreated,
+            properties: {
+              'is_recurring': _isRecurring,
+              'frequency': _isRecurring ? _recurringFrequency.name : 'one_time',
+            },
+          );
       if (mounted) _leaveScreen();
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -256,7 +259,7 @@ class _AmountHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
+      padding: const EdgeInsets.fromLTRB(28, 28, 28, 28),
       decoration: BoxDecoration(
         color: _Tok.cardBg,
         borderRadius: BorderRadius.circular(28),
@@ -300,18 +303,20 @@ class _AmountHeroCard extends StatelessWidget {
             autofocus: true,
             onChanged: (_) => onChanged(),
             style: const TextStyle(
-              fontSize: 48,
+              fontSize: 46,
               fontWeight: FontWeight.w700,
               color: Color(0xFF1F2E33),
-              letterSpacing: -1.5,
+              letterSpacing: 0,
             ),
             decoration: const InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
               prefixIcon: Padding(
                 padding: EdgeInsets.only(right: 8, bottom: 2),
                 child: Text(
                   '\$',
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 30,
                     fontWeight: FontWeight.w600,
                     color: _Tok.textPlaceholder,
                   ),
@@ -320,13 +325,27 @@ class _AmountHeroCard extends StatelessWidget {
               prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
               hintText: '0.00',
               hintStyle: TextStyle(
-                fontSize: 48,
+                fontSize: 46,
                 fontWeight: FontWeight.w500,
                 color: _Tok.textPlaceholder,
-                letterSpacing: -1.5,
+                letterSpacing: 0,
               ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(18)),
+                borderSide: BorderSide(color: LekoColors.secondary, width: 1.5),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(18)),
+                borderSide: BorderSide(color: LekoColors.secondary, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(18)),
+                borderSide: BorderSide(color: LekoColors.secondary, width: 1.5),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               isDense: true,
             ),
           ),
@@ -724,38 +743,77 @@ class _SaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = isValid && !isSaving;
     return SizedBox(
       width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isValid ? _Tok.ctaEnabled : _Tok.ctaDisabled,
-          foregroundColor: isValid ? _Tok.ctaTextEnabled : _Tok.ctaTextDisabled,
-          elevation: isValid ? 4 : 0,
-          shadowColor: _Tok.ctaEnabled.withValues(alpha: 0.25),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_Tok.rCta),
+      height: 60,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: enabled ? _Tok.ctaEnabled : _Tok.ctaDisabled,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(
+            color:
+                enabled
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.transparent,
+          ),
+          boxShadow:
+              enabled
+                  ? [
+                    BoxShadow(
+                      color: _Tok.ctaEnabled.withValues(alpha: 0.2),
+                      blurRadius: 22,
+                      offset: const Offset(0, 10),
+                    ),
+                  ]
+                  : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: enabled ? onPressed : null,
+            borderRadius: BorderRadius.circular(26),
+            child: Center(
+              child:
+                  isSaving
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.payments_outlined,
+                            size: 20,
+                            color:
+                                enabled
+                                    ? _Tok.ctaTextEnabled
+                                    : _Tok.ctaTextDisabled,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Save Income',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color:
+                                  enabled
+                                      ? _Tok.ctaTextEnabled
+                                      : _Tok.ctaTextDisabled,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                        ],
+                      ),
+            ),
           ),
         ),
-        onPressed: isValid && !isSaving ? onPressed : null,
-        child:
-            isSaving
-                ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                )
-                : const Text(
-                  'Save Income',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.3,
-                  ),
-                ),
       ),
     );
   }

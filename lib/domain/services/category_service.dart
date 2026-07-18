@@ -26,14 +26,16 @@ class CategoryService {
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
-    await _repo.insert(CategoriesCompanion.insert(
-      id: id,
-      name: name.trim(),
-      defaultLabel: Value(defaultLabel.name),
-      isSystem: const Value(false),
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _repo.insert(
+      CategoriesCompanion.insert(
+        id: id,
+        name: name.trim(),
+        defaultLabel: Value(defaultLabel.name),
+        isSystem: const Value(false),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     return id;
   }
 

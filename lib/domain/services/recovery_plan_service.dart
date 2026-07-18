@@ -36,14 +36,16 @@ class RecoveryPlanService {
     final r = overspendAmount / days;
     final params = jsonEncode({'days': days, 'dailyReduction': r});
 
-    await _repo.insert(RecoveryPlansCompanion.insert(
-      id: id,
-      createdAt: DateTime.now(),
-      triggerTransactionId: triggerTransactionId,
-      overspendAmount: overspendAmount,
-      planType: enumToDb(RecoveryPlanType.reduceNextNDays),
-      parameters: Value(params),
-    ));
+    await _repo.insert(
+      RecoveryPlansCompanion.insert(
+        id: id,
+        createdAt: DateTime.now(),
+        triggerTransactionId: triggerTransactionId,
+        overspendAmount: overspendAmount,
+        planType: enumToDb(RecoveryPlanType.reduceNextNDays),
+        parameters: Value(params),
+      ),
+    );
     return id;
   }
 
@@ -61,14 +63,16 @@ class RecoveryPlanService {
       'weekendReduction': r,
     });
 
-    await _repo.insert(RecoveryPlansCompanion.insert(
-      id: id,
-      createdAt: DateTime.now(),
-      triggerTransactionId: triggerTransactionId,
-      overspendAmount: overspendAmount,
-      planType: enumToDb(RecoveryPlanType.reduceWeekendsOnly),
-      parameters: Value(params),
-    ));
+    await _repo.insert(
+      RecoveryPlansCompanion.insert(
+        id: id,
+        createdAt: DateTime.now(),
+        triggerTransactionId: triggerTransactionId,
+        overspendAmount: overspendAmount,
+        planType: enumToDb(RecoveryPlanType.reduceWeekendsOnly),
+        parameters: Value(params),
+      ),
+    );
     return id;
   }
 
@@ -82,14 +86,16 @@ class RecoveryPlanService {
     final id = _uuid.v4();
     final params = jsonEncode({'pushDays': pushDays});
 
-    await _repo.insert(RecoveryPlansCompanion.insert(
-      id: id,
-      createdAt: DateTime.now(),
-      triggerTransactionId: triggerTransactionId,
-      overspendAmount: overspendAmount,
-      planType: enumToDb(RecoveryPlanType.pushGoalDate),
-      parameters: Value(params),
-    ));
+    await _repo.insert(
+      RecoveryPlansCompanion.insert(
+        id: id,
+        createdAt: DateTime.now(),
+        triggerTransactionId: triggerTransactionId,
+        overspendAmount: overspendAmount,
+        planType: enumToDb(RecoveryPlanType.pushGoalDate),
+        parameters: Value(params),
+      ),
+    );
     return id;
   }
 
@@ -103,14 +109,16 @@ class RecoveryPlanService {
     final id = _uuid.v4();
     final params = jsonEncode({'targetStyle': enumToDb(targetStyle)});
 
-    await _repo.insert(RecoveryPlansCompanion.insert(
-      id: id,
-      createdAt: DateTime.now(),
-      triggerTransactionId: triggerTransactionId,
-      overspendAmount: overspendAmount,
-      planType: enumToDb(RecoveryPlanType.tempSwitchSavingStyle),
-      parameters: Value(params),
-    ));
+    await _repo.insert(
+      RecoveryPlansCompanion.insert(
+        id: id,
+        createdAt: DateTime.now(),
+        triggerTransactionId: triggerTransactionId,
+        overspendAmount: overspendAmount,
+        planType: enumToDb(RecoveryPlanType.tempSwitchSavingStyle),
+        parameters: Value(params),
+      ),
+    );
     return id;
   }
 
@@ -128,12 +136,17 @@ class RecoveryPlanService {
     if (plan == null || plan.status != 'active') return 0;
 
     final type = enumFromDb<RecoveryPlanType>(
-        plan.planType, RecoveryPlanType.values);
+      plan.planType,
+      RecoveryPlanType.values,
+    );
     final params = jsonDecode(plan.parameters) as Map<String, dynamic>;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final planStart = DateTime(
-        plan.createdAt.year, plan.createdAt.month, plan.createdAt.day);
+      plan.createdAt.year,
+      plan.createdAt.month,
+      plan.createdAt.day,
+    );
 
     switch (type) {
       case RecoveryPlanType.reduceNextNDays:
@@ -162,10 +175,15 @@ class RecoveryPlanService {
   /// Build the full per-day schedule for display/verification.
   static List<RecoveryAdjustment> buildSchedule(RecoveryPlan plan) {
     final type = enumFromDb<RecoveryPlanType>(
-        plan.planType, RecoveryPlanType.values);
+      plan.planType,
+      RecoveryPlanType.values,
+    );
     final params = jsonDecode(plan.parameters) as Map<String, dynamic>;
     final planStart = DateTime(
-        plan.createdAt.year, plan.createdAt.month, plan.createdAt.day);
+      plan.createdAt.year,
+      plan.createdAt.month,
+      plan.createdAt.day,
+    );
     final schedule = <RecoveryAdjustment>[];
 
     switch (type) {
@@ -174,7 +192,10 @@ class RecoveryPlanService {
         final r = (params['dailyReduction'] as num).toDouble();
         for (var i = 0; i < days; i++) {
           final day = DateTime(
-              planStart.year, planStart.month, planStart.day + i);
+            planStart.year,
+            planStart.month,
+            planStart.day + i,
+          );
           schedule.add(RecoveryAdjustment(date: day, adjustment: -r));
         }
 

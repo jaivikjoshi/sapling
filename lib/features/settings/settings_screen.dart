@@ -13,6 +13,7 @@ import '../../core/providers/recurring_income_providers.dart';
 import '../../core/providers/settings_providers.dart';
 import '../../core/utils/enum_serialization.dart';
 import '../../data/db/leko_database.dart';
+import '../../data/repositories/settings_repository.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/models/settings_model.dart';
 import '../../domain/services/profile_service.dart';
@@ -100,6 +101,19 @@ class _PrototypeSettingsBody extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         _PrototypeSettingsGroup(
+          title: 'PREMIUM',
+          children: [
+            _PrototypeSettingsRow(
+              icon: Icons.workspace_premium_rounded,
+              title: 'Leko Premium',
+              subtitle: 'Subscriptions, bank review, OCR, voice, reports',
+              isLast: true,
+              onTap: () => context.push('/premium'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _PrototypeSettingsGroup(
           title: 'ACCOUNT',
           children: [
             _PrototypeSettingsRow(
@@ -112,7 +126,12 @@ class _PrototypeSettingsBody extends ConsumerWidget {
               icon: Icons.notifications_none_rounded,
               title: 'Notifications',
               subtitle: 'Bills, check-ins, reminders',
-              onTap: () => context.push('/settings'),
+              onTap:
+                  () => _showNotificationSettingsSheet(
+                    context,
+                    settings: settings,
+                    repo: repo,
+                  ),
             ),
             _PrototypeSettingsRow(
               icon: Icons.account_balance_rounded,
@@ -233,6 +252,167 @@ void _showIncomeFormSheet(BuildContext context, RecurringIncome? existing) {
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
     builder: (_) => RecurringIncomeFormSheet(existing: existing),
+  );
+}
+
+Future<void> _showNotificationSettingsSheet(
+  BuildContext context, {
+  required UserSettings settings,
+  required SettingsRepository repo,
+}) async {
+  var paydayEnabled = settings.paydayEnabled;
+  var billsEnabled = settings.billsEnabled;
+  var overspendEnabled = settings.overspendEnabled;
+  var cycleResetEnabled = settings.cycleResetEnabled;
+  var nightlyCloseoutEnabled = settings.nightlyCloseoutEnabled;
+  var nightlyCloseoutTime = settings.nightlyCloseoutTime;
+
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              decoration: const BoxDecoration(
+                color: _SettingsReferencePalette.background,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 42,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _SettingsReferencePalette.chevron.withValues(
+                            alpha: 0.7,
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    const Text(
+                      'Notifications',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _SettingsReferencePalette.textPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Choose which reminders Leko can surface.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _SettingsReferencePalette.textSecondary,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    _PrototypeSettingsGroup(
+                      title: 'REMINDERS',
+                      children: [
+                        _PrototypeToggleRow(
+                          icon: Icons.payments_rounded,
+                          title: 'Payday reminders',
+                          subtitle: 'Income due and confirmation nudges',
+                          value: paydayEnabled,
+                          onChanged: (value) {
+                            setSheetState(() => paydayEnabled = value);
+                            saveSettingsField(repo, paydayEnabled: value);
+                          },
+                        ),
+                        _PrototypeToggleRow(
+                          icon: Icons.receipt_long_rounded,
+                          title: 'Bill reminders',
+                          subtitle: 'Upcoming bill alerts before they hit',
+                          value: billsEnabled,
+                          onChanged: (value) {
+                            setSheetState(() => billsEnabled = value);
+                            saveSettingsField(repo, billsEnabled: value);
+                          },
+                        ),
+                        _PrototypeToggleRow(
+                          icon: Icons.warning_amber_rounded,
+                          title: 'Overspend alerts',
+                          subtitle: 'Warnings when spending runs hot',
+                          value: overspendEnabled,
+                          onChanged: (value) {
+                            setSheetState(() => overspendEnabled = value);
+                            saveSettingsField(repo, overspendEnabled: value);
+                          },
+                        ),
+                        _PrototypeToggleRow(
+                          icon: Icons.restart_alt_rounded,
+                          title: 'Cycle reset alerts',
+                          subtitle: 'New allowance cycle reminders',
+                          value: cycleResetEnabled,
+                          onChanged: (value) {
+                            setSheetState(() => cycleResetEnabled = value);
+                            saveSettingsField(repo, cycleResetEnabled: value);
+                          },
+                        ),
+                        _PrototypeToggleRow(
+                          icon: Icons.nightlight_round,
+                          title: 'Nightly closeout',
+                          subtitle: 'End-of-day check-in prompt',
+                          value: nightlyCloseoutEnabled,
+                          isLast: !nightlyCloseoutEnabled,
+                          onChanged: (value) {
+                            setSheetState(() => nightlyCloseoutEnabled = value);
+                            saveSettingsField(
+                              repo,
+                              nightlyCloseoutEnabled: value,
+                            );
+                          },
+                        ),
+                        if (nightlyCloseoutEnabled)
+                          _PrototypeSettingsRow(
+                            icon: Icons.schedule_rounded,
+                            title: 'Closeout time',
+                            subtitle: _formatTime(nightlyCloseoutTime),
+                            isLast: true,
+                            onTap:
+                                () => _showTimePickerRow(
+                                  context,
+                                  initialValue: nightlyCloseoutTime,
+                                  onSelected: (value) {
+                                    setSheetState(
+                                      () => nightlyCloseoutTime = value,
+                                    );
+                                    saveSettingsField(
+                                      repo,
+                                      nightlyCloseoutTime: value,
+                                    );
+                                  },
+                                ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    },
   );
 }
 
@@ -501,7 +681,7 @@ class _PrototypeSettingsHeader extends StatelessWidget {
                   color: _SettingsReferencePalette.textPrimary,
                   fontSize: 30,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -1.1,
+                  letterSpacing: 0,
                 ),
               ),
               SizedBox(height: 4),
@@ -606,7 +786,7 @@ class _PrototypeProfileCard extends StatelessWidget {
                     color: _SettingsReferencePalette.textPrimary,
                     fontSize: 19,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: -0.4,
+                    letterSpacing: 0,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1444,7 +1624,7 @@ class _Header extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             color: _SettingsPalette.textPrimary,
             fontWeight: FontWeight.w700,
-            letterSpacing: -1.1,
+            letterSpacing: 0,
           ),
         ),
         const SizedBox(height: 6),
@@ -1487,12 +1667,8 @@ class _ProfileHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
+        color: _SettingsPalette.surface,
         borderRadius: BorderRadius.circular(34),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF121516), Color(0xFF1A2123)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
         border: Border.all(color: _SettingsPalette.outlineStrong),
         boxShadow: [
           BoxShadow(
@@ -1541,11 +1717,7 @@ class _ProfileHero extends StatelessWidget {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1A2B2C), Color(0xFF0E1719)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: _SettingsPalette.surfaceSoft,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.08),
@@ -1573,7 +1745,7 @@ class _ProfileHero extends StatelessWidget {
                         color: _SettingsPalette.textPrimary,
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: -0.9,
+                        letterSpacing: 0,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1711,7 +1883,7 @@ class _SectionTitle extends StatelessWidget {
             color: _SettingsPalette.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            letterSpacing: -0.2,
+            letterSpacing: 0,
           ),
         ),
         const SizedBox(height: 4),
@@ -2088,56 +2260,9 @@ class _SettingsBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(color: _SettingsPalette.background),
-        const Positioned(
-          top: -120,
-          right: -80,
-          child: _BackdropOrb(size: 280, color: Color(0x1635A69D)),
-        ),
-        const Positioned(
-          top: 260,
-          left: -90,
-          child: _BackdropOrb(size: 220, color: Color(0x0EE3BC88)),
-        ),
-        Positioned.fill(
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.02),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.12),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BackdropOrb extends StatelessWidget {
-  const _BackdropOrb({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color, Colors.transparent]),
-      ),
+    return const ColoredBox(
+      color: _SettingsPalette.background,
+      child: SizedBox.expand(),
     );
   }
 }
@@ -2515,7 +2640,7 @@ const _privacySections = <({String heading, String body})>[
   (
     heading: 'Bank connections',
     body:
-        'Future bank connections should use a trusted provider and explicit consent. Leko should never store bank credentials directly in the app.',
+        'Bank connections are optional and use Flinks Connect. Leko does not receive your bank username or password. It stores encrypted connection identifiers, selected account metadata, balances, and transaction drafts needed for review. Disconnecting asks Flinks to delete linked bank data and removes unimported bank records from Leko.',
   ),
 ];
 

@@ -13,7 +13,8 @@ class WidgetPreviewScreen extends ConsumerStatefulWidget {
   const WidgetPreviewScreen({super.key});
 
   @override
-  ConsumerState<WidgetPreviewScreen> createState() => _WidgetPreviewScreenState();
+  ConsumerState<WidgetPreviewScreen> createState() =>
+      _WidgetPreviewScreenState();
 }
 
 class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
@@ -33,7 +34,10 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
       _error = null;
     });
     try {
-      final jsonString = await HomeWidget.getWidgetData<String>(_key, defaultValue: null);
+      final jsonString = await HomeWidget.getWidgetData<String>(
+        _key,
+        defaultValue: null,
+      );
       if (jsonString == null || jsonString.isEmpty) {
         setState(() => _error = 'No snapshot stored');
         return;
@@ -51,10 +55,7 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
       appBar: AppBar(
         title: const Text('Widget snapshot preview'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _load,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
       ),
       body: _body(),
@@ -90,29 +91,61 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Allowance today', style: TextStyle(color: LekoColors.textSecondary)),
+                Text(
+                  'Allowance today',
+                  style: TextStyle(color: LekoColors.textSecondary),
+                ),
                 const SizedBox(height: 4),
-                Text(formatCurrency(s.todayAllowance), style: Theme.of(context).textTheme.headlineSmall),
+                Text(
+                  formatCurrency(s.todayAllowance),
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
                 const SizedBox(height: 12),
-                Text('Behind', style: TextStyle(color: LekoColors.textSecondary)),
+                Text(
+                  'Behind',
+                  style: TextStyle(color: LekoColors.textSecondary),
+                ),
                 const SizedBox(height: 4),
-                Text(formatCurrency(s.behindAmount), style: TextStyle(color: s.behindAmount > 0 ? LekoColors.labelRed : null)),
+                Text(
+                  formatCurrency(s.behindAmount),
+                  style: TextStyle(
+                    color: s.behindAmount > 0 ? LekoColors.labelRed : null,
+                  ),
+                ),
                 if (s.primaryGoalProgress != null) ...[
                   const SizedBox(height: 12),
-                  Text('Goal progress', style: TextStyle(color: LekoColors.textSecondary)),
+                  Text(
+                    'Goal progress',
+                    style: TextStyle(color: LekoColors.textSecondary),
+                  ),
                   const SizedBox(height: 4),
-                  Text('${(s.primaryGoalProgress! * 100).toStringAsFixed(0)}%', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    '${(s.primaryGoalProgress! * 100).toStringAsFixed(0)}%',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ],
                 const SizedBox(height: 12),
-                Text('Tree stage', style: TextStyle(color: LekoColors.textSecondary)),
+                Text(
+                  'Tree stage',
+                  style: TextStyle(color: LekoColors.textSecondary),
+                ),
                 const SizedBox(height: 4),
-                Text(s.treeStage, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  s.treeStage,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 12),
-                Text('Closeout', style: TextStyle(color: LekoColors.textSecondary)),
+                Text(
+                  'Closeout',
+                  style: TextStyle(color: LekoColors.textSecondary),
+                ),
                 const SizedBox(height: 4),
                 Text(s.closeoutStatus),
                 const SizedBox(height: 12),
-                Text('Updated', style: TextStyle(color: LekoColors.textSecondary)),
+                Text(
+                  'Updated',
+                  style: TextStyle(color: LekoColors.textSecondary),
+                ),
                 const SizedBox(height: 4),
                 Text(s.timestamp.toIso8601String()),
               ],

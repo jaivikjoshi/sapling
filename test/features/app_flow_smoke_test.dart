@@ -14,6 +14,7 @@ import 'package:leko/features/home/home_screen.dart';
 import 'package:leko/features/household/household_screen.dart';
 import 'package:leko/features/imports/import_review_screen.dart';
 import 'package:leko/features/leaf/leaf_screen.dart';
+import 'package:leko/features/monetization/paywall_screen.dart';
 import 'package:leko/features/recovery/recovery_screen.dart';
 import 'package:leko/features/recurring_income/recurring_income_screen.dart';
 import 'package:leko/features/reports/reports_screen.dart';
@@ -46,19 +47,19 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Today\'s money'), findsOneWidget);
 
-        await tester.tap(find.text('Expense'));
+        await tester.tap(find.text('Add Expense'));
         await tester.pumpAndSettle();
         expect(find.text('Add Expense'), findsOneWidget);
 
         router.go('/home');
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Income'));
+        await tester.tap(find.text('Add Income'));
         await tester.pumpAndSettle();
         expect(find.text('Add Income'), findsOneWidget);
 
         router.go('/home');
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Goal'));
+        await tester.tap(find.text('Add Goal'));
         await tester.pumpAndSettle();
         expect(find.text('New Goal'), findsOneWidget);
         expect(tester.takeException(), isNull);
@@ -71,7 +72,7 @@ void main() {
       (tester) async {
         final routes = <String, String>{
           '/goals': 'Goals',
-          '/leaf': 'Ask Leko',
+          '/leaf': 'Leaf',
           '/reports': 'Reports',
           '/settings': 'Settings',
           '/bills': 'Bills',
@@ -79,6 +80,7 @@ void main() {
           '/categories': 'Categories',
           '/recurring-income': 'Recurring Income',
           '/imports': 'Transaction review',
+          '/premium': 'Leko Premium',
           '/household': 'Household mode',
           '/splits': 'Friends & Split',
           '/closeout': 'Nightly Closeout',
@@ -169,6 +171,7 @@ GoRouter _router({required String initialLocation}) {
         builder: (_, __) => const RecurringIncomeScreen(),
       ),
       GoRoute(path: '/imports', builder: (_, __) => const ImportReviewScreen()),
+      GoRoute(path: '/premium', builder: (_, __) => const PaywallScreen()),
       GoRoute(path: '/household', builder: (_, __) => const HouseholdScreen()),
       GoRoute(path: '/splits', builder: (_, __) => const SplitsScreen()),
       GoRoute(path: '/closeout', builder: (_, __) => const CloseoutScreen()),

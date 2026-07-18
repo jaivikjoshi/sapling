@@ -37,24 +37,36 @@ class SplitsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           children: [
-            _BalancesSection(balancesAsync: balancesAsync, personsAsync: personsAsync),
+            _BalancesSection(
+              balancesAsync: balancesAsync,
+              personsAsync: personsAsync,
+            ),
             const SizedBox(height: 24),
             Text(
               'Open splits',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: LekoColors.textSecondary,
-                  ),
+                color: LekoColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             openAsync.when(
-              data: (splits) => splits.isEmpty
-                  ? const _EmptySplits()
-                  : _OpenSplitsList(splits: splits),
-              loading: () => const Center(child: Padding(
-                padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(),
-              )),
-              error: (e, _) => Text('Error: $e', style: TextStyle(color: LekoColors.error)),
+              data:
+                  (splits) =>
+                      splits.isEmpty
+                          ? const _EmptySplits()
+                          : _OpenSplitsList(splits: splits),
+              loading:
+                  () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+              error:
+                  (e, _) => Text(
+                    'Error: $e',
+                    style: TextStyle(color: LekoColors.error),
+                  ),
             ),
           ],
         ),
@@ -110,7 +122,10 @@ class _BalancesSection extends StatelessWidget {
         }
         final names = personsAsync.valueOrNull ?? [];
         final nameMap = {for (final p in names) p.id: p.name};
-        final list = balances.values.where((b) => b.personId != kSplitPaidByYou).toList();
+        final list =
+            balances.values
+                .where((b) => b.personId != kSplitPaidByYou)
+                .toList();
         if (list.isEmpty) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,8 +133,8 @@ class _BalancesSection extends StatelessWidget {
             Text(
               'Balances',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: LekoColors.textSecondary,
-                  ),
+                color: LekoColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             ...list.map((b) {
@@ -133,9 +148,10 @@ class _BalancesSection extends StatelessWidget {
                         ? 'Owes you ${formatCurrency(b.owedToYou)}'
                         : 'You owe ${formatCurrency(b.youOwe)}',
                     style: TextStyle(
-                      color: b.owedToYou > 0
-                          ? LekoColors.labelGreen
-                          : LekoColors.labelRed,
+                      color:
+                          b.owedToYou > 0
+                              ? LekoColors.labelGreen
+                              : LekoColors.labelRed,
                     ),
                   ),
                   trailing: const Icon(Icons.chevron_right),
@@ -168,7 +184,9 @@ class _OpenSplitsList extends StatelessWidget {
         final s = splits[i];
         return ListTile(
           title: Text(s.description),
-          subtitle: Text('${dateFmt.format(s.date)} • ${formatCurrency(s.totalAmount)}'),
+          subtitle: Text(
+            '${dateFmt.format(s.date)} • ${formatCurrency(s.totalAmount)}',
+          ),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => context.push('/splits/detail/${s.id}'),
         );
@@ -188,14 +206,17 @@ class _EmptySplits extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.receipt_long_outlined,
-                size: 48, color: LekoColors.textSecondary),
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 48,
+              color: LekoColors.textSecondary,
+            ),
             const SizedBox(height: 12),
             Text(
               'No open splits',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: LekoColors.textSecondary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(color: LekoColors.textSecondary),
             ),
             const SizedBox(height: 4),
             Text(

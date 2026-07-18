@@ -24,9 +24,7 @@ class SavingsPaceCard extends ConsumerWidget {
       error: (_, __) => const SizedBox.shrink(),
       data: (data) {
         if (data == null) {
-          return _SavingsPaceEmptyCta(
-            onAddGoal: () => context.go('/goals'),
-          );
+          return _SavingsPaceEmptyCta(onAddGoal: () => context.go('/goals'));
         }
         return _SavingsPaceContent(data: data);
       },
@@ -88,7 +86,7 @@ class _SavingsPaceContent extends StatelessWidget {
             style: textTheme.titleLarge?.copyWith(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.6,
+              letterSpacing: 0,
               color: LekoColors.textPrimary,
             ),
           ),
@@ -102,10 +100,7 @@ class _SavingsPaceContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          SizedBox(
-            height: 150,
-            child: _PaceChart(data: data),
-          ),
+          SizedBox(height: 150, child: _PaceChart(data: data)),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -227,17 +222,14 @@ class _PaceChart extends StatelessWidget {
         ),
     ];
 
-    final idealSpots = <FlSpot>[
-      const FlSpot(0, 0),
-      FlSpot(maxX, maxY),
-    ];
+    final idealSpots = <FlSpot>[const FlSpot(0, 0), FlSpot(maxX, maxY)];
 
-    final todayX = data.history.isEmpty
-        ? 0.0
-        : data.history.last.x(start: data.startDate);
-    final todayY = data.history.isEmpty
-        ? 0.0
-        : data.history.last.amount.clamp(0, maxY).toDouble();
+    final todayX =
+        data.history.isEmpty ? 0.0 : data.history.last.x(start: data.startDate);
+    final todayY =
+        data.history.isEmpty
+            ? 0.0
+            : data.history.last.amount.clamp(0, maxY).toDouble();
 
     return LineChart(
       LineChartData(
@@ -273,12 +265,13 @@ class _PaceChart extends StatelessWidget {
             dotData: FlDotData(
               show: true,
               checkToShowDot: (spot, _) => spot.x == todayX && spot.y == todayY,
-              getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
-                radius: 5,
-                color: LekoColors.paceLine,
-                strokeColor: LekoColors.cardSurfaceSoft,
-                strokeWidth: 3,
-              ),
+              getDotPainter:
+                  (_, __, ___, ____) => FlDotCirclePainter(
+                    radius: 5,
+                    color: LekoColors.paceLine,
+                    strokeColor: LekoColors.cardSurfaceSoft,
+                    strokeWidth: 3,
+                  ),
             ),
             belowBarData: BarAreaData(
               show: true,
@@ -292,12 +285,13 @@ class _PaceChart extends StatelessWidget {
             color: Colors.transparent,
             dotData: FlDotData(
               show: true,
-              getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
-                radius: 5,
-                color: LekoColors.cardSurfaceSoft,
-                strokeColor: LekoColors.paceIdeal,
-                strokeWidth: 1.5,
-              ),
+              getDotPainter:
+                  (_, __, ___, ____) => FlDotCirclePainter(
+                    radius: 5,
+                    color: LekoColors.cardSurfaceSoft,
+                    strokeColor: LekoColors.paceIdeal,
+                    strokeWidth: 1.5,
+                  ),
             ),
             belowBarData: BarAreaData(show: false),
           ),
@@ -376,7 +370,7 @@ class _SavingsPaceEmptyCta extends StatelessWidget {
             style: textTheme.titleLarge?.copyWith(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
+              letterSpacing: 0,
               color: LekoColors.textPrimary,
             ),
           ),

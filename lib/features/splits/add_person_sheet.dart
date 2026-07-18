@@ -40,10 +40,7 @@ class _AddPersonSheetState extends ConsumerState<AddPersonSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Add person',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          Text('Add person', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
           TextField(
             controller: _nameCtrl,
@@ -66,16 +63,17 @@ class _AddPersonSheetState extends ConsumerState<AddPersonSheet> {
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: _valid && !_saving ? _save : null,
-            child: _saving
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Save'),
+            child:
+                _saving
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : const Text('Save'),
           ),
         ],
       ),
@@ -88,15 +86,18 @@ class _AddPersonSheetState extends ConsumerState<AddPersonSheet> {
       final repo = ref.read(personsRepositoryProvider);
       final now = DateTime.now();
       final id = const Uuid().v4();
-      await repo.insert(PersonsCompanion.insert(
-        id: id,
-        name: _nameCtrl.text.trim(),
-        handle: _handleCtrl.text.trim().isEmpty
-            ? const Value.absent()
-            : Value(_handleCtrl.text.trim()),
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await repo.insert(
+        PersonsCompanion.insert(
+          id: id,
+          name: _nameCtrl.text.trim(),
+          handle:
+              _handleCtrl.text.trim().isEmpty
+                  ? const Value.absent()
+                  : Value(_handleCtrl.text.trim()),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
       if (mounted) Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _saving = false);

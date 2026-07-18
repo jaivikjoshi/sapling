@@ -38,15 +38,21 @@ class UserSettings {
   factory UserSettings.fromDb(AppSetting row) {
     return UserSettings(
       baseCurrency: enumFromDb(row.baseCurrency, Currency.values),
-      rolloverResetType:
-          enumFromDb(row.rolloverResetType, RolloverResetType.values),
+      rolloverResetType: enumFromDb(
+        row.rolloverResetType,
+        RolloverResetType.values,
+      ),
       spendingBaselineDays: row.spendingBaselineDays,
-      allowanceDefaultMode:
-          enumFromDb(row.allowanceDefaultMode, AllowanceMode.values),
+      allowanceDefaultMode: enumFromDb(
+        row.allowanceDefaultMode,
+        AllowanceMode.values,
+      ),
       primaryGoalId: row.primaryGoalId,
       paydayAnchorRecurringIncomeId: row.paydayAnchorRecurringIncomeId,
-      defaultPaydayBehavior:
-          enumFromDb(row.defaultPaydayBehavior, PaydayBehavior.values),
+      defaultPaydayBehavior: enumFromDb(
+        row.defaultPaydayBehavior,
+        PaydayBehavior.values,
+      ),
       paydayEnabled: row.paydayEnabled,
       billsEnabled: row.billsEnabled,
       overspendEnabled: row.overspendEnabled,
@@ -95,9 +101,10 @@ class UserSettings {
       allowanceDefaultMode: allowanceDefaultMode ?? this.allowanceDefaultMode,
       primaryGoalId:
           primaryGoalId != null ? primaryGoalId() : this.primaryGoalId,
-      paydayAnchorRecurringIncomeId: paydayAnchorRecurringIncomeId != null
-          ? paydayAnchorRecurringIncomeId()
-          : this.paydayAnchorRecurringIncomeId,
+      paydayAnchorRecurringIncomeId:
+          paydayAnchorRecurringIncomeId != null
+              ? paydayAnchorRecurringIncomeId()
+              : this.paydayAnchorRecurringIncomeId,
       defaultPaydayBehavior:
           defaultPaydayBehavior ?? this.defaultPaydayBehavior,
       paydayEnabled: paydayEnabled ?? this.paydayEnabled,

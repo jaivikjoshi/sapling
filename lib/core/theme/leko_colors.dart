@@ -44,20 +44,14 @@ abstract final class LekoColors {
   static const Color pillBehindBg = Color(0x14C4763C);
   static const Color pillBehindFg = Color(0xFF8C5224);
 
-  // Premium Onboarding Flow (Dark Immerse)
+  // Premium onboarding flow
   static const Color onboardingBackground = Color(
-    0xFF0F1A1B,
-  ); // Deep midnight forest green
-  static const Color onboardingSurface = Color(0xFF19292A);
-  static const Color onboardingTextPrimary = Color(
-    0xFFF7F5F0,
-  ); // Off-white/cream
-  static const Color onboardingTextSecondary = Color(
-    0xFFA1B3B0,
-  ); // Soft glowing sage/grey
-  static const Color onboardingButton = Color(
-    0xFF3B9797,
-  ); // Seafoam jade as CTA
+    0xFFFBF9F6,
+  ); // Same warm canvas as the main app
+  static const Color onboardingSurface = Colors.white;
+  static const Color onboardingTextPrimary = Color(0xFF1A1A1A);
+  static const Color onboardingTextSecondary = Color(0xFF7D8C94);
+  static const Color onboardingButton = Color(0xFF1B3B42);
   static const Color onboardingButtonText = Colors.white;
   static const Color onboardingTrack = divider;
   static const Color onboardingFill = secondary;

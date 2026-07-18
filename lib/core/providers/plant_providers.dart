@@ -27,9 +27,10 @@ final plantServiceProvider = Provider<PlantService>((ref) {
 
 /// Main reactive provider for the widget.
 final plantStateProvider = StreamProvider<PlantState>((ref) {
-  return ref.watch(plantRepositoryProvider).watch().map(
-        (state) => state ?? PlantState.initial(),
-      );
+  return ref
+      .watch(plantRepositoryProvider)
+      .watch()
+      .map((state) => state ?? PlantState.initial());
 });
 
 /// Triggers a plant update (evaluate missed days) and persists the result.
@@ -42,7 +43,10 @@ final plantUpdateProvider = FutureProvider<PlantState>((ref) async {
   if (settings == null) return PlantState.initial();
 
   var current = await repo.get() ?? PlantState.initial();
-  final updated = await service.updatePlant(current: current, settings: settings);
+  final updated = await service.updatePlant(
+    current: current,
+    settings: settings,
+  );
 
   if (updated != current) {
     await repo.upsert(updated);

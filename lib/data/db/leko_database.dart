@@ -20,20 +20,22 @@ import 'tables/scheduler_metadata_table.dart';
 
 part 'leko_database.g.dart';
 
-@DriftDatabase(tables: [
-  AppSettings,
-  Transactions,
-  Categories,
-  Goals,
-  RecurringIncomes,
-  Bills,
-  Persons,
-  SplitEntries,
-  SplitShares,
-  DailyCloseouts,
-  RecoveryPlans,
-  SchedulerMetadata,
-])
+@DriftDatabase(
+  tables: [
+    AppSettings,
+    Transactions,
+    Categories,
+    Goals,
+    RecurringIncomes,
+    Bills,
+    Persons,
+    SplitEntries,
+    SplitShares,
+    DailyCloseouts,
+    RecoveryPlans,
+    SchedulerMetadata,
+  ],
+)
 class LekoDatabase extends _$LekoDatabase {
   LekoDatabase() : super(_openConnection());
 
@@ -44,21 +46,19 @@ class LekoDatabase extends _$LekoDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
-          await m.createAll();
-          await _seedDefaults();
-        },
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.createTable(schedulerMetadata);
-          }
-        },
-      );
+    onCreate: (m) async {
+      await m.createAll();
+      await _seedDefaults();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(schedulerMetadata);
+      }
+    },
+  );
 
   Future<void> _seedDefaults() async {
-    await into(appSettings).insert(
-      AppSettingsCompanion.insert(),
-    );
+    await into(appSettings).insert(AppSettingsCompanion.insert());
     await _seedSystemCategories();
   }
 
@@ -79,14 +79,16 @@ class LekoDatabase extends _$LekoDatabase {
     ];
 
     for (final (id, name, label) in systemCategories) {
-      await into(categories).insert(CategoriesCompanion.insert(
-        id: id,
-        name: name,
-        defaultLabel: Value(label),
-        isSystem: const Value(true),
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await into(categories).insert(
+        CategoriesCompanion.insert(
+          id: id,
+          name: name,
+          defaultLabel: Value(label),
+          isSystem: const Value(true),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
     }
   }
 }

@@ -21,22 +21,27 @@ class OverspendModal extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 20, right: 20, top: 24,
+        left: 20,
+        right: 20,
+        top: 24,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.warning_amber_rounded,
-              color: LekoColors.labelRed, size: 48),
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: LekoColors.labelRed,
+            size: 48,
+          ),
           const SizedBox(height: 12),
           Text(
             'You overspent today',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: LekoColors.labelRed,
-                ),
+              fontWeight: FontWeight.bold,
+              color: LekoColors.labelRed,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
@@ -48,19 +53,17 @@ class OverspendModal extends ConsumerWidget {
           Text(
             'Spent ${formatCurrency(result.spendToday)} of '
             '${formatCurrency(result.allowanceToday)} allowance',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: LekoColors.textSecondary),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: LekoColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           Text(
             'Choose a recovery plan',
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           _PlanOption(
@@ -97,7 +100,10 @@ class OverspendModal extends ConsumerWidget {
   }
 
   Future<void> _selectPlan(
-      BuildContext context, WidgetRef ref, String plan) async {
+    BuildContext context,
+    WidgetRef ref,
+    String plan,
+  ) async {
     final service = ref.read(recoveryPlanServiceProvider);
 
     switch (plan) {
@@ -124,9 +130,9 @@ class OverspendModal extends ConsumerWidget {
     ref.read(snapshotWriterProvider).writeSnapshot();
     if (context.mounted) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Recovery plan activated.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Recovery plan activated.')));
     }
   }
 }
@@ -162,14 +168,21 @@ class _PlanOption extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(subtitle,
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: LekoColors.textSecondary)),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: LekoColors.textSecondary,
+                      ),
+                    ),
                   ],
                 ),
               ),

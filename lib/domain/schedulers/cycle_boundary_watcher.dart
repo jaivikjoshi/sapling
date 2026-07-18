@@ -15,11 +15,7 @@ class CycleBoundaryWatcher {
 
   static const _keyLastCycleStart = 'lastCycleStart';
 
-  CycleBoundaryWatcher(
-    this._metadata,
-    this._settingsRepo,
-    this._incomeRepo,
-  );
+  CycleBoundaryWatcher(this._metadata, this._settingsRepo, this._incomeRepo);
 
   /// Run on app launch / scheduler run. Returns true if boundary was crossed.
   Future<bool> checkAndUpdate(DateTime now) async {

@@ -46,9 +46,10 @@ class SnapshotBuilder {
     StreakResult streak,
   ) {
     final goal = allowance.goal;
-    final progress = goal.targetAmount > 0
-        ? (allowance.balance / goal.targetAmount).clamp(0.0, 1.0)
-        : null;
+    final progress =
+        goal.targetAmount > 0
+            ? (allowance.balance / goal.targetAmount).clamp(0.0, 1.0)
+            : null;
     return DailySnapshot(
       todayAllowance: allowance.allowanceToday,
       behindAmount: allowance.behindAmount,

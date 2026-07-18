@@ -19,15 +19,13 @@ class DriftBillsRepository implements BillsRepository {
   @override
   Future<List<Bill>> getAll() {
     return (_db.select(_db.bills)
-          ..orderBy([(t) => OrderingTerm.asc(t.nextDueDate)]))
-        .get();
+      ..orderBy([(t) => OrderingTerm.asc(t.nextDueDate)])).get();
   }
 
   @override
   Stream<List<Bill>> watchAll() {
     return (_db.select(_db.bills)
-          ..orderBy([(t) => OrderingTerm.asc(t.nextDueDate)]))
-        .watch();
+      ..orderBy([(t) => OrderingTerm.asc(t.nextDueDate)])).watch();
   }
 
   @override
@@ -42,8 +40,8 @@ class DriftBillsRepository implements BillsRepository {
 
   @override
   Future<void> updateById(String id, BillsCompanion companion) {
-    return (_db.update(_db.bills)..where((t) => t.id.equals(id)))
-        .write(companion);
+    return (_db.update(_db.bills)
+      ..where((t) => t.id.equals(id))).write(companion);
   }
 
   @override
@@ -56,8 +54,7 @@ class DriftBillsRepository implements BillsRepository {
     final now = DateTime.now();
     final cutoff = DateTime(now.year, now.month, now.day + days);
     return (_db.select(_db.bills)
-          ..where(
-              (t) => t.nextDueDate.isSmallerOrEqualValue(cutoff))
+          ..where((t) => t.nextDueDate.isSmallerOrEqualValue(cutoff))
           ..orderBy([(t) => OrderingTerm.asc(t.nextDueDate)]))
         .watch();
   }

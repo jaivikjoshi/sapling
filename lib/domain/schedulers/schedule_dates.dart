@@ -31,13 +31,7 @@ abstract final class ScheduleDates {
     );
     final lead = bill.reminderLeadTimeDays;
     final reminderDay = DateTime(due.year, due.month, due.day - lead);
-    return DateTime(
-      reminderDay.year,
-      reminderDay.month,
-      reminderDay.day,
-      9,
-      0,
-    );
+    return DateTime(reminderDay.year, reminderDay.month, reminderDay.day, 9, 0);
   }
 
   /// Whether a payday reminder should fire on or before [when] for this income.

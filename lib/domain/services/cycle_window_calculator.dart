@@ -31,10 +31,10 @@ abstract final class CycleWindowCalculator {
     return switch (resetType) {
       RolloverResetType.monthly => _monthly(now),
       RolloverResetType.paydayBased => _paydayBased(
-          now,
-          anchorFrequency ?? 'monthly',
-          anchorNextPaydayDate ?? now,
-        ),
+        now,
+        anchorFrequency ?? 'monthly',
+        anchorNextPaydayDate ?? now,
+      ),
     };
   }
 
@@ -54,9 +54,10 @@ abstract final class CycleWindowCalculator {
 
   static CycleWindow _monthly(DateTime now) {
     final start = DateTime(now.year, now.month);
-    final end = (now.month == 12)
-        ? DateTime(now.year + 1, 1)
-        : DateTime(now.year, now.month + 1);
+    final end =
+        (now.month == 12)
+            ? DateTime(now.year + 1, 1)
+            : DateTime(now.year, now.month + 1);
     return CycleWindow(start: start, end: end);
   }
 
@@ -78,8 +79,10 @@ abstract final class CycleWindowCalculator {
 
     // Walk forward if cursor is far in the past
     while (advanceByIncomeFrequency(cursor, freq).isBefore(nowDay) ||
-        advanceByIncomeFrequency(cursor, freq).isAtSameMomentAs(
-            DateTime(now.year, now.month, now.day))) {
+        advanceByIncomeFrequency(
+          cursor,
+          freq,
+        ).isAtSameMomentAs(DateTime(now.year, now.month, now.day))) {
       cursor = advanceByIncomeFrequency(cursor, freq);
     }
 
@@ -95,10 +98,22 @@ abstract final class CycleWindowCalculator {
 
   static DateTime _subtractByFrequency(DateTime d, IncomeFrequency freq) {
     return switch (freq) {
-      IncomeFrequency.weekly =>
-        DateTime(d.year, d.month, d.day - 7, d.hour, d.minute, d.second),
-      IncomeFrequency.biweekly =>
-        DateTime(d.year, d.month, d.day - 14, d.hour, d.minute, d.second),
+      IncomeFrequency.weekly => DateTime(
+        d.year,
+        d.month,
+        d.day - 7,
+        d.hour,
+        d.minute,
+        d.second,
+      ),
+      IncomeFrequency.biweekly => DateTime(
+        d.year,
+        d.month,
+        d.day - 14,
+        d.hour,
+        d.minute,
+        d.second,
+      ),
       IncomeFrequency.monthly => _subtractMonth(d),
     };
   }

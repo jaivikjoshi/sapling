@@ -31,7 +31,10 @@ abstract final class GoalFeasibilityService {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final targetDay = DateTime(
-        goal.targetDate.year, goal.targetDate.month, goal.targetDate.day);
+      goal.targetDate.year,
+      goal.targetDate.month,
+      goal.targetDate.day,
+    );
     final horizon = targetDay.difference(todayStart).inDays + 1;
     final h = horizon < 1 ? 1 : horizon;
 
@@ -73,7 +76,8 @@ abstract final class GoalFeasibilityService {
     required double allowedVarPerDay,
     required int horizon,
   }) {
-    final totalFree = projectedIncome - projectedBills - (allowedVarPerDay * horizon);
+    final totalFree =
+        projectedIncome - projectedBills - (allowedVarPerDay * horizon);
     return totalFree / horizon;
   }
 
@@ -100,8 +104,7 @@ abstract final class GoalFeasibilityService {
   }
 
   static DateTime _roundDate(DateTime raw, DateTime today) {
-    final monthsDiff =
-        (raw.year - today.year) * 12 + (raw.month - today.month);
+    final monthsDiff = (raw.year - today.year) * 12 + (raw.month - today.month);
 
     if (monthsDiff <= 6) {
       // Round up to end-of-month

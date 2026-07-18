@@ -28,9 +28,10 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.existing?.name ?? '');
-    _label = widget.existing != null
-        ? LabelRules.defaultForCategory(widget.existing!)
-        : SpendLabel.green;
+    _label =
+        widget.existing != null
+            ? LabelRules.defaultForCategory(widget.existing!)
+            : SpendLabel.green;
   }
 
   @override
@@ -43,7 +44,10 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24,
+        24,
+        24,
+        24,
+        MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -51,18 +55,14 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
         children: [
           Text(
             _isEditing ? 'Edit Category' : 'New Category',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
           TextField(
             controller: _nameCtrl,
-            decoration: InputDecoration(
-              labelText: 'Name',
-              errorText: _error,
-            ),
+            decoration: InputDecoration(labelText: 'Name', errorText: _error),
             textCapitalization: TextCapitalization.words,
             autofocus: true,
             onChanged: (_) {
@@ -70,39 +70,44 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
             },
           ),
           const SizedBox(height: 16),
-          Text('Default label',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: LekoColors.textSecondary)),
+          Text(
+            'Default label',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: LekoColors.textSecondary),
+          ),
           const SizedBox(height: 8),
           Row(
-            children: SpendLabel.values.map((l) {
-              final color = _colorFor(l);
-              final selected = _label == l;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(l.name),
-                  selected: selected,
-                  selectedColor: color.withValues(alpha: 0.2),
-                  avatar: Icon(Icons.circle, size: 12, color: color),
-                  onSelected: (_) => setState(() => _label = l),
-                ),
-              );
-            }).toList(),
+            children:
+                SpendLabel.values.map((l) {
+                  final color = _colorFor(l);
+                  final selected = _label == l;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(l.name),
+                      selected: selected,
+                      selectedColor: color.withValues(alpha: 0.2),
+                      avatar: Icon(Icons.circle, size: 12, color: color),
+                      onSelected: (_) => setState(() => _label = l),
+                    ),
+                  );
+                }).toList(),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
-                  )
-                : Text(_isEditing ? 'Save' : 'Create'),
+            child:
+                _saving
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : Text(_isEditing ? 'Save' : 'Create'),
           ),
         ],
       ),
@@ -110,10 +115,10 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   }
 
   Color _colorFor(SpendLabel l) => switch (l) {
-        SpendLabel.green => LekoColors.labelGreen,
-        SpendLabel.orange => LekoColors.labelOrange,
-        SpendLabel.red => LekoColors.labelRed,
-      };
+    SpendLabel.green => LekoColors.labelGreen,
+    SpendLabel.orange => LekoColors.labelOrange,
+    SpendLabel.red => LekoColors.labelRed,
+  };
 
   Future<void> _save() async {
     final service = ref.read(categoryServiceProvider);

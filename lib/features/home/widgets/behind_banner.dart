@@ -15,9 +15,10 @@ class BehindBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(effectiveAllowanceModeProvider);
-    final behind = mode == AllowanceMode.paycheck
-        ? _paycheckBehind(ref)
-        : _goalBehind(ref);
+    final behind =
+        mode == AllowanceMode.paycheck
+            ? _paycheckBehind(ref)
+            : _goalBehind(ref);
     final activePlan = ref.watch(activeRecoveryPlanProvider).valueOrNull;
 
     if ((behind == null || behind <= 0) && activePlan == null) {
@@ -45,13 +46,15 @@ class BehindBanner extends ConsumerWidget {
       decoration: BoxDecoration(
         color: LekoColors.labelRed.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border:
-            Border.all(color: LekoColors.labelRed.withValues(alpha: 0.3)),
+        border: Border.all(color: LekoColors.labelRed.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded,
-              color: LekoColors.labelRed, size: 20),
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: LekoColors.labelRed,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -96,12 +99,12 @@ class _ActivePlanChip extends StatelessWidget {
         color: LekoColors.labelOrange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: LekoColors.labelOrange.withValues(alpha: 0.3)),
+          color: LekoColors.labelOrange.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.healing,
-              color: LekoColors.labelOrange, size: 18),
+          const Icon(Icons.healing, color: LekoColors.labelOrange, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -135,9 +138,10 @@ class _ActivePlanChip extends StatelessWidget {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text('Cancel',
-                style: TextStyle(
-                    color: LekoColors.labelOrange, fontSize: 12)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: LekoColors.labelOrange, fontSize: 12),
+            ),
           ),
         ],
       ),

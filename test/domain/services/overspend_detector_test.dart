@@ -93,9 +93,11 @@ void main() {
 
       // Spend all of it and more
       final now = DateTime.now();
-      final daysLeft = DateTime(now.year, now.month + 1)
-              .difference(DateTime(now.year, now.month, now.day))
-              .inDays;
+      final daysLeft =
+          DateTime(
+            now.year,
+            now.month + 1,
+          ).difference(DateTime(now.year, now.month, now.day)).inDays;
       final allowancePerDay = 100.0 / daysLeft;
       final overAmount = allowancePerDay + 50;
 

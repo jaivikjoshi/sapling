@@ -18,15 +18,17 @@ class TransactionListScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Transactions')),
       body: txnAsync.when(
-        data: (txns) => txns.isEmpty
-            ? const Center(child: Text('No transactions yet.'))
-            : ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: txns.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, i) =>
-                    TransactionTile(transaction: txns[i]),
-              ),
+        data:
+            (txns) =>
+                txns.isEmpty
+                    ? const Center(child: Text('No transactions yet.'))
+                    : ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: txns.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder:
+                          (context, i) => TransactionTile(transaction: txns[i]),
+                    ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
@@ -45,28 +47,32 @@ class TransactionTile extends StatelessWidget {
     final isIncome = transaction.type == 'income';
     final isAdjustment = transaction.type == 'adjustment';
 
-    final icon = isExpense
-        ? Icons.arrow_downward
-        : isIncome
+    final icon =
+        isExpense
+            ? Icons.arrow_downward
+            : isIncome
             ? Icons.arrow_upward
             : Icons.sync_alt;
 
-    final color = isExpense
-        ? LekoColors.labelRed
-        : isIncome
+    final color =
+        isExpense
+            ? LekoColors.labelRed
+            : isIncome
             ? LekoColors.labelGreen
             : LekoColors.support;
 
-    final sign = isExpense
-        ? '-'
-        : isAdjustment && transaction.amount < 0
+    final sign =
+        isExpense
+            ? '-'
+            : isAdjustment && transaction.amount < 0
             ? ''
             : '+';
 
     final dateStr = DateFormat.MMMd().format(transaction.date);
-    final onTap = isExpense
-        ? () => context.push('/edit-expense/${transaction.id}')
-        : null;
+    final onTap =
+        isExpense
+            ? () => context.push('/edit-expense/${transaction.id}')
+            : null;
 
     return ListTile(
       onTap: onTap,

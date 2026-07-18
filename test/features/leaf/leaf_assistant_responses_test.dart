@@ -16,10 +16,13 @@ void main() {
     expect(response, isNot(contains('Paycheck mode')));
   });
 
-  test('unknown messages ask user to clarify instead of returning overview', () {
-    final response = responseForFreeText(ctx, 'banana spaceship');
+  test(
+    'unknown messages ask user to clarify instead of returning overview',
+    () {
+      final response = responseForFreeText(ctx, 'banana spaceship');
 
-    expect(response, contains('I didn’t quite catch that'));
-    expect(response, contains('spending today'));
-  });
+      expect(response, contains('I didn’t quite catch that'));
+      expect(response, contains('spending today'));
+    },
+  );
 }

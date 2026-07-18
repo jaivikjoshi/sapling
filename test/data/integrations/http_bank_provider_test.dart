@@ -5,6 +5,40 @@ import 'package:leko/data/integrations/http_bank_provider.dart';
 import 'package:leko/domain/integrations/transaction_importer.dart';
 
 void main() {
+  test('authenticates bank API requests with the Supabase session', () async {
+    final provider = HttpBankProvider(
+      client: MockClient((request) async {
+        expect(request.headers['authorization'], 'Bearer user-jwt');
+        expect(request.url.path, '/bank/status');
+        return http.Response('''
+          {
+            "status": "connected",
+            "institutionName": "Example Bank",
+            "lastSyncAt": "2026-07-17T12:00:00Z",
+            "accounts": [
+              {
+                "id": "account-1",
+                "name": "Chequing",
+                "mask": "1234",
+                "currency": "CAD",
+                "isSelected": true
+              }
+            ]
+          }
+        ''', 200);
+      }),
+      baseUri: Uri.parse('https://api.example.com'),
+      accessTokenProvider: () async => 'user-jwt',
+    );
+
+    final details = await provider.connectionDetails();
+
+    expect(details.status, BankConnectionStatus.connected);
+    expect(details.institutionName, 'Example Bank');
+    expect(details.accounts.single.mask, '1234');
+    expect(details.lastSyncAt, DateTime.utc(2026, 7, 17, 12));
+  });
+
   test(
     'starts a backend bank connection with consent copy and auth URL',
     () async {
@@ -91,6 +125,8 @@ void main() {
           amount: 12.50,
           date: DateTime(2026, 6, 16),
           merchant: 'Lunch Spot',
+          reviewStatus: ImportReviewStatus.approved,
+          ledgerTransactionId: 'ledger-1',
         ),
       ]);
 
@@ -99,4 +135,36 @@ void main() {
       expect(result.message, 'Imported');
     },
   );
+
+  test('persists review decisions and account selection', () async {
+    final requests = <http.Request>[];
+    final provider = HttpBankProvider(
+      client: MockClient((request) async {
+        requests.add(request);
+        if (request.url.path == '/bank/accounts/select') {
+          return http.Response('{"status":"connected"}', 200);
+        }
+        if (request.url.path == '/bank/status') {
+          return http.Response('{"status":"connected"}', 200);
+        }
+        return http.Response('{"updatedCount":1}', 200);
+      }),
+      baseUri: Uri.parse('https://api.example.com'),
+    );
+
+    await provider.recordReviewDecision(
+      'transaction-1',
+      ImportReviewStatus.approved,
+    );
+    await provider.updateSelectedAccounts({'account-1'});
+
+    expect(requests.first.body, contains('"reviewStatus":"approved"'));
+    expect(
+      requests
+          .where((request) => request.url.path == '/bank/accounts/select')
+          .single
+          .body,
+      contains('account-1'),
+    );
+  });
 }

@@ -72,7 +72,7 @@ class StepScaffold extends ConsumerWidget {
                           color: LekoColors.onboardingTextSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
+                          letterSpacing: 0,
                         ),
                       ),
                     ],
@@ -226,15 +226,9 @@ class _OnboardingBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [LekoColors.background, Color(0xFFF4F0EA), Color(0xFFEAF6F2)],
-        ),
-      ),
-      child: const SizedBox.expand(),
+    return const ColoredBox(
+      color: LekoColors.onboardingBackground,
+      child: SizedBox.expand(),
     );
   }
 }

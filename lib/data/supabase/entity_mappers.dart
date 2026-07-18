@@ -31,8 +31,7 @@ Map<String, dynamic> transactionToSupabase(Transaction e) =>
 Goal goalFromSupabase(Map<String, dynamic> row) =>
     Goal.fromJson(camelCaseKeys(row));
 
-Map<String, dynamic> goalToSupabase(Goal e) =>
-    prepareForSupabase(e.toJson());
+Map<String, dynamic> goalToSupabase(Goal e) => prepareForSupabase(e.toJson());
 
 RecurringIncome recurringIncomeFromSupabase(Map<String, dynamic> row) =>
     RecurringIncome.fromJson(camelCaseKeys(row));
@@ -43,8 +42,7 @@ Map<String, dynamic> recurringIncomeToSupabase(RecurringIncome e) =>
 Bill billFromSupabase(Map<String, dynamic> row) =>
     Bill.fromJson(camelCaseKeys(row));
 
-Map<String, dynamic> billToSupabase(Bill e) =>
-    prepareForSupabase(e.toJson());
+Map<String, dynamic> billToSupabase(Bill e) => prepareForSupabase(e.toJson());
 
 Person personFromSupabase(Map<String, dynamic> row) =>
     Person.fromJson(camelCaseKeys(row));

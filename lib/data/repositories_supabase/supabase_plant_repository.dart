@@ -18,11 +18,12 @@ class SupabasePlantRepository implements PlantRepository {
 
   @override
   Future<PlantState?> get() async {
-    final res = await _client
-        .from(_table)
-        .select()
-        .eq('user_id', _userId)
-        .maybeSingle();
+    final res =
+        await _client
+            .from(_table)
+            .select()
+            .eq('user_id', _userId)
+            .maybeSingle();
     if (res == null) return null;
     return PlantState.fromJson(res);
   }

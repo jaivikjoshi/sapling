@@ -21,22 +21,19 @@ class DriftRecurringIncomeRepository implements RecurringIncomeRepository {
   @override
   Future<List<RecurringIncome>> getAll() {
     return (_db.select(_db.recurringIncomes)
-          ..orderBy([(t) => OrderingTerm.asc(t.nextPaydayDate)]))
-        .get();
+      ..orderBy([(t) => OrderingTerm.asc(t.nextPaydayDate)])).get();
   }
 
   @override
   Stream<List<RecurringIncome>> watchAll() {
     return (_db.select(_db.recurringIncomes)
-          ..orderBy([(t) => OrderingTerm.asc(t.nextPaydayDate)]))
-        .watch();
+      ..orderBy([(t) => OrderingTerm.asc(t.nextPaydayDate)])).watch();
   }
 
   @override
   Future<RecurringIncome> getById(String id) {
     return (_db.select(_db.recurringIncomes)
-          ..where((t) => t.id.equals(id)))
-        .getSingle();
+      ..where((t) => t.id.equals(id))).getSingle();
   }
 
   @override
@@ -47,39 +44,35 @@ class DriftRecurringIncomeRepository implements RecurringIncomeRepository {
   @override
   Future<void> updateById(String id, RecurringIncomesCompanion companion) {
     return (_db.update(_db.recurringIncomes)
-          ..where((t) => t.id.equals(id)))
-        .write(companion);
+      ..where((t) => t.id.equals(id))).write(companion);
   }
 
   @override
   Future<void> deleteById(String id) {
     return (_db.delete(_db.recurringIncomes)
-          ..where((t) => t.id.equals(id)))
-        .go();
+      ..where((t) => t.id.equals(id))).go();
   }
 
   @override
   Future<void> clearPaydayAnchor() async {
-    await (_db.update(_db.recurringIncomes)
-          ..where((t) => t.isPaydayAnchor.equals(true)))
-        .write(
-      const RecurringIncomesCompanion(isPaydayAnchor: Value(false)),
-    );
+    await (_db.update(_db.recurringIncomes)..where(
+      (t) => t.isPaydayAnchor.equals(true),
+    )).write(const RecurringIncomesCompanion(isPaydayAnchor: Value(false)));
   }
 
   @override
   Future<void> setPaydayAnchor(String id) async {
     await clearPaydayAnchor();
-    await (_db.update(_db.recurringIncomes)
-          ..where((t) => t.id.equals(id)))
-        .write(const RecurringIncomesCompanion(isPaydayAnchor: Value(true)));
+    await (_db.update(_db.recurringIncomes)..where(
+      (t) => t.id.equals(id),
+    )).write(const RecurringIncomesCompanion(isPaydayAnchor: Value(true)));
   }
 
   @override
   Future<RecurringIncome?> getAnchor() async {
-    final results = await (_db.select(_db.recurringIncomes)
-          ..where((t) => t.isPaydayAnchor.equals(true)))
-        .get();
+    final results =
+        await (_db.select(_db.recurringIncomes)
+          ..where((t) => t.isPaydayAnchor.equals(true))).get();
     return results.isEmpty ? null : results.first;
   }
 }

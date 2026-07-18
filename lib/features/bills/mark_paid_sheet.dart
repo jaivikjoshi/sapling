@@ -51,9 +51,10 @@ class _MarkPaidSheetState extends ConsumerState<MarkPaidSheet> {
         children: [
           Text('Mark Paid', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 4),
-          Text(widget.bill.name,
-              style: TextStyle(
-                  color: LekoColors.textSecondary, fontSize: 14)),
+          Text(
+            widget.bill.name,
+            style: TextStyle(color: LekoColors.textSecondary, fontSize: 14),
+          ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _amountCtrl,
@@ -61,8 +62,7 @@ class _MarkPaidSheetState extends ConsumerState<MarkPaidSheet> {
               labelText: 'Amount Paid',
               prefixText: '\$ ',
             ),
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
             ],
@@ -87,19 +87,19 @@ class _MarkPaidSheetState extends ConsumerState<MarkPaidSheet> {
           Text(
             'This creates an expense transaction and advances the '
             'next due date.',
-            style: TextStyle(
-                color: LekoColors.textSecondary, fontSize: 12),
+            style: TextStyle(color: LekoColors.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _saving ? null : _markPaid,
-            child: _saving
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Confirm Payment'),
+            child:
+                _saving
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Text('Confirm Payment'),
           ),
         ],
       ),

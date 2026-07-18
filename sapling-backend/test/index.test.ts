@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createLeafWorker, type Env } from '../src/index';
+import { normalizeFlinksAccountDetails } from '../src/flinks';
 
 const baseContext = {
   greeting_name: 'Jaivik',
@@ -30,6 +31,109 @@ describe('Leaf Worker', () => {
     const body = await response.json<{ type: string; intent: string }>();
     expect(body.type).toBe('assistant_message');
     expect(body.intent).toBe('get_allowance_status');
+  });
+
+  it('returns Flinks connection intent in bank mock mode', async () => {
+    const worker = createLeafWorker();
+
+    const response = await invoke(worker, {
+      url: 'https://leaf.test/bank/connect',
+      body: {},
+      env: { BANK_DEV_MODE: 'mock' },
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json<{
+      providerId: string;
+      displayName: string;
+      authorizationUrl?: string;
+      consentCopy: string;
+    }>();
+    expect(body.providerId).toBe('flinks');
+    expect(body.displayName).toBe('Flinks Connect');
+    expect(body.authorizationUrl).toContain('redirectURL=');
+    expect(decodeURIComponent(body.authorizationUrl ?? '')).toContain(
+      '/bank/callback',
+    );
+    expect(body.consentCopy).toContain('drafts');
+  });
+
+  it('returns Flinks mock transaction drafts for bank preview', async () => {
+    const worker = createLeafWorker();
+
+    const response = await invokeGet(worker, {
+      url: 'https://leaf.test/bank/transactions/preview',
+      env: { BANK_DEV_MODE: 'mock' },
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json<{
+      drafts: Array<{ source: string; sourceId: string; reviewStatus: string }>;
+    }>();
+    expect(body.drafts.length).toBeGreaterThan(0);
+    expect(body.drafts[0].source).toBe('bank_aggregator');
+    expect(body.drafts[0].sourceId).toContain('flinks');
+    expect(body.drafts[0].reviewStatus).toBe('pending');
+  });
+
+  it('normalizes live Flinks account detail transactions into drafts', async () => {
+    const snapshot = normalizeFlinksAccountDetails({
+          Accounts: [
+            {
+              Id: 'account-1',
+              Title: 'Chequing',
+              Transactions: [
+                {
+                  Id: 'txn-1',
+                  Date: '2026-06-24T00:00:00',
+                  Description: 'Grocery Store',
+                  Debit: 42.55,
+                  Category: 'Groceries',
+                },
+                {
+                  Id: 'txn-2',
+                  Date: '2026-06-23',
+                  Description: 'Payroll',
+                  Credit: 1500,
+                },
+              ],
+            },
+          ],
+    });
+
+    expect(snapshot.accounts).toHaveLength(1);
+    expect(snapshot.drafts).toHaveLength(2);
+    expect(snapshot.drafts[0]).toMatchObject({
+      sourceId: 'account-1:txn-1',
+      type: 'expense',
+      amount: 42.55,
+      date: '2026-06-24',
+      merchant: 'Grocery Store',
+      categorySuggestion: 'Groceries',
+    });
+    expect(snapshot.drafts[1]).toMatchObject({
+      sourceId: 'account-1:txn-2',
+      type: 'income',
+      amount: 1500,
+      date: '2026-06-23',
+      merchant: 'Payroll',
+    });
+  });
+
+  it('requires a signed-in user for configured live bank routes', async () => {
+    const worker = createLeafWorker();
+    const response = await invokeGet(worker, {
+      url: 'https://leaf.test/bank/status',
+      env: {
+        FLINKS_API_BASE_URL: 'https://instance-api.private.fin.ag',
+        FLINKS_CONNECT_URL: 'https://instance-iframe.private.fin.ag/v2/',
+        FLINKS_CUSTOMER_ID: 'customer-1',
+        FLINKS_SECRET_KEY: 'secret-1',
+        FLINKS_X_API_KEY: 'api-key-1',
+      },
+    });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({ error: 'bank_auth_required' });
   });
 
   it('returns an expense preview in mock mode when the category is obvious', async () => {
@@ -236,6 +340,41 @@ describe('Leaf Worker', () => {
     expect(successBody.assistant_message).toContain('Added that expense');
     expect(failureBody.assistant_message).toContain('could not match');
   });
+
+  it('only sends CORS headers to explicitly allowed browser origins', async () => {
+    const worker = createLeafWorker();
+    const context = {} as ExecutionContext;
+
+    const allowed = await worker.fetch!(
+      new Request('https://leaf.test/health', {
+        headers: { origin: 'https://app.example.com' },
+      }) as never,
+      { CORS_ALLOWED_ORIGINS: 'https://app.example.com' },
+      context,
+    );
+    expect(allowed.headers.get('access-control-allow-origin')).toBe(
+      'https://app.example.com',
+    );
+
+    const denied = await worker.fetch!(
+      new Request('https://leaf.test/health', {
+        headers: { origin: 'https://attacker.example' },
+      }) as never,
+      { CORS_ALLOWED_ORIGINS: 'https://app.example.com' },
+      context,
+    );
+    expect(denied.headers.get('access-control-allow-origin')).toBeNull();
+
+    const rejectedPreflight = await worker.fetch!(
+      new Request('https://leaf.test/bank/status', {
+        method: 'OPTIONS',
+        headers: { origin: 'https://attacker.example' },
+      }) as never,
+      { CORS_ALLOWED_ORIGINS: 'https://app.example.com' },
+      context,
+    );
+    expect(rejectedPreflight.status).toBe(403);
+  });
 });
 
 function jsonRequest(url: string, body: unknown): Request {
@@ -285,6 +424,20 @@ async function invoke(
 ): Promise<Response> {
   return worker.fetch!(
     jsonRequest(options.url, options.body) as never,
+    options.env,
+    {} as ExecutionContext,
+  );
+}
+
+async function invokeGet(
+  worker: ReturnType<typeof createLeafWorker>,
+  options: {
+    url: string;
+    env: Env;
+  },
+): Promise<Response> {
+  return worker.fetch!(
+    new Request(options.url) as never,
     options.env,
     {} as ExecutionContext,
   );

@@ -6,12 +6,12 @@ library;
 Map<String, dynamic> camelCaseKeys(Map<String, dynamic> map) {
   return map.map((key, value) {
     final newKey = _toCamelCase(key);
-    final newValue = value is Map<String, dynamic>
-        ? camelCaseKeys(value)
-        : value is List
+    final newValue =
+        value is Map<String, dynamic>
+            ? camelCaseKeys(value)
+            : value is List
             ? value
-                .map((e) =>
-                    e is Map<String, dynamic> ? camelCaseKeys(e) : e)
+                .map((e) => e is Map<String, dynamic> ? camelCaseKeys(e) : e)
                 .toList()
             : value;
     return MapEntry(newKey, newValue);
@@ -23,12 +23,12 @@ Map<String, dynamic> camelCaseKeys(Map<String, dynamic> map) {
 Map<String, dynamic> snakeCaseKeys(Map<String, dynamic> map) {
   return map.map((key, value) {
     final newKey = _toSnakeCase(key);
-    final newValue = value is Map<String, dynamic>
-        ? snakeCaseKeys(value)
-        : value is List
+    final newValue =
+        value is Map<String, dynamic>
+            ? snakeCaseKeys(value)
+            : value is List
             ? value
-                .map((e) =>
-                    e is Map<String, dynamic> ? snakeCaseKeys(e) : e)
+                .map((e) => e is Map<String, dynamic> ? snakeCaseKeys(e) : e)
                 .toList()
             : value;
     return MapEntry(newKey, newValue);
@@ -38,9 +38,7 @@ Map<String, dynamic> snakeCaseKeys(Map<String, dynamic> map) {
 /// Converts values for Supabase: Drift serializes DateTime as Unix milliseconds;
 /// Postgres timestamptz expects ISO 8601 strings. Recursively processes maps/lists.
 dynamic _convertDatesForSupabase(dynamic value) {
-  if (value is int &&
-      value > 1000000000000 &&
-      value < 2500000000000) {
+  if (value is int && value > 1000000000000 && value < 2500000000000) {
     return DateTime.fromMillisecondsSinceEpoch(value).toIso8601String();
   }
   if (value is Map<String, dynamic>) {
@@ -62,13 +60,23 @@ String _toCamelCase(String s) {
   if (s.isEmpty) return s;
   final parts = s.split('_');
   return parts.first.toLowerCase() +
-      parts.skip(1).map((p) => p.isEmpty ? p : p[0].toUpperCase() + p.substring(1).toLowerCase()).join();
+      parts
+          .skip(1)
+          .map(
+            (p) =>
+                p.isEmpty
+                    ? p
+                    : p[0].toUpperCase() + p.substring(1).toLowerCase(),
+          )
+          .join();
 }
 
 String _toSnakeCase(String s) {
   if (s.isEmpty) return s;
-  return s.replaceAllMapped(
-    RegExp(r'[A-Z]'),
-    (m) => '_${m.group(0)!.toLowerCase()}',
-  ).replaceFirst(RegExp(r'^_'), '');
+  return s
+      .replaceAllMapped(
+        RegExp(r'[A-Z]'),
+        (m) => '_${m.group(0)!.toLowerCase()}',
+      )
+      .replaceFirst(RegExp(r'^_'), '');
 }

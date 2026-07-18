@@ -35,7 +35,9 @@ class _EditExpenseScreenState extends ConsumerState<EditExpenseScreen> {
   }
 
   Future<void> _load() async {
-    final txn = await ref.read(ledgerServiceProvider).getTransactionById(widget.transactionId);
+    final txn = await ref
+        .read(ledgerServiceProvider)
+        .getTransactionById(widget.transactionId);
     if (txn == null || txn.type != 'expense') {
       if (mounted) context.pop();
       return;
@@ -46,9 +48,10 @@ class _EditExpenseScreenState extends ConsumerState<EditExpenseScreen> {
       _noteCtrl.text = txn.note ?? '';
       _date = txn.date;
       _categoryId = txn.categoryId;
-      _label = txn.label != null
-          ? enumFromDb<SpendLabel>(txn.label!, SpendLabel.values)
-          : SpendLabel.green;
+      _label =
+          txn.label != null
+              ? enumFromDb<SpendLabel>(txn.label!, SpendLabel.values)
+              : SpendLabel.green;
       _loading = false;
     });
   }
@@ -97,12 +100,21 @@ class _EditExpenseScreenState extends ConsumerState<EditExpenseScreen> {
           ),
           const SizedBox(height: 16),
           categoriesAsync.when(
-            data: (cats) => DropdownButtonFormField<String>(
-              value: _categoryId,
-              decoration: const InputDecoration(labelText: 'Category'),
-              items: cats.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
-              onChanged: (id) => setState(() => _categoryId = id),
-            ),
+            data:
+                (cats) => DropdownButtonFormField<String>(
+                  value: _categoryId,
+                  decoration: const InputDecoration(labelText: 'Category'),
+                  items:
+                      cats
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c.id,
+                              child: Text(c.name),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: (id) => setState(() => _categoryId = id),
+                ),
             loading: () => const LinearProgressIndicator(),
             error: (e, _) => Text('Error: $e'),
           ),
@@ -117,13 +129,17 @@ class _EditExpenseScreenState extends ConsumerState<EditExpenseScreen> {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: _isValid && !_saving ? _save : null,
-            child: _saving
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Text('Save'),
+            child:
+                _saving
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : const Text('Save'),
           ),
         ],
       ),
@@ -149,22 +165,23 @@ class _EditExpenseScreenState extends ConsumerState<EditExpenseScreen> {
     if (linkedId != null && (newAmount != _txn!.amount)) {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Update linked split?'),
-          content: const Text(
-            'This expense is linked to a split. Update the linked split amount too?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('No'),
+        builder:
+            (ctx) => AlertDialog(
+              title: const Text('Update linked split?'),
+              content: const Text(
+                'This expense is linked to a split. Update the linked split amount too?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('No'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Yes'),
+                ),
+              ],
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Yes'),
-            ),
-          ],
-        ),
       );
       updateLinkedSplit = confirmed == true;
     }
@@ -172,9 +189,13 @@ class _EditExpenseScreenState extends ConsumerState<EditExpenseScreen> {
     setState(() => _saving = true);
     try {
       if (updateLinkedSplit && linkedId != null) {
-        await ref.read(splitServiceProvider).updateSplitFromExpenseAmount(linkedId, newAmount);
+        await ref
+            .read(splitServiceProvider)
+            .updateSplitFromExpenseAmount(linkedId, newAmount);
       }
-      await ref.read(ledgerServiceProvider).updateExpense(
+      await ref
+          .read(ledgerServiceProvider)
+          .updateExpense(
             id: widget.transactionId,
             amount: newAmount,
             date: _date,

@@ -22,18 +22,24 @@ class CategoriesScreen extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
       body: catsAsync.when(
-        data: (cats) => cats.isEmpty
-            ? const Center(child: Text('No categories.'))
-            : ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: cats.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (_, i) => _CategoryTile(
-                  category: cats[i],
-                  onEdit: () => _showForm(context, ref, existing: cats[i]),
-                  onDelete: () => _confirmDelete(context, ref, cats[i]),
-                ),
-              ),
+        data:
+            (cats) =>
+                cats.isEmpty
+                    ? const Center(child: Text('No categories.'))
+                    : ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: cats.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder:
+                          (_, i) => _CategoryTile(
+                            category: cats[i],
+                            onEdit:
+                                () =>
+                                    _showForm(context, ref, existing: cats[i]),
+                            onDelete:
+                                () => _confirmDelete(context, ref, cats[i]),
+                          ),
+                    ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
@@ -60,20 +66,29 @@ class CategoriesScreen extends ConsumerWidget {
     }
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete category?'),
-        content: Text('Remove "${cat.name}"? Existing transactions keep their category reference.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await ref.read(categoryServiceProvider).delete(cat.id);
-            },
-            child: Text('Delete', style: TextStyle(color: LekoColors.error)),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete category?'),
+            content: Text(
+              'Remove "${cat.name}"? Existing transactions keep their category reference.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(categoryServiceProvider).delete(cat.id);
+                },
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: LekoColors.error),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -90,18 +105,15 @@ class _CategoryTile extends StatelessWidget {
   final VoidCallback onDelete;
 
   Color get _labelColor => switch (category.defaultLabel) {
-        'orange' => LekoColors.labelOrange,
-        'red' => LekoColors.labelRed,
-        _ => LekoColors.labelGreen,
-      };
+    'orange' => LekoColors.labelOrange,
+    'red' => LekoColors.labelRed,
+    _ => LekoColors.labelGreen,
+  };
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: CircleAvatar(
-        radius: 6,
-        backgroundColor: _labelColor,
-      ),
+      leading: CircleAvatar(radius: 6, backgroundColor: _labelColor),
       title: Text(
         category.name,
         style: const TextStyle(fontWeight: FontWeight.w600),
@@ -110,18 +122,20 @@ class _CategoryTile extends StatelessWidget {
         category.isSystem ? 'System' : 'Custom',
         style: TextStyle(color: LekoColors.textSecondary, fontSize: 12),
       ),
-      trailing: category.isSystem
-          ? null
-          : PopupMenuButton<String>(
-              onSelected: (v) {
-                if (v == 'edit') onEdit();
-                if (v == 'delete') onDelete();
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'delete', child: Text('Delete')),
-              ],
-            ),
+      trailing:
+          category.isSystem
+              ? null
+              : PopupMenuButton<String>(
+                onSelected: (v) {
+                  if (v == 'edit') onEdit();
+                  if (v == 'delete') onDelete();
+                },
+                itemBuilder:
+                    (_) => const [
+                      PopupMenuItem(value: 'edit', child: Text('Edit')),
+                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                    ],
+              ),
       onTap: category.isSystem ? null : onEdit,
     );
   }

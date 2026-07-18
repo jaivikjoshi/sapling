@@ -26,7 +26,9 @@ final splitEntriesRepositoryProvider = Provider<SplitEntriesRepository>((ref) {
     return DriftSplitEntriesRepository(ref.watch(databaseProvider));
   }
   return SupabaseSplitEntriesRepository(
-      ref.watch(supabaseClientProvider), userId);
+    ref.watch(supabaseClientProvider),
+    userId,
+  );
 });
 
 final splitSharesRepositoryProvider = Provider<SplitSharesRepository>((ref) {
@@ -46,18 +48,19 @@ final splitServiceProvider = Provider<SplitService>((ref) {
   );
 });
 
-final openSplitsStreamProvider =
-    StreamProvider<List<SplitEntry>>((ref) {
+final openSplitsStreamProvider = StreamProvider<List<SplitEntry>>((ref) {
   return ref.watch(splitServiceProvider).watchOpenSplits();
 });
 
 final openSplitsForPersonProvider =
     StreamProvider.family<List<SplitEntry>, String>((ref, personId) {
-  return ref.watch(splitServiceProvider).watchOpenSplitsForPerson(personId);
-});
+      return ref.watch(splitServiceProvider).watchOpenSplitsForPerson(personId);
+    });
 
-final splitDetailProvider =
-    FutureProvider.family<SplitEntry?, String>((ref, splitEntryId) {
+final splitDetailProvider = FutureProvider.family<SplitEntry?, String>((
+  ref,
+  splitEntryId,
+) {
   return ref.watch(splitServiceProvider).getSplitById(splitEntryId);
 });
 
@@ -65,7 +68,6 @@ final personsListProvider = StreamProvider<List<Person>>((ref) {
   return ref.watch(splitServiceProvider).watchPersons();
 });
 
-final splitBalancesProvider =
-    StreamProvider<Map<String, PersonBalance>>((ref) {
+final splitBalancesProvider = StreamProvider<Map<String, PersonBalance>>((ref) {
   return ref.watch(splitServiceProvider).watchBalancesByPerson();
 });

@@ -40,43 +40,52 @@ Future<void> saveSettingsField(
   String? nightlyCloseoutTime,
 }) async {
   final companion = AppSettingsCompanion(
-    baseCurrency: baseCurrency != null
-        ? Value(enumToDb(baseCurrency))
-        : const Value.absent(),
-    rolloverResetType: rolloverResetType != null
-        ? Value(enumToDb(rolloverResetType))
-        : const Value.absent(),
-    spendingBaselineDays: spendingBaselineDays != null
-        ? Value(spendingBaselineDays)
-        : const Value.absent(),
-    allowanceDefaultMode: allowanceDefaultMode != null
-        ? Value(enumToDb(allowanceDefaultMode))
-        : const Value.absent(),
-    primaryGoalId: primaryGoalId != null
-        ? Value(primaryGoalId())
-        : const Value.absent(),
-    defaultPaydayBehavior: defaultPaydayBehavior != null
-        ? Value(enumToDb(defaultPaydayBehavior))
-        : const Value.absent(),
-    paydayAnchorRecurringIncomeId: paydayAnchorRecurringIncomeId != null
-        ? Value(paydayAnchorRecurringIncomeId())
-        : const Value.absent(),
+    baseCurrency:
+        baseCurrency != null
+            ? Value(enumToDb(baseCurrency))
+            : const Value.absent(),
+    rolloverResetType:
+        rolloverResetType != null
+            ? Value(enumToDb(rolloverResetType))
+            : const Value.absent(),
+    spendingBaselineDays:
+        spendingBaselineDays != null
+            ? Value(spendingBaselineDays)
+            : const Value.absent(),
+    allowanceDefaultMode:
+        allowanceDefaultMode != null
+            ? Value(enumToDb(allowanceDefaultMode))
+            : const Value.absent(),
+    primaryGoalId:
+        primaryGoalId != null ? Value(primaryGoalId()) : const Value.absent(),
+    defaultPaydayBehavior:
+        defaultPaydayBehavior != null
+            ? Value(enumToDb(defaultPaydayBehavior))
+            : const Value.absent(),
+    paydayAnchorRecurringIncomeId:
+        paydayAnchorRecurringIncomeId != null
+            ? Value(paydayAnchorRecurringIncomeId())
+            : const Value.absent(),
     paydayEnabled:
         paydayEnabled != null ? Value(paydayEnabled) : const Value.absent(),
     billsEnabled:
         billsEnabled != null ? Value(billsEnabled) : const Value.absent(),
-    overspendEnabled: overspendEnabled != null
-        ? Value(overspendEnabled)
-        : const Value.absent(),
-    cycleResetEnabled: cycleResetEnabled != null
-        ? Value(cycleResetEnabled)
-        : const Value.absent(),
-    nightlyCloseoutEnabled: nightlyCloseoutEnabled != null
-        ? Value(nightlyCloseoutEnabled)
-        : const Value.absent(),
-    nightlyCloseoutTime: nightlyCloseoutTime != null
-        ? Value(nightlyCloseoutTime)
-        : const Value.absent(),
+    overspendEnabled:
+        overspendEnabled != null
+            ? Value(overspendEnabled)
+            : const Value.absent(),
+    cycleResetEnabled:
+        cycleResetEnabled != null
+            ? Value(cycleResetEnabled)
+            : const Value.absent(),
+    nightlyCloseoutEnabled:
+        nightlyCloseoutEnabled != null
+            ? Value(nightlyCloseoutEnabled)
+            : const Value.absent(),
+    nightlyCloseoutTime:
+        nightlyCloseoutTime != null
+            ? Value(nightlyCloseoutTime)
+            : const Value.absent(),
   );
   await repo.update(companion);
 }

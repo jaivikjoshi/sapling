@@ -21,24 +21,26 @@ void main() {
   tearDown(() => db.close());
 
   group('RecoveryPlanService — create plans', () {
-    test('createReduceNextNDays creates active plan with correct params',
-        () async {
-      final id = await service.createReduceNextNDays(
-        triggerTransactionId: 'txn-1',
-        overspendAmount: 70,
-        days: 7,
-      );
+    test(
+      'createReduceNextNDays creates active plan with correct params',
+      () async {
+        final id = await service.createReduceNextNDays(
+          triggerTransactionId: 'txn-1',
+          overspendAmount: 70,
+          days: 7,
+        );
 
-      final plan = await repo.getActive();
-      expect(plan, isNot(equals(null)));
-      expect(plan!.id, id);
-      expect(plan.status, 'active');
-      expect(plan.overspendAmount, 70);
+        final plan = await repo.getActive();
+        expect(plan, isNot(equals(null)));
+        expect(plan!.id, id);
+        expect(plan.status, 'active');
+        expect(plan.overspendAmount, 70);
 
-      final params = jsonDecode(plan.parameters) as Map<String, dynamic>;
-      expect(params['days'], 7);
-      expect(params['dailyReduction'], 10.0);
-    });
+        final params = jsonDecode(plan.parameters) as Map<String, dynamic>;
+        expect(params['days'], 7);
+        expect(params['dailyReduction'], 10.0);
+      },
+    );
 
     test('createReduceWeekendsOnly stores correct params', () async {
       await service.createReduceWeekendsOnly(
@@ -109,18 +111,20 @@ void main() {
       expect(RecoveryPlanService.computeTodayAdjustment(null), 0);
     });
 
-    test('reduceNextNDays returns negative daily amount within window',
-        () async {
-      await service.createReduceNextNDays(
-        triggerTransactionId: 'txn-1',
-        overspendAmount: 70,
-        days: 7,
-      );
+    test(
+      'reduceNextNDays returns negative daily amount within window',
+      () async {
+        await service.createReduceNextNDays(
+          triggerTransactionId: 'txn-1',
+          overspendAmount: 70,
+          days: 7,
+        );
 
-      final plan = await repo.getActive();
-      final adj = RecoveryPlanService.computeTodayAdjustment(plan);
-      expect(adj, -10.0);
-    });
+        final plan = await repo.getActive();
+        final adj = RecoveryPlanService.computeTodayAdjustment(plan);
+        expect(adj, -10.0);
+      },
+    );
 
     test('reduceWeekendsOnly returns 0 on weekday', () async {
       await service.createReduceWeekendsOnly(
@@ -132,8 +136,7 @@ void main() {
       final plan = await repo.getActive();
       final adj = RecoveryPlanService.computeTodayAdjustment(plan);
       final now = DateTime.now();
-      if (now.weekday == DateTime.saturday ||
-          now.weekday == DateTime.sunday) {
+      if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
         expect(adj, -25.0);
       } else {
         expect(adj, 0);
@@ -194,8 +197,7 @@ void main() {
       }
     });
 
-    test('schedule sum equals -overspendAmount for reduceNextNDays',
-        () async {
+    test('schedule sum equals -overspendAmount for reduceNextNDays', () async {
       await service.createReduceNextNDays(
         triggerTransactionId: 'txn-1',
         overspendAmount: 100,
@@ -204,8 +206,10 @@ void main() {
 
       final plan = await repo.getActive();
       final schedule = RecoveryPlanService.buildSchedule(plan!);
-      final total =
-          schedule.fold<double>(0, (sum, adj) => sum + adj.adjustment);
+      final total = schedule.fold<double>(
+        0,
+        (sum, adj) => sum + adj.adjustment,
+      );
       expect(total, closeTo(-100, 0.01));
     });
   });

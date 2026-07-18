@@ -19,12 +19,10 @@ class DriftCategoriesRepository implements CategoriesRepository {
 
   @override
   Stream<List<Category>> watchAll() {
-    return (_db.select(_db.categories)
-          ..orderBy([
-            (t) => OrderingTerm.asc(t.isSystem),
-            (t) => OrderingTerm.asc(t.name),
-          ]))
-        .watch();
+    return (_db.select(_db.categories)..orderBy([
+      (t) => OrderingTerm.asc(t.isSystem),
+      (t) => OrderingTerm.asc(t.name),
+    ])).watch();
   }
 
   @override
@@ -34,14 +32,13 @@ class DriftCategoriesRepository implements CategoriesRepository {
 
   @override
   Future<Category> getById(String id) {
-    return (_db.select(_db.categories)..where((t) => t.id.equals(id)))
-        .getSingle();
+    return (_db.select(_db.categories)
+      ..where((t) => t.id.equals(id))).getSingle();
   }
 
   @override
   Future<bool> nameExists(String name, {String? excludeId}) async {
-    final q = _db.select(_db.categories)
-      ..where((t) => t.name.equals(name));
+    final q = _db.select(_db.categories)..where((t) => t.name.equals(name));
     final results = await q.get();
     if (excludeId != null) {
       return results.any((c) => c.id != excludeId);
@@ -56,8 +53,8 @@ class DriftCategoriesRepository implements CategoriesRepository {
 
   @override
   Future<void> updateById(String id, CategoriesCompanion companion) {
-    return (_db.update(_db.categories)..where((t) => t.id.equals(id)))
-        .write(companion);
+    return (_db.update(_db.categories)
+      ..where((t) => t.id.equals(id))).write(companion);
   }
 
   @override

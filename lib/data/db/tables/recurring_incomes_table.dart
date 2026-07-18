@@ -7,8 +7,7 @@ import 'package:drift/drift.dart';
 class RecurringIncomes extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
-  TextColumn get frequency =>
-      text().withDefault(const Constant('monthly'))();
+  TextColumn get frequency => text().withDefault(const Constant('monthly'))();
   DateTimeColumn get nextPaydayDate => dateTime()();
   RealColumn get expectedAmount => real().nullable()();
   TextColumn get paydayBehavior =>

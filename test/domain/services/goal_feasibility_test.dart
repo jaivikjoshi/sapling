@@ -108,8 +108,10 @@ void main() {
       );
 
       // Aggressive spends less on variable → more free → potentially more feasible
-      expect(aggressive.freeAfterObligations,
-          greaterThan(easy.freeAfterObligations));
+      expect(
+        aggressive.freeAfterObligations,
+        greaterThan(easy.freeAfterObligations),
+      );
     });
 
     test('need is zero when balance already covers target', () {

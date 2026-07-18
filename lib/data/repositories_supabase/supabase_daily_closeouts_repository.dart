@@ -33,15 +33,14 @@ class SupabaseDailyCloseoutsRepository implements DailyCloseoutsRepository {
   Future<DailyCloseout?> getByDateBucket(DateTime dateBucket) async {
     final start = DateTime(dateBucket.year, dateBucket.month, dateBucket.day);
     final dateStr = _dateToIso(start);
-    final res = await _client
-        .from('daily_closeouts')
-        .select()
-        .eq('user_id', _userId)
-        .eq('date', dateStr)
-        .maybeSingle();
-    return res == null
-        ? null
-        : dailyCloseoutFromSupabase(res);
+    final res =
+        await _client
+            .from('daily_closeouts')
+            .select()
+            .eq('user_id', _userId)
+            .eq('date', dateStr)
+            .maybeSingle();
+    return res == null ? null : dailyCloseoutFromSupabase(res);
   }
 
   @override

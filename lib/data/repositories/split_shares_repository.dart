@@ -19,22 +19,19 @@ class DriftSplitSharesRepository implements SplitSharesRepository {
   @override
   Future<List<SplitShare>> getBySplitEntryId(String splitEntryId) {
     return (_db.select(_db.splitShares)
-          ..where((t) => t.splitEntryId.equals(splitEntryId)))
-        .get();
+      ..where((t) => t.splitEntryId.equals(splitEntryId))).get();
   }
 
   @override
   Stream<List<SplitShare>> watchBySplitEntryId(String splitEntryId) {
     return (_db.select(_db.splitShares)
-          ..where((t) => t.splitEntryId.equals(splitEntryId)))
-        .watch();
+      ..where((t) => t.splitEntryId.equals(splitEntryId))).watch();
   }
 
   @override
   Future<List<SplitShare>> getByPersonId(String personId) {
     return (_db.select(_db.splitShares)
-          ..where((t) => t.personId.equals(personId)))
-        .get();
+      ..where((t) => t.personId.equals(personId))).get();
   }
 
   @override
@@ -54,13 +51,13 @@ class DriftSplitSharesRepository implements SplitSharesRepository {
   @override
   Future<void> deleteBySplitEntryId(String splitEntryId) {
     return (_db.delete(_db.splitShares)
-          ..where((t) => t.splitEntryId.equals(splitEntryId)))
-        .go();
+      ..where((t) => t.splitEntryId.equals(splitEntryId))).go();
   }
 
   @override
   Future<void> updateShareAmount(String id, double shareAmount) {
-    return (_db.update(_db.splitShares)..where((t) => t.id.equals(id)))
-        .write(SplitSharesCompanion(shareAmount: Value(shareAmount)));
+    return (_db.update(_db.splitShares)..where(
+      (t) => t.id.equals(id),
+    )).write(SplitSharesCompanion(shareAmount: Value(shareAmount)));
   }
 }

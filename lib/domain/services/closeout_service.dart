@@ -26,12 +26,14 @@ class CloseoutService {
     final existing = await _repo.getByDateBucket(bucket);
     if (existing != null) await _repo.deleteById(existing.id);
     final now = DateTime.now();
-    await _repo.insert(DailyCloseoutsCompanion.insert(
-      id: _uuid.v4(),
-      date: bucket,
-      result: enumToDb(result),
-      createdAt: now,
-    ));
+    await _repo.insert(
+      DailyCloseoutsCompanion.insert(
+        id: _uuid.v4(),
+        date: bucket,
+        result: enumToDb(result),
+        createdAt: now,
+      ),
+    );
   }
 
   /// Streak = consecutive days (going back from reference date) where
@@ -43,7 +45,10 @@ class CloseoutService {
     final ref = referenceDate ?? DateTime.now();
     final bucket = dateBucket(ref);
 
-    final todayWithinBudget = await _allowanceEngine.wasWithinBudgetOnDate(bucket, settings);
+    final todayWithinBudget = await _allowanceEngine.wasWithinBudgetOnDate(
+      bucket,
+      settings,
+    );
 
     int count = 0;
     for (int offset = 0; offset < 366; offset++) {

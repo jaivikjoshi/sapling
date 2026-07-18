@@ -56,7 +56,8 @@ class SupabaseSplitSharesRepository implements SplitSharesRepository {
 
   @override
   Future<void> insertAll(List<SplitSharesCompanion> companions) async {
-    final maps = companions.map((c) => splitSharesCompanionToSupabase(c)).toList();
+    final maps =
+        companions.map((c) => splitSharesCompanionToSupabase(c)).toList();
     await _client.from('split_shares').insert(maps);
   }
 

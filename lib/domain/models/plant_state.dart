@@ -1,4 +1,3 @@
-
 /// Represents the user's plant growth & health state.
 /// Growth is permanent (points only increase, unless prolonged neglect).
 /// Health fluctuates with streak.
@@ -21,14 +20,17 @@ class PlantState {
 
   /// Factory for a brand-new user who has never been evaluated.
   factory PlantState.initial() => PlantState(
-        growthPoints: 0,
-        healthScore: 100,
-        longestStreak: 0,
-        currentStreak: 0,
-        daysAtZero: 0,
-        lastEvaluatedDate:
-            DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-      );
+    growthPoints: 0,
+    healthScore: 100,
+    longestStreak: 0,
+    currentStreak: 0,
+    daysAtZero: 0,
+    lastEvaluatedDate: DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    ),
+  );
 
   // ── Growth stage (0–6) derived from growthPoints ──
 
@@ -52,7 +54,7 @@ class PlantState {
     if (healthScore >= 60) return 4; // slightly wilted
     if (healthScore >= 40) return 3; // wilted
     if (healthScore >= 20) return 2; // leaf loss
-    if (healthScore >= 1) return 1;  // dried
+    if (healthScore >= 1) return 1; // dried
     return 0; // dead
   }
 
@@ -99,25 +101,34 @@ class PlantState {
   // ── JSON serialization (for Supabase / Drift) ──
 
   Map<String, dynamic> toJson() => {
-        'growth_points': growthPoints,
-        'health_score': healthScore,
-        'longest_streak': longestStreak,
-        'current_streak': currentStreak,
-        'days_at_zero': daysAtZero,
-        'last_evaluated_date':
-            '${lastEvaluatedDate.year}-${lastEvaluatedDate.month.toString().padLeft(2, '0')}-${lastEvaluatedDate.day.toString().padLeft(2, '0')}',
-      };
+    'growth_points': growthPoints,
+    'health_score': healthScore,
+    'longest_streak': longestStreak,
+    'current_streak': currentStreak,
+    'days_at_zero': daysAtZero,
+    'last_evaluated_date':
+        '${lastEvaluatedDate.year}-${lastEvaluatedDate.month.toString().padLeft(2, '0')}-${lastEvaluatedDate.day.toString().padLeft(2, '0')}',
+  };
 
   factory PlantState.fromJson(Map<String, dynamic> json) {
     final dateStr = json['last_evaluated_date'] as String?;
     DateTime lastDate;
     if (dateStr != null) {
       final parsed = DateTime.tryParse(dateStr);
-      lastDate = parsed != null
-          ? DateTime(parsed.year, parsed.month, parsed.day)
-          : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      lastDate =
+          parsed != null
+              ? DateTime(parsed.year, parsed.month, parsed.day)
+              : DateTime(
+                DateTime.now().year,
+                DateTime.now().month,
+                DateTime.now().day,
+              );
     } else {
-      lastDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      lastDate = DateTime(
+        DateTime.now().year,
+        DateTime.now().month,
+        DateTime.now().day,
+      );
     }
 
     return PlantState(

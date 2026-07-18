@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/leko_mark.dart';
+
 abstract final class AuthPalette {
   static const bgTop = Color(0xFF0D1F22);
-  static const bgBottom = Color(0xFF0A1A1E);
   static const headline = Color(0xFFF4F0EA);
   static const subtext = Color(0xFFA3B0AC);
   static const primaryBtn = Color(0xFFF4F0EA);
@@ -41,14 +42,8 @@ class AuthScaffold extends StatelessWidget {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: AuthPalette.bgTop,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AuthPalette.bgTop, AuthPalette.bgBottom],
-          ),
-        ),
+      body: ColoredBox(
+        color: AuthPalette.bgTop,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -83,18 +78,14 @@ class AuthScaffold extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            const Text(
-                              'leko',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'Georgia',
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: AuthPalette.headline,
-                                letterSpacing: 0,
+                            const Center(
+                              child: LekoMark(
+                                size: 96,
+                                color: Color(0xFFB4B6B7),
+                                semanticLabel: 'Leko logo',
                               ),
                             ),
-                            const SizedBox(height: 18),
+                            const SizedBox(height: 22),
                             Text(
                               title,
                               textAlign: TextAlign.center,

@@ -159,7 +159,11 @@ class _BillFormSheetState extends ConsumerState<BillFormSheet> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.autorenew_rounded, size: 16, color: LekoColors.textSecondary),
+        const Icon(
+          Icons.autorenew_rounded,
+          size: 16,
+          color: LekoColors.textSecondary,
+        ),
         const SizedBox(width: 6),
         Expanded(
           child: Text(

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/analytics/leko_analytics.dart';
+import '../../core/providers/analytics_providers.dart';
 import '../../core/providers/goals_providers.dart';
 import '../../core/theme/leko_colors.dart';
 import '../../core/utils/enum_serialization.dart';
@@ -85,7 +87,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: _GoalFormPalette.textPrimary,
-                      letterSpacing: -0.8,
+                      letterSpacing: 0,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -146,10 +148,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
         color: _GoalFormPalette.textPrimary,
         fontSize: 16,
       ),
-      decoration: _fieldDecoration(
-        label: 'Goal name',
-        hint: 'Emergency Fund',
-      ),
+      decoration: _fieldDecoration(label: 'Goal name', hint: 'Emergency Fund'),
       validator: (v) => GoalsService.validateName(v ?? ''),
     );
   }
@@ -189,14 +188,14 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
         ],
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 10,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text(
           'Target date',
-          style: TextStyle(
-            color: _GoalFormPalette.textSecondary,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: _GoalFormPalette.textSecondary, fontSize: 14),
         ),
         subtitle: Text(
           DateFormat.yMMMd().format(_targetDate),
@@ -244,9 +243,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
           padding: const EdgeInsets.only(left: 4),
           child: Text(
             'Saving Style',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: _GoalFormPalette.textSecondary,
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -266,12 +263,14 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                       label: Text(
                         s.name,
                         style: TextStyle(
-                          color: selected
-                              ? (s == SavingStyle.natural
-                                  ? _GoalFormPalette.cta
-                                  : _styleColor(s))
-                              : _GoalFormPalette.textPrimary,
-                          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                          color:
+                              selected
+                                  ? (s == SavingStyle.natural
+                                      ? _GoalFormPalette.cta
+                                      : _styleColor(s))
+                                  : _GoalFormPalette.textPrimary,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w500,
                           fontSize: 15,
                         ),
                       ),
@@ -280,7 +279,10 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                       backgroundColor: Colors.white,
                       selectedColor: _styleChipColor(s),
                       side: BorderSide(
-                        color: selected ? _styleBorderColor(s) : _GoalFormPalette.chipBorder,
+                        color:
+                            selected
+                                ? _styleBorderColor(s)
+                                : _GoalFormPalette.chipBorder,
                         width: selected ? 1.5 : 1,
                       ),
                       shape: RoundedRectangleBorder(
@@ -364,6 +366,12 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
         targetDate: _targetDate,
         savingStyle: _style,
       );
+      ref
+          .read(lekoAnalyticsProvider)
+          .track(
+            LekoAnalyticsEvent.goalCreated,
+            properties: {'saving_style': _style.name},
+          );
     }
 
     if (mounted) Navigator.pop(context);
@@ -403,10 +411,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(24),
-        borderSide: const BorderSide(
-          color: _GoalFormPalette.cta,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: _GoalFormPalette.cta, width: 1.4),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(24),

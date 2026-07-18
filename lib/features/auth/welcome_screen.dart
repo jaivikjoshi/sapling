@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/widgets/leko_mark.dart';
+
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -37,7 +39,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   // ── Palette ──
   static const _bgTop = Color(0xFF0D1F22); // Deep dark teal
-  static const _bgBottom = Color(0xFF0A1A1E); // Near-black green
   static const _headline = Color(0xFFF4F0EA); // Warm cream white
   static const _subtext = Color(0xFFA3B0AC); // Muted sage
   static const _primaryBtn = Color(0xFFF4F0EA); // Light cream button
@@ -57,13 +58,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [_bgTop, _bgBottom],
-          ),
-        ),
+        color: _bgTop,
         child: FadeTransition(
           opacity: _fadeIn,
           child: SlideTransition(
@@ -76,6 +71,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     210.0,
                     360.0,
                   );
+                  final logoSize = isShort ? 168.0 : 196.0;
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(28, 8, 28, bottomPad + 18),
                     child: ConstrainedBox(
@@ -86,42 +82,13 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           SizedBox(
-                            height: isShort ? 190 : heroHeight,
-                            child: Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          const Color(
-                                            0xFF1A3A3A,
-                                          ).withValues(alpha: 0.35),
-                                          Colors.transparent,
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      top: isShort ? 8 : 22,
-                                      left: 18,
-                                      right: 18,
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(28),
-                                      child: Image.asset(
-                                        'assets/images/welcome_hero.png',
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            height: isShort ? 210 : heroHeight,
+                            child: Center(
+                              child: LekoMark(
+                                size: logoSize,
+                                color: const Color(0xFFB4B6B7),
+                                semanticLabel: 'Leko logo',
+                              ),
                             ),
                           ),
                           Padding(

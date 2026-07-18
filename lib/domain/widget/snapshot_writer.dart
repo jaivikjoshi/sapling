@@ -34,7 +34,9 @@ class SnapshotWriter {
     try {
       final settings = await _settingsRepo.get();
       final userSettings = UserSettings.fromDb(settings);
-      final streak = await _closeoutService.computeStreak(settings: userSettings);
+      final streak = await _closeoutService.computeStreak(
+        settings: userSettings,
+      );
 
       final mode = enumFromDb<AllowanceMode>(
         settings.allowanceDefaultMode,
@@ -44,16 +46,20 @@ class SnapshotWriter {
       if (mode == AllowanceMode.goal &&
           settings.primaryGoalId != null &&
           _goalsRepo != null) {
-        final result = await _allowanceEngine.computeGoalMode(settings: userSettings);
+        final result = await _allowanceEngine.computeGoalMode(
+          settings: userSettings,
+        );
         if (result != null) {
           await _write(SnapshotBuilder.fromGoal(result, streak));
           return;
         }
       }
 
-      final result = await _allowanceEngine.computePaycheckMode(settings: userSettings);
+      final result = await _allowanceEngine.computePaycheckMode(
+        settings: userSettings,
+      );
       await _write(SnapshotBuilder.fromPaycheck(result, streak));
-        } catch (_) {}
+    } catch (_) {}
   }
 
   Future<void> _write(DailySnapshot snapshot) async {

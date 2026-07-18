@@ -52,8 +52,8 @@ class DriftGoalsRepository implements GoalsRepository {
 
   @override
   Future<void> updateById(String id, GoalsCompanion companion) {
-    return (_db.update(_db.goals)..where((t) => t.id.equals(id)))
-        .write(companion);
+    return (_db.update(_db.goals)
+      ..where((t) => t.id.equals(id))).write(companion);
   }
 
   @override

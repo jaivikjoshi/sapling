@@ -4,7 +4,6 @@ import 'package:leko/data/db/leko_database.dart';
 import 'package:leko/domain/services/projection_service.dart';
 
 void main() {
-
   group('ProjectionService.projectIncome', () {
     test('counts confirmed income in window', () {
       final txns = [
