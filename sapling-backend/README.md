@@ -31,6 +31,10 @@ Cloudflare Worker backend for Leaf. It exposes the two routes the Flutter app al
 
 Use Node.js 22 or newer; current Wrangler releases require it.
 
+For a web client, configure `CORS_ALLOWED_ORIGINS` to a comma-separated list
+of exact trusted origins. The Worker does not send permissive CORS headers by
+default; native iOS and Android calls do not require CORS.
+
 1. Copy `.dev.vars.example` to `.dev.vars`.
 2. Add your Gemini API key:
 

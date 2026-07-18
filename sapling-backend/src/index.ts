@@ -24,6 +24,8 @@ import {
 
 export interface Env extends GeminiEnv, BankEnv {
   LEAF_DEV_MODE?: string;
+  /** Comma-separated browser origins permitted to call this Worker. */
+  CORS_ALLOWED_ORIGINS?: string;
 }
 
 interface WorkerDeps {
@@ -38,47 +40,63 @@ export function createLeafWorker(deps: WorkerDeps = {}): ExportedHandler<Env> {
       const url = new URL(request.url);
 
       if (request.method === 'OPTIONS') {
-        return withCors(new Response(null, { status: 204 }));
+        return handlePreflight(request, env);
       }
 
       if (request.method === 'GET' && url.pathname === '/health') {
-        return jsonResponse({
-          ok: true,
-          mode: isMockMode(env) ? 'mock' : 'live',
-        });
+        return withCors(
+          jsonResponse({
+            ok: true,
+            mode: isMockMode(env) ? 'mock' : 'live',
+          }),
+          request,
+          env,
+        );
       }
 
       const bankResponse = await handleBankRoute(request, env, { fetchImpl });
-      if (bankResponse != null) return withCors(bankResponse);
+      if (bankResponse != null) return withCors(bankResponse, request, env);
 
       if (request.method === 'POST' && url.pathname === '/assistant/message') {
-        return handleAssistantMessage(request, env, fetchImpl);
+        return withCors(
+          await handleAssistantMessage(request, env, fetchImpl),
+          request,
+          env,
+        );
       }
 
       if (request.method === 'POST' && url.pathname === '/assistant/respond') {
-        return handleAssistantRespond(request, env, fetchImpl);
+        return withCors(
+          await handleAssistantRespond(request, env, fetchImpl),
+          request,
+          env,
+        );
       }
 
-      return jsonResponse(
-        {
-          error: 'Not found',
-          available_routes: [
-            'GET /health',
-            'GET /bank/status',
-            'POST /bank/connect',
-            'GET /bank/transactions/drafts',
-            'GET /bank/transactions/preview',
-            'POST /bank/transactions/review',
-            'POST /bank/transactions/import',
-            'POST /bank/accounts/select',
-            'DELETE /bank/connection',
-            'GET /bank/callback',
-            'POST /bank/webhook',
-            'POST /assistant/message',
-            'POST /assistant/respond',
-          ],
-        },
-        404,
+      return withCors(
+        jsonResponse(
+          {
+            error: 'Not found',
+            available_routes: [
+              'GET /health',
+              'GET /bank/status',
+              'POST /bank/connect',
+              'GET /bank/transactions/drafts',
+              'GET /bank/transactions/preview',
+              'POST /bank/transactions/review',
+              'POST /bank/transactions/import',
+              'POST /bank/accounts/select',
+              'DELETE /bank/connection',
+              'GET /bank/callback',
+              'POST /bank/webhook',
+              'POST /assistant/message',
+              'POST /assistant/respond',
+            ],
+          },
+          404,
+        ),
+        request,
+        env,
       );
     },
   };
@@ -231,27 +249,46 @@ function validationError(error: z.ZodError): Response {
 }
 
 function jsonResponse(payload: unknown, status = 200): Response {
-  return withCors(
-    new Response(JSON.stringify(payload, null, 2), {
-      status,
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-      },
-    }),
-  );
+  return new Response(JSON.stringify(payload, null, 2), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+    },
+  });
 }
 
-function withCors(response: Response): Response {
+function handlePreflight(request: Request, env: Env): Response {
+  if (!allowedCorsOrigin(request, env)) {
+    return new Response(null, { status: 403 });
+  }
+  return withCors(new Response(null, { status: 204 }), request, env);
+}
+
+function withCors(response: Response, request: Request, env: Env): Response {
   const headers = new Headers(response.headers);
-  headers.set('access-control-allow-origin', '*');
-  headers.set('access-control-allow-methods', 'GET,POST,DELETE,OPTIONS');
-  headers.set('access-control-allow-headers', 'authorization,content-type');
-  headers.set('access-control-max-age', '86400');
+  const origin = allowedCorsOrigin(request, env);
+  if (origin) {
+    headers.set('access-control-allow-origin', origin);
+    headers.set('access-control-allow-methods', 'GET,POST,DELETE,OPTIONS');
+    headers.set('access-control-allow-headers', 'authorization,content-type');
+    headers.set('access-control-max-age', '86400');
+    headers.append('vary', 'Origin');
+  }
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers,
   });
+}
+
+function allowedCorsOrigin(request: Request, env: Env): string | undefined {
+  const origin = request.headers.get('origin');
+  if (!origin) return undefined;
+  const allowed = (env.CORS_ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return allowed.includes(origin) ? origin : undefined;
 }
 
 function isMockMode(env: Env): boolean {

@@ -1,3 +1,16 @@
+import java.io.FileInputStream
+import java.util.Properties
+
+val releaseKeystoreProperties = Properties()
+val releaseKeystorePropertiesFile = rootProject.file("key.properties")
+if (releaseKeystorePropertiesFile.exists()) {
+    FileInputStream(releaseKeystorePropertiesFile).use(releaseKeystoreProperties::load)
+    check(
+        listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+            .all(releaseKeystoreProperties::containsKey),
+    ) { "android/key.properties is missing a required release signing value." }
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -31,11 +44,24 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (releaseKeystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = file(releaseKeystoreProperties.getProperty("storeFile"))
+                storePassword = releaseKeystoreProperties.getProperty("storePassword")
+                keyAlias = releaseKeystoreProperties.getProperty("keyAlias")
+                keyPassword = releaseKeystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Never publish a release signed with the public debug key. A
+            // missing key.properties intentionally leaves the artifact unsigned.
+            if (releaseKeystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }

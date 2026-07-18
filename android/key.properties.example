@@ -1,0 +1,6 @@
+# Copy to android/key.properties and replace with your Apple/Google Play release
+# keystore values. Never commit the copied file or the keystore itself.
+storeFile=/absolute/path/to/leko-release.keystore
+storePassword=replace-me
+keyAlias=leko
+keyPassword=replace-me

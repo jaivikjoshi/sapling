@@ -80,6 +80,8 @@ the bank UI in an unavailable state and do not expose an incomplete live flow.
   - `FLINKS_REDIRECT_URL`
   - `FLINKS_APP_RETURN_URL=com.jaivik.leko://bank-callback`
   - `FLINKS_SANDBOX=false`
+  - `CORS_ALLOWED_ORIGINS` only if a browser client is supported; use exact
+    trusted HTTPS origins and never `*`. Native mobile traffic does not need it.
 
 - Configure secrets with `wrangler secret put`:
 

@@ -340,6 +340,41 @@ describe('Leaf Worker', () => {
     expect(successBody.assistant_message).toContain('Added that expense');
     expect(failureBody.assistant_message).toContain('could not match');
   });
+
+  it('only sends CORS headers to explicitly allowed browser origins', async () => {
+    const worker = createLeafWorker();
+    const context = {} as ExecutionContext;
+
+    const allowed = await worker.fetch!(
+      new Request('https://leaf.test/health', {
+        headers: { origin: 'https://app.example.com' },
+      }) as never,
+      { CORS_ALLOWED_ORIGINS: 'https://app.example.com' },
+      context,
+    );
+    expect(allowed.headers.get('access-control-allow-origin')).toBe(
+      'https://app.example.com',
+    );
+
+    const denied = await worker.fetch!(
+      new Request('https://leaf.test/health', {
+        headers: { origin: 'https://attacker.example' },
+      }) as never,
+      { CORS_ALLOWED_ORIGINS: 'https://app.example.com' },
+      context,
+    );
+    expect(denied.headers.get('access-control-allow-origin')).toBeNull();
+
+    const rejectedPreflight = await worker.fetch!(
+      new Request('https://leaf.test/bank/status', {
+        method: 'OPTIONS',
+        headers: { origin: 'https://attacker.example' },
+      }) as never,
+      { CORS_ALLOWED_ORIGINS: 'https://app.example.com' },
+      context,
+    );
+    expect(rejectedPreflight.status).toBe(403);
+  });
 });
 
 function jsonRequest(url: string, body: unknown): Request {

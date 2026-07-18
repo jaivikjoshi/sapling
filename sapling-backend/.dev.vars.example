@@ -3,6 +3,9 @@ GEMINI_MODEL="gemini-2.5-flash"
 
 # Optional: set to "mock" to exercise the Worker locally without calling Gemini.
 LEAF_DEV_MODE="live"
+# Optional browser origins for local web development. Native iOS/Android calls
+# do not send an Origin header and are unaffected.
+CORS_ALLOWED_ORIGINS="http://localhost:3000"
 
 # Optional: set to "mock" to exercise /bank/* locally without Flinks credentials.
 BANK_DEV_MODE="mock"
