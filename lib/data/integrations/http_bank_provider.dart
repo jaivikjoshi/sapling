@@ -107,7 +107,7 @@ class ImportedTransactionDraftJson {
       sourceId:
           json['sourceId']?.toString() ??
           json['id']?.toString() ??
-          '${source.name}:${json.hashCode}',
+          _stableSourceIdFallback(source: source, json: json),
       source: source,
       amount: amount,
       date: _asDate(json['date']) ?? DateTime.now(),
@@ -124,6 +124,19 @@ class ImportedTransactionDraftJson {
           ImportReviewStatus.pending,
       confidence: _optionalDouble(json['confidence']),
     );
+  }
+
+  /// When the provider omits ids, derive a stable key from immutable fields
+  /// so re-previewing the same transaction cannot bypass import dedup.
+  static String _stableSourceIdFallback({
+    required TransactionImportSource source,
+    required Map<Object?, Object?> json,
+  }) {
+    final amount = _asDouble(json['amount']);
+    final date = _asDate(json['date'])?.toIso8601String().split('T').first ?? '';
+    final merchant = _optionalString(json['merchant']) ?? '';
+    final type = json['type']?.toString() ?? '';
+    return '${enumToDb(source)}:$date:$amount:$merchant:$type';
   }
 
   static Map<String, Object?> toJson(ImportedTransactionDraft draft) {
