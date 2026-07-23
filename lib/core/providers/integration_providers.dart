@@ -101,6 +101,7 @@ class TransactionReviewController
     : super(const TransactionReviewState());
 
   final Ref _ref;
+  bool _importInFlight = false;
 
   Future<BankConnectionIntent> startBankConnection() async {
     return _ref.read(bankProviderProvider).startConnection();
@@ -132,7 +133,17 @@ class TransactionReviewController
     required String mimeType,
     required String dataBase64,
   }) async {
-    final bytes = base64Decode(dataBase64);
+    late final List<int> bytes;
+    try {
+      bytes = base64Decode(dataBase64);
+    } on FormatException {
+      state = state.copyWith(
+        message:
+            () =>
+                'Could not read receipt attachment. The file may be corrupted.',
+      );
+      return null;
+    }
     final result = await _ref
         .read(receiptOcrProvider)
         .extract(
@@ -183,6 +194,13 @@ class TransactionReviewController
   }
 
   Future<TransactionImportResult> importApproved() async {
+    if (_importInFlight) {
+      return const TransactionImportResult(
+        createdCount: 0,
+        skippedCount: 0,
+        message: 'Import already in progress.',
+      );
+    }
     final approved = _ref
         .read(transactionReviewQueueProvider)
         .approvedOnly(state.drafts);
@@ -194,6 +212,7 @@ class TransactionReviewController
       );
     }
 
+    _importInFlight = true;
     state = state.copyWith(isLoading: true, message: () => null);
     var created = 0;
     var skipped = 0;
@@ -201,14 +220,20 @@ class TransactionReviewController
       final ledger = _ref.read(ledgerServiceProvider);
       final transactionsRepo = _ref.read(transactionsRepositoryProvider);
       final existing = await transactionsRepo.getAll();
-      final importedNotes =
-          existing.map((txn) => txn.note).whereType<String>().toSet();
+      final importedTags = <String>{
+        for (final txn in existing)
+          if (txn.note != null) _importDedupeTagFromNote(txn.note!),
+      };
       final categories =
           _ref.read(categoriesProvider).valueOrNull ?? const <Category>[];
 
       for (final draft in approved) {
-        final importNote = _importNote(draft);
-        if (importedNotes.contains(importNote)) {
+        if (draft.amount <= 0) {
+          skipped += 1;
+          continue;
+        }
+        final dedupeTag = _importDedupeTag(draft);
+        if (importedTags.contains(dedupeTag)) {
           skipped += 1;
           continue;
         }
@@ -218,7 +243,7 @@ class TransactionReviewController
             date: draft.date,
             postingType: IncomePostingType.manualOneTime,
             source: draft.merchant,
-            note: importNote,
+            note: _importNote(draft),
           );
         } else {
           final category = _categoryForDraft(draft, categories);
@@ -230,10 +255,10 @@ class TransactionReviewController
                 category == null
                     ? SpendLabel.green
                     : LabelRules.defaultForCategory(category),
-            note: importNote,
+            note: _importNote(draft),
           );
         }
-        importedNotes.add(importNote);
+        importedTags.add(dedupeTag);
         created += 1;
       }
 
@@ -268,6 +293,8 @@ class TransactionReviewController
         skippedCount: skipped,
         message: state.message,
       );
+    } finally {
+      _importInFlight = false;
     }
   }
 
@@ -306,13 +333,24 @@ class TransactionReviewController
     return categories.isEmpty ? null : categories.first;
   }
 
+  String _importDedupeTag(ImportedTransactionDraft draft) =>
+      'Imported from ${enumToDb(draft.source)}:${draft.sourceId}';
+
+  String? _importDedupeTagFromNote(String note) {
+    const prefix = 'Imported from ';
+    final start = note.indexOf(prefix);
+    if (start < 0) return null;
+    final tag = note.substring(start).split(' • ').first.trim();
+    return tag.isEmpty ? null : tag;
+  }
+
   String _importNote(ImportedTransactionDraft draft) {
     final parts = [
       if (draft.merchant != null && draft.merchant!.trim().isNotEmpty)
         draft.merchant!.trim(),
       if (draft.note != null && draft.note!.trim().isNotEmpty)
         draft.note!.trim(),
-      'Imported from ${enumToDb(draft.source)}:${draft.sourceId}',
+      _importDedupeTag(draft),
     ];
     return parts.join(' • ');
   }
